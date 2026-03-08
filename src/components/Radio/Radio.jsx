@@ -4,7 +4,7 @@ const Radio = ({
     name,
     value,
     checked,
-    onChange,
+    onClick,
     label,
 }) => {
     return (
@@ -14,7 +14,8 @@ const Radio = ({
                 name={name}
                 value={value}
                 checked={checked}
-                onChange={onChange}
+                onChange={() => {}}  
+                onClick={onClick}
                 className={styles.input}
             />
             <span className={styles.custom} />

@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useEffect } from "react";
 import Radio from "../../Radio/Radio";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import { toggleValue } from "../../../shared/utils/toggleValue";
 import styles from "./HormoneTherapy.module.css";
 
 const radioOptions = ["Estrogen only", "Estrogen + progestin"];
@@ -13,7 +14,7 @@ const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
     const handleRadioChange = (value) => {
         setHormoneTherapy(prev => ({
             ...prev,
-            general: value
+            general: toggleValue(prev.general, value)
         }));
     };
 
@@ -75,7 +76,7 @@ const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
                             value={item}
                             label={item}
                             checked={hormoneTherapy.general === item}
-                            onChange={() => handleRadioChange(item)}
+                            onClick={() => handleRadioChange(item)}
                         />
                     ))}
                 </div>

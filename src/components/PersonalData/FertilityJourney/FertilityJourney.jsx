@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useEffect } from "react";
 import Radio from "../../Radio/Radio";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import { toggleValue } from "../../../shared/utils/toggleValue";
 import styles from "./FertilityJourney.module.css";
 
 const radioOptions = ["I am pregnant", "I had a baby (last 12 months)", "I am not able to get pregnant", "I am trying to conceive"];
@@ -13,7 +14,7 @@ const FertilityJourney = ({ fertilityJourney, setFertilityJourney }) => {
     const handleRadioChange = (value) => {
         setFertilityJourney(prev => ({
             ...prev,
-            currentStatus: value
+            currentStatus: toggleValue(prev.currentStatus, value)
         }));
     };
 
@@ -77,7 +78,7 @@ const FertilityJourney = ({ fertilityJourney, setFertilityJourney }) => {
                             value={item}
                             label={item}
                             checked={fertilityJourney.currentStatus === item}
-                            onChange={() => handleRadioChange(item)}
+                            onClick={() => handleRadioChange(item)}
                         />
                     ))}
                 </div>

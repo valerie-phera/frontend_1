@@ -1,6 +1,6 @@
 import { memo, useState, useRef, useEffect } from "react";
 import Radio from "../../Radio/Radio";
-
+import { toggleValue } from "../../../shared/utils/toggleValue";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./BirthControl.module.css";
 
@@ -27,10 +27,11 @@ const sectionTitles = {
 const BirthControl = ({ birthControl, setBirthControl }) => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapRef = useRef(null);
+
     const handleChange = (section, value) => {
         setBirthControl(prev => ({
             ...prev,
-            [section]: value
+            [section]: toggleValue(prev[section], value)
         }));
     };
 
@@ -44,7 +45,7 @@ const BirthControl = ({ birthControl, setBirthControl }) => {
                     value={item}
                     label={item}
                     checked={birthControl[section] === item}
-                    onChange={() => handleChange(section, item)}
+                    onClick={() => handleChange(section, item)}
                 />
             ))}
         </div>
