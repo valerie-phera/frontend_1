@@ -9,7 +9,7 @@ const HomePage = () => {
       <div className={styles.wrapHomePage}>
         <Main />
         <footer className={styles.footer}>
-          <p>pHera • Empowering vaginal health through accessible testing!</p>
+          <p>pHera • Empowering vaginal health through accessible testing</p>
         </footer>
       </div>
     </>
