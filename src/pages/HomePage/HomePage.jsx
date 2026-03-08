@@ -1,6 +1,7 @@
 import Main from "../../components/Main/Main";
 
 import styles from "./HomePage.module.css";
+// check
 
 const HomePage = () => {
 
