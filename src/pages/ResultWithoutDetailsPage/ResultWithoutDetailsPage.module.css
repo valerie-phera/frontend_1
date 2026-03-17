@@ -147,6 +147,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 12px;
+    padding: 0 10px;
 }
 
 .textBlock {

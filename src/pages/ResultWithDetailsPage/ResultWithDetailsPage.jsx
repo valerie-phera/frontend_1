@@ -89,7 +89,6 @@ const ResultWithDetailsPage = () => {
                                 <ScaleMarker className={styles.scaleMarker} style={{ left: `${markerPos}%` }} />
                             </div>
                             <div className={styles.meaning}>
-                                <p>Low</p>
                                 <p>Normal</p>
                                 <p>Elevated</p>
                             </div>
