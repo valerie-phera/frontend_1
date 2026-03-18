@@ -31,10 +31,10 @@ const CameraViewPage = () => {
             const range = max - min;
             const steps = Math.round(range / step);
             const randomSteps = Math.floor(Math.random() * (steps + 1));
-            return +(min + randomSteps * step).toFixed(1);
+            return +(min + randomSteps * step).toFixed(2);
         };
 
-        const phValue = randomStep(4.0, 7.0, 0.1);
+        const phValue = randomStep(4.0, 7.0, 0.05);
         const confidence = randomStep(92, 99, 1);
 
         const now = new Date();

@@ -27,7 +27,7 @@ const ResultWithDetailsPage = () => {
     const phValue = state?.phValue;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
-    const interpretation = getInterpretation(phLevel);
+    const interpretation = getInterpretation(phLevel, Number(phValue).toFixed(2));
     const currentRecommendations = getRecommendations(phLevel);
     const { handleExport } = useExportResults();
 
@@ -62,7 +62,7 @@ const ResultWithDetailsPage = () => {
     const minPh = 4.0;
     const maxPh = 7.0;
 
-    const markerPos = Math.min(100, Math.max(0, ((phValue - minPh) / (maxPh - minPh)) * 100));
+    const markerPos = Math.min(100, Math.max(0, ((Number(phValue) - minPh) / (maxPh - minPh)) * 100));
 
     return (
         <>
@@ -78,7 +78,7 @@ const ResultWithDetailsPage = () => {
                                     <div className={styles.actionsInner} onClick={onExportClick}><ShareIcon /></div>
                                 </div>
                             </div>
-                            <div className={styles.num}>{phValue}</div>
+                            <div className={styles.num}>{Number(phValue).toFixed(2)}</div>
                             <div className={styles.date}>{timestamp}</div>
                             <div className={styles.scale}>
                                 <div className={styles.scalePart1}></div>

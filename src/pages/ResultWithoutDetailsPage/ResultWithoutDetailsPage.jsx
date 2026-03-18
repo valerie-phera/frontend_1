@@ -50,15 +50,15 @@ const ResultWithoutDetailsPage = () => {
     };
 
     // Extract pH, category and timestamp from backend response
-    const phValue = resultData.phValue || 0.00;
+    const phValue = Number((resultData.phValue || 0).toFixed(2));
     const phLevel = getPhLevel(phValue);
     const timestamp = resultData.date || new Date().toISOString();
-    const interpretation = getInterpretation(phLevel);
+    const interpretation = getInterpretation(phLevel, phValue.toFixed(2));
 
     const minPh = 4.0;
     const maxPh = 7.0;
 
-    const markerPos = ((phValue - minPh) / (maxPh - minPh)) * 100;
+    const markerPos = ((Number(phValue) - minPh) / (maxPh - minPh)) * 100;
 
     const onExportClick = () => {
         handleExport({
