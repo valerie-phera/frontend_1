@@ -54,6 +54,8 @@ const ResultWithoutDetailsPage = () => {
     const phLevel = getPhLevel(phValue);
     const timestamp = resultData.date || new Date().toISOString();
     const interpretation = getInterpretation(phLevel, phValue.toFixed(2));
+    const recommendations = resultData.agent_reply;
+    console.log(recommendations);  
 
     const minPh = 4.0;
     const maxPh = 7.0;
@@ -130,7 +132,8 @@ const ResultWithoutDetailsPage = () => {
                                     phValue,
                                     phLevel,
                                     timestamp,
-                                    interpretation
+                                    interpretation,
+                                    recommendations
                                 },
                             })
                         }

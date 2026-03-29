@@ -41,8 +41,8 @@ function App() {
         <Route path="/camera-view" element={<CameraViewPage />} />
         <Route path="/result-without-details" element={<AppLayout><ResultWithoutDetailsPage /></AppLayout>} />
         <Route path="/add-details" element={<AppLayout><AddDetailsPage /></AppLayout>} />
-        <Route path="/result-with-details-normal" element={<AppLayout><ResultWithDetailsPage /></AppLayout>} />
-        <Route path="/signup" element={<AppLayout showBack onBack={() => navigate("/result-with-details-normal")}><SignUpPage /></AppLayout>} />
+        <Route path="/result-with-details" element={<AppLayout><ResultWithDetailsPage /></AppLayout>} />
+        <Route path="/signup" element={<AppLayout showBack onBack={() => navigate("/result-with-details")}><SignUpPage /></AppLayout>} />
         <Route path="/start" element={<AppLayout showBack onBack={() => navigate("https://phera.digital/")}><StartPage /></AppLayout>} />
         <Route path="/registration/username" element={<AppLayout><RegistrationStepName /></AppLayout>} />
         <Route path="/registration/email" element={<AppLayout><RegistrationStepEmail /></AppLayout>} />

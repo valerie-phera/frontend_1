@@ -177,6 +177,10 @@
     border-radius: 10px;
 }
 
+.innerText strong {
+    font-weight: 700;
+}
+
 .edit {
     cursor: pointer;
 }
@@ -229,20 +233,6 @@
 
 .arrowOpen {
     transform: rotate(180deg);
-}
-
-.collapse {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.35s ease;
-    margin: 0;
-    padding: 0;
-}
-
-.open {
-    opacity: 1;
-    max-height: 500px;
 }
 
 .details {

@@ -16,6 +16,7 @@ const AddDetailsPage = () => {
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
     const interpretation = state?.interpretation;
+    const recommendations = state?.recommendations;
 
     // Pre-fill user details if they were passed from the previous screen
     // Otherwise initialize with empty/default values
@@ -95,12 +96,13 @@ const AddDetailsPage = () => {
                 <BottomBlock>
                     {/* On submit: navigate to detailed results page and pass all user inputs */}
                     <Button
-                        onClick={() => navigate("/result-with-details-normal", {
+                        onClick={() => navigate("/result-with-details", {
                             state: {
                                 phValue,
                                 phLevel,
                                 timestamp,
                                 interpretation,
+                                recommendations,
                                 age,
                                 ethnicBackground,
                                 menstrualCycle,

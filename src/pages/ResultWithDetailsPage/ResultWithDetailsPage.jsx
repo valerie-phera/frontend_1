@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
@@ -13,7 +13,6 @@ import ScaleMarker from "../../assets/icons/ScaleMarker";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretation } from "../../shared/utils/getInterpretation";
-import { getRecommendations } from "../../shared/utils/getRecomendations";
 import useDetailsFromState from "../../hooks/useDetailsFromState";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
@@ -22,14 +21,15 @@ import styles from "./ResultWithDetailsPage.module.css";
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
     const { state } = useLocation();
     const phValue = state?.phValue;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
     const interpretation = getInterpretation(phLevel, Number(phValue).toFixed(2));
-    const currentRecommendations = getRecommendations(phLevel);
+    const currentRecommendations = state?.recommendations;
     const { handleExport } = useExportResults();
+    const contentRef = useRef(null);
 
     const handleImportedData = (data) => {
         console.log("📥 Импортировано:", data);
@@ -48,6 +48,22 @@ const ResultWithDetailsPage = () => {
         <div key={item} className={styles.item}>{item}</div>
     ));
 
+    const minPh = 4.0;
+    const maxPh = 7.0;
+
+    const markerPos = Math.min(100, Math.max(0, ((Number(phValue) - minPh) / (maxPh - minPh)) * 100));
+
+    const cleaned = Array.isArray(currentRecommendations)
+        ? currentRecommendations.join("\n\n")
+        : (currentRecommendations || "")
+            .replace(/\[\d+(?:\s*,\s*\d+)*\]/g, "")
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+    const paragraphs = cleaned      //converts text with paragraphs into an array of individual paragraphs
+        .split(/\n\s*\n/)  // by double line break
+        .map(p => p.trim())
+        .filter(Boolean);
+
     const onExportClick = () => {
         handleExport({
             phValue,
@@ -55,14 +71,15 @@ const ResultWithDetailsPage = () => {
             timestamp,
             interpretation,
             detailOptions,
-            recommendations: currentRecommendations
+            recommendations: paragraphs
         });
     };
 
-    const minPh = 4.0;
-    const maxPh = 7.0;
-
-    const markerPos = Math.min(100, Math.max(0, ((Number(phValue) - minPh) / (maxPh - minPh)) * 100));
+    useEffect(() => {
+        if (contentRef.current) {
+            contentRef.current.style.maxHeight = `${contentRef.current.scrollHeight}px`;
+        }
+    }, []);
 
     return (
         <>
@@ -117,11 +134,23 @@ const ResultWithDetailsPage = () => {
                                         <ArrowDownGrey />
                                     </span>
                                 </div>
-                                <div className={`${styles.wrapText} ${styles.collapse} ${!isOpen ? styles.open : ""}`}>
-                                    {currentRecommendations.map((rec, index) => (
+                                <div
+                                    ref={contentRef}
+                                    className={styles.wrapText}
+                                    style={{
+                                        maxHeight: isOpen ? contentRef.current?.scrollHeight : 0,
+                                        opacity: isOpen ? 1 : 0,
+                                        overflow: "hidden",
+                                        transition: "max-height 0.35s ease, opacity 0.35s ease"
+                                    }}
+                                >
+                                    {paragraphs.map((rec, index) => (
                                         <div key={index} className={styles.text}>
                                             <div className={styles.point}></div>
-                                            <p className={styles.innerText}>{rec}</p>
+                                            <p
+                                                className={styles.innerText}
+                                                dangerouslySetInnerHTML={{ __html: rec }}
+                                            />
                                         </div>
                                     ))}
                                 </div>
@@ -132,7 +161,6 @@ const ResultWithDetailsPage = () => {
                 <BottomBlock>
                     <Button onClick={onExportClick}>Export results</Button>
                     <Button onClick={handleImportClick}>Import results</Button>
-
                     <input
                         type="file"
                         accept="application/json"

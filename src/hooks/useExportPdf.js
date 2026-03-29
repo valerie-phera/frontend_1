@@ -11,6 +11,10 @@ const useExportPdf = (logoSrc) => {
     recommendations
   }) => {
     try {
+      if (!Array.isArray(recommendations)) {
+        recommendations = [String(recommendations || "")];
+      }
+      
       const pdfDoc = await PDFDocument.create();
       const page = pdfDoc.addPage([595, 842]);
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
