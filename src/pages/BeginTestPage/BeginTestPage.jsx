@@ -31,6 +31,31 @@ const clampPh = (raw) => {
     return Number(v.toFixed(2));
 };
 
+/**
+ * Только цифры — режим «как на телефоне»: 556 → 5.56 (первая цифра, точка, ещё до двух цифр).
+ * Есть точка или запятая — ввод как набран (Backspace на 7.00 не сбрасывает значение).
+ */
+const sanitizePhInput = (raw) => {
+    const s = String(raw ?? "");
+    if (/^\d*$/.test(s)) {
+        if (s.length === 0) return "";
+        if (s.length === 1) return s;
+        if (s.length === 2) return `${s[0]}.${s[1]}`;
+        let num = parseFloat(`${s[0]}.${s.slice(1, 3)}`);
+        if (Number.isNaN(num)) return s.slice(0, 3);
+        num = Math.min(MAX_PH, Math.max(MIN_PH, num));
+        return num.toFixed(2);
+    }
+
+    let v = s.replace(",", ".");
+    v = v.replace(/[^\d.]/g, "");
+    const parts = v.split(".");
+    if (parts.length === 1) return parts[0];
+    const intPart = parts[0];
+    const frac = parts.slice(1).join("").slice(0, 2);
+    return frac.length > 0 ? `${intPart}.${frac}` : `${intPart}.`;
+};
+
 const BeginTestPage = () => {
     const navigate = useNavigate();
     const [phInput, setPhInput] = useState("");
@@ -72,7 +97,7 @@ const BeginTestPage = () => {
                                 max={MAX_PH}
                                 step={STEP}
                                 value={phInput}
-                                 onChange={(e) => setPhInput(e.target.value.replace(',', '.'))}
+                                onChange={(e) => setPhInput(sanitizePhInput(e.target.value))}
                                 onBlur={handlePhBlur}
                                 placeholder="pH value (4.00 – 7.00)"
                             />
