@@ -3,6 +3,7 @@ import AppLayout from "./Layout/AppLayout";
 
 import ScrollToTop from "./ScrollToTop/ScrollToTop";
 import HomePage from "../pages/HomePage/HomePage";
+import BeginTestPage from "../pages/BeginTestPage/BeginTestPage";
 import CameraViewPage from "../pages/CameraViewPage/CameraViewPage";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import ResultWithoutDetailsPage from "../pages/ResultWithoutDetailsPage/ResultWithoutDetailsPage";
@@ -38,6 +39,7 @@ function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/begin-test" element={<AppLayout><BeginTestPage /></AppLayout>} />
         <Route path="/camera-view" element={<CameraViewPage />} />
         <Route path="/result-without-details" element={<AppLayout><ResultWithoutDetailsPage /></AppLayout>} />
         <Route path="/add-details" element={<AppLayout><AddDetailsPage /></AppLayout>} />

@@ -10,7 +10,8 @@ const Main = () => {
     const navigate = useNavigate();
 
     const handleTryDemo = () => {
-        navigate("/camera-view");
+        // navigate("/camera-view");
+        navigate("/begin-test");
     };
 
     return (
