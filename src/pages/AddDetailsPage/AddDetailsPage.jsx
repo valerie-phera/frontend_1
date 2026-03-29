@@ -140,16 +140,48 @@ import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
 import Container from "../../components/Container/Container";
+import { analyzePh } from "../../shared/api/images-api";
+import { getInterpretation } from "../../shared/utils/getInterpretation";
 
 import styles from "./AddDetailsPage.module.css";
+
+const getPhLevel = (ph) => {
+    if (ph < 4.5) return "Normal";
+    if (ph >= 4.5 && ph <= 4.9) return "Slightly Elevated";
+    return "Elevated";
+};
+
+const buildSymptomsPayload = ({
+    ethnicBackground,
+    menstrualCycle,
+    hormoneDiagnoses,
+    birthControl,
+    hormoneTherapy,
+    fertilityJourney,
+    discharge,
+    vulvaCondition,
+    smell,
+    urination,
+    notes,
+}) => ({
+    ethnic_background: ethnicBackground,
+    menstrual_cycle: menstrualCycle,
+    hormone_diagnoses: hormoneDiagnoses,
+    birth_control: birthControl,
+    hormone_therapy: hormoneTherapy,
+    fertility_journey: fertilityJourney,
+    discharge,
+    vulva_vagina: vulvaCondition,
+    smell,
+    urination,
+    notes,
+});
 
 const AddDetailsPage = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
     const phValue = state?.phValue;
-    const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
-    const interpretation = state?.interpretation;
     const recommendations = state?.recommendations;
 
     // Pre-fill user details if they were passed from the previous screen
@@ -184,6 +216,82 @@ const AddDetailsPage = () => {
     const [smell, setSmell] = useState(state?.smell || []);
     const [urination, setUrination] = useState(state?.urination || []);
     const [notes, setNotes] = useState(state?.notes || "");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveDetails = async () => {
+        if (phValue === undefined || phValue === null) {
+            alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+        const ageNum = parseInt(String(age).trim(), 10);
+        if (Number.isNaN(ageNum) || ageNum < 1) {
+            alert("Please enter a valid age.");
+            return;
+        }
+
+        const symptoms = buildSymptomsPayload({
+            ethnicBackground,
+            menstrualCycle,
+            hormoneDiagnoses,
+            birthControl,
+            hormoneTherapy,
+            fertilityJourney,
+            discharge,
+            vulvaCondition,
+            smell,
+            urination,
+            notes,
+        });
+
+        const payload = {
+            ph_value: Number(phValue),
+            user_message: "What does my pH mean?",
+            age: ageNum,
+            symptoms,
+        };
+        console.log("Request:", payload);
+
+        setIsSaving(true);
+        try {
+            const backendResponse = await analyzePh(payload);
+            console.log("Analyze API raw response:", backendResponse);
+            const nextPhValue = Number(
+                backendResponse?.phValue ?? backendResponse?.ph_value ?? phValue
+            );
+            const nextPhLevel = getPhLevel(nextPhValue);
+            const nextInterpretation = getInterpretation(
+                nextPhLevel,
+                nextPhValue.toFixed(2)
+            );
+
+            navigate("/result-with-details", {
+                state: {
+                    phValue: nextPhValue,
+                    phLevel: nextPhLevel,
+                    timestamp,
+                    interpretation: nextInterpretation,
+                    recommendations:
+                        backendResponse?.agent_reply ?? recommendations,
+                    age,
+                    ethnicBackground,
+                    menstrualCycle,
+                    hormoneDiagnoses,
+                    birthControl,
+                    hormoneTherapy,
+                    fertilityJourney,
+                    discharge,
+                    vulvaCondition,
+                    smell,
+                    urination,
+                    notes,
+                },
+            });
+        } catch (err) {
+            alert(`Failed: ${err.message}`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <>
@@ -230,29 +338,10 @@ const AddDetailsPage = () => {
                 <BottomBlock>
                     {/* On submit: navigate to detailed results page and pass all user inputs */}
                     <Button
-                        onClick={() => navigate("/result-with-details", {
-                            state: {
-                                phValue,
-                                phLevel,
-                                timestamp,
-                                interpretation,
-                                recommendations,
-                                age,
-                                ethnicBackground,
-                                menstrualCycle,
-                                hormoneDiagnoses,
-                                birthControl,
-                                hormoneTherapy,
-                                fertilityJourney,
-                                discharge,
-                                vulvaCondition,
-                                smell,
-                                urination,
-                                notes
-                            }
-                        })}
+                        onClick={handleSaveDetails}
+                        disabled={isSaving}
                     >
-                        Save details
+                        {isSaving ? "Saving…" : "Save details"}
                     </Button>
                     <ButtonReverse onClick={() => navigate("/result-without-details")}>Go back</ButtonReverse>
                 </BottomBlock>
