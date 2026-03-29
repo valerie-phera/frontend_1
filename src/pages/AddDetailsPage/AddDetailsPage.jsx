@@ -223,10 +223,15 @@ const AddDetailsPage = () => {
             alert("Missing pH result. Please go back and complete the test.");
             return;
         }
-        const ageNum = parseInt(String(age).trim(), 10);
-        if (Number.isNaN(ageNum) || ageNum < 1) {
-            alert("Please enter a valid age.");
-            return;
+        const ageTrimmed = String(age ?? "").trim();
+        let ageForApi = undefined;
+        if (ageTrimmed !== "") {
+            const ageNum = parseInt(ageTrimmed, 10);
+            if (Number.isNaN(ageNum) || ageNum < 1) {
+                alert("Please enter a valid age, or leave the field empty.");
+                return;
+            }
+            ageForApi = ageNum;
         }
 
         const symptoms = buildSymptomsPayload({
@@ -246,7 +251,7 @@ const AddDetailsPage = () => {
         const payload = {
             ph_value: Number(phValue),
             user_message: "What does my pH mean?",
-            age: ageNum,
+            ...(ageForApi !== undefined && { age: ageForApi }),
             symptoms,
         };
         console.log("Request:", payload);
