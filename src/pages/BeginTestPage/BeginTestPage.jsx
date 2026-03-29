@@ -66,13 +66,13 @@ const BeginTestPage = () => {
                             <input
                                 id="begin-test-ph"
                                 className={styles.phInput}
-                                type="number"
+                                type="text"
                                 inputMode="decimal"
                                 min={MIN_PH}
                                 max={MAX_PH}
                                 step={STEP}
                                 value={phInput}
-                                onChange={(e) => setPhInput(e.target.value)}
+                                 onChange={(e) => setPhInput(e.target.value.replace(',', '.'))}
                                 onBlur={handlePhBlur}
                                 placeholder="pH value (4.00 – 7.00)"
                             />
