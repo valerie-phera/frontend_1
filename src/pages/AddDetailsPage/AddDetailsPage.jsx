@@ -151,31 +151,17 @@ const getPhLevel = (ph) => {
     return "Elevated";
 };
 
-const buildSymptomsPayload = ({
-    ethnicBackground,
-    menstrualCycle,
-    hormoneDiagnoses,
-    birthControl,
-    hormoneTherapy,
-    fertilityJourney,
-    discharge,
-    vulvaCondition,
-    smell,
-    urination,
-    notes,
-}) => ({
-    ethnic_background: ethnicBackground,
-    menstrual_cycle: menstrualCycle,
-    hormone_diagnoses: hormoneDiagnoses,
-    birth_control: birthControl,
-    hormone_therapy: hormoneTherapy,
-    fertility_journey: fertilityJourney,
-    discharge,
-    vulva_vagina: vulvaCondition,
-    smell,
-    urination,
-    notes,
-});
+const firstOrNull = (value) => {
+    if (Array.isArray(value)) return value[0] ?? null;
+    if (value === undefined || value === "") return null;
+    return value ?? null;
+};
+
+const toArray = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (value === undefined || value === null || value === "") return [];
+    return [value].filter(Boolean);
+};
 
 const AddDetailsPage = () => {
     const navigate = useNavigate();
@@ -234,25 +220,32 @@ const AddDetailsPage = () => {
             ageForApi = ageNum;
         }
 
-        const symptoms = buildSymptomsPayload({
-            ethnicBackground,
-            menstrualCycle,
-            hormoneDiagnoses,
-            birthControl,
-            hormoneTherapy,
-            fertilityJourney,
-            discharge,
-            vulvaCondition,
-            smell,
-            urination,
-            notes,
-        });
-
         const payload = {
             ph_value: Number(phValue),
-            user_message: "What does my pH mean?",
-            ...(ageForApi !== undefined && { age: ageForApi }),
-            symptoms,
+            age: ageForApi ?? null,
+            diagnoses: toArray(hormoneDiagnoses),
+            ethnic_backgrounds: toArray(ethnicBackground),
+            menstrual_cycle: firstOrNull(menstrualCycle),
+            birth_control: {
+                general: birthControl?.general ?? null,
+                pill: birthControl?.pill ?? null,
+                iud: birthControl?.iud ?? null,
+                other_methods: toArray(birthControl?.otherHormonalMethods),
+                permanent: toArray(birthControl?.permanentMethods),
+            },
+            hormone_therapy: toArray(hormoneTherapy?.general ?? hormoneTherapy),
+            hrt: toArray(hormoneTherapy?.hormoneReplacement),
+            fertility_journey: {
+                current_status: fertilityJourney?.currentStatus ?? null,
+                fertility_treatments: toArray(fertilityJourney?.fertilityTreatments),
+            },
+            symptoms: {
+                discharge: toArray(discharge),
+                vulva_vagina: toArray(vulvaCondition),
+                smell: toArray(smell),
+                urine: toArray(urination),
+                notes: String(notes ?? ""),
+            },
         };
         console.log("Request:", payload);
 
