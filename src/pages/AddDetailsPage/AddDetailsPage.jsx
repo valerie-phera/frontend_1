@@ -270,6 +270,7 @@ const AddDetailsPage = () => {
                     interpretation: nextInterpretation,
                     recommendations:
                         backendResponse?.agent_reply ?? recommendations,
+                    citations: backendResponse?.citations ?? [],
                     age,
                     ethnicBackground,
                     menstrualCycle,

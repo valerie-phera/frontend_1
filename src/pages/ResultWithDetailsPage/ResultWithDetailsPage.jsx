@@ -207,6 +207,7 @@ const ResultWithDetailsPage = () => {
     const timestamp = state?.timestamp;
     const interpretation = getInterpretation(phLevel, Number(phValue).toFixed(2));
     const currentRecommendations = state?.recommendations;
+    const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
     const contentRef = useRef(null);
 
@@ -243,6 +244,21 @@ const ResultWithDetailsPage = () => {
         .map(p => p.trim())
         .filter(Boolean);
 
+    const citations = Array.isArray(rawCitations)
+        ? rawCitations
+            .map((c) => {
+                if (!c || typeof c !== "object") return null;
+                const title = c.title;
+                const text = c.relevant_section;
+                if (!title && !text) return null;
+                return {
+                    title: title == null ? "" : String(title),
+                    text: text == null ? "" : String(text),
+                };
+            })
+            .filter(Boolean)
+        : [];
+
     const onExportClick = () => {
         handleExport({
             phValue,
@@ -253,12 +269,6 @@ const ResultWithDetailsPage = () => {
             recommendations: paragraphs
         });
     };
-
-    useEffect(() => {
-        if (contentRef.current) {
-            contentRef.current.style.maxHeight = `${contentRef.current.scrollHeight}px`;
-        }
-    }, []);
 
     return (
         <>
@@ -317,7 +327,7 @@ const ResultWithDetailsPage = () => {
                                     ref={contentRef}
                                     className={styles.wrapText}
                                     style={{
-                                        maxHeight: isOpen ? contentRef.current?.scrollHeight : 0,
+                                        maxHeight: isOpen ? 5000 : 0,
                                         opacity: isOpen ? 1 : 0,
                                         overflow: "hidden",
                                         transition: "max-height 0.35s ease, opacity 0.35s ease"
@@ -332,6 +342,24 @@ const ResultWithDetailsPage = () => {
                                             />
                                         </div>
                                     ))}
+
+                                    {citations.length > 0 && (
+                                        <div className={styles.quotesBlock}>
+                                            {citations.map((q, index) => (
+                                                <div key={index} className={styles.quoteItem}>
+                                                    <p className={styles.quoteText}>
+                                                        {q.title ? (
+                                                            <>
+                                                                <span className={styles.quoteTitle}>{q.title}</span>
+                                                                <span className={styles.quoteDash}> — </span>
+                                                            </>
+                                                        ) : null}
+                                                        <span>{q.text}</span>
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
