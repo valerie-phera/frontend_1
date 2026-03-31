@@ -233,7 +233,7 @@ const AddDetailsPage = () => {
                 other_methods: toArray(birthControl?.otherHormonalMethods),
                 permanent: toArray(birthControl?.permanentMethods),
             },
-            hormone_therapy: toArray(hormoneTherapy?.general ?? hormoneTherapy),
+            hormone_therapy: toArray(hormoneTherapy?.general),
             hrt: toArray(hormoneTherapy?.hormoneReplacement),
             fertility_journey: {
                 current_status: fertilityJourney?.currentStatus ?? null,
