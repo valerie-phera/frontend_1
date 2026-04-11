@@ -98,6 +98,10 @@
     background-color: #E6F2F4;
 }
 
+.infoIcon {
+    display: flex;
+    flex-shrink: 0;
+}
 
 .numWrap {
     display: flex;

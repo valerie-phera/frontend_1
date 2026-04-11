@@ -29,7 +29,7 @@ const PhBadge = ({ level }) => {
             style={{ backgroundColor }}
         >
             <Icon />
-            <p className={styles.levelPhText}>{level} pH</p>
+            <p className={styles.levelPhText}>{level}</p>
         </div>
     );
 };

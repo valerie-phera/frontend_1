@@ -4,7 +4,6 @@
     padding: 20px 16px 20px 16px;
     background-color: #FFFFFF;
     border-radius: 10px;
-    cursor: pointer;
 }
 
 .list {
@@ -12,21 +11,6 @@
     flex-direction: column;
     gap: 20px;
     padding-top: 12px;
-
-    max-height: 700px;
-    opacity: 1;
-    overflow: hidden;
-
-    transition:
-        max-height 280ms ease,
-        opacity 200ms ease,
-        padding-top 200ms ease;
-}
-
-.collapsed {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
 }
 
 .section {

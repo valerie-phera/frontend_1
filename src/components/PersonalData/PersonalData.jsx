@@ -1,4 +1,5 @@
 import AgeInput from "./AgeInput/AgeInput";
+import LifeStage from "./LifeStage/LifeStage";
 import EthnicBackground from "./EthnicBackground/EthnicBackground";
 import MenstrualCycle from "./MenstrualCycle/MenstrualCycle";
 import HormoneDiagnoses from "./HormoneDiagnoses/HormoneDiagnoses";
@@ -17,6 +18,8 @@ import styles from "./PersonalData.module.css";
 const PersonalData = ({
     age,
     setAge,
+    lifeStage,
+    setLifeStage,
     ethnicBackground,
     setEthnicBackground,
     menstrualCycle,
@@ -40,6 +43,14 @@ const PersonalData = ({
     notes,
     setNotes,
 }) => {
+
+    const handleLifeStageChange = (value) => {
+        setLifeStage((prev) =>
+            prev.includes(value)
+                ? prev.filter((h) => h !== value)
+                : [...prev, value]
+        );
+    };
 
     const handleEthnicBackgroundChange = (value) => {
         setEthnicBackground((prev) =>
@@ -102,6 +113,7 @@ const PersonalData = ({
             <div className={styles.wrapper}>
                 <form className={styles.form}>
                     <AgeInput age={age} onChange={setAge} />
+                    <LifeStage lifeStage={lifeStage} onChange={handleLifeStageChange} />
                     <EthnicBackground ethnicBackground={ethnicBackground} onChange={handleEthnicBackgroundChange} />
 
                     <div className={styles.wrapHeading}>

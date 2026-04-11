@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./EthnicBackground.module.css";
@@ -16,13 +16,10 @@ const options = [
   "Sinti / Roma",
   "White / Caucasian / European",
   "Mixed / Multiple ancestrie",
-  "Other",
+  "+ Other",
 ];
 
 const EthnicBackground = ({ ethnicBackground, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapRef = useRef(null);
-
   const list = options.map((item) => {
     const isActive = ethnicBackground.includes(item);
 
@@ -37,48 +34,13 @@ const EthnicBackground = ({ ethnicBackground, onChange }) => {
     );
   });
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, []);
-
   return (
-    <div ref={wrapRef} className={styles.wrap} onClick={() => setIsOpen(v => !v)}>
-      <InfoTooltip
-        title="Ethnic background(s)"
-        onToggle={(e) => {
-          e.stopPropagation();
-          setIsOpen(v => !v);
-        }}
-        onToggleArrow={isOpen}>
+    <div className={styles.wrap}>
+      <InfoTooltip title="Ethnic background(s)" showArrow={false}>
         Racial and ethnic backgrounds are linked to natural differences in genetics, immune responses, and care habits. This can shape vaginal flora and therefore its acidity, moisture, and scent. Knowing this helps pHera understand what is normal for your body.
       </InfoTooltip>
 
-      <div className={`${styles.list} ${!isOpen ? styles.collapsed : ""}`} onClick={(e) => e.stopPropagation()}>
-        {list}
-      </div>
+      <div className={styles.list}>{list}</div>
     </div>
   );
 };

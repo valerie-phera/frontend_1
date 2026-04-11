@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo } from "react";
 import Radio from "../../Radio/Radio";
 import { toggleValue } from "../../../shared/utils/toggleValue";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
@@ -25,9 +25,6 @@ const sectionTitles = {
 };
 
 const BirthControl = ({ birthControl, setBirthControl }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapRef = useRef(null);
-
     const handleChange = (section, value) => {
         setBirthControl(prev => ({
             ...prev,
@@ -51,48 +48,12 @@ const BirthControl = ({ birthControl, setBirthControl }) => {
         </div>
     ));
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        document.addEventListener("touchstart", handleClickOutside);
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-            document.removeEventListener("touchstart", handleClickOutside);
-        };
-    }, []);
-
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === "Escape") {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("keydown", handleEsc);
-        return () => document.removeEventListener("keydown", handleEsc);
-    }, []);
-
-
     return (
-        <div ref={wrapRef} className={styles.wrap} onClick={() => setIsOpen(v => !v)}>
-            <InfoTooltip title="Birth control" onToggle={(e) => {
-                e.stopPropagation();
-                setIsOpen(v => !v);
-            }} onToggleArrow={isOpen}></InfoTooltip>
-            <div className={`${styles.list} ${!isOpen ? styles.collapsed : ""}`} onClick={(e) => e.stopPropagation()}>
-                {sections}
-            </div>
+        <div className={styles.wrap}>
+            <InfoTooltip title="Birth control" showArrow={false} />
+            <div className={styles.list}>{sections}</div>
         </div>
     );
 };
 
 export default memo(BirthControl);
-
-
-

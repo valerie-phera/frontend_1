@@ -1,0 +1,53 @@
+.content {
+    background-color: var(--main-background-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding-top: 56px;
+
+    scrollbar-gutter: stable;
+}
+
+.containerInner {
+    display: flex;
+    flex-direction: column;
+    padding-top: 26px;
+    padding-bottom: 31px;
+
+    flex: 1
+}
+
+.heading {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.title {
+    font-size: 22px;
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--main-color);
+}
+
+.subtitle {
+    color: var(--main-color-secondary);
+    margin-bottom: 14px;
+}
+
+.privacyPolicyWrap {
+    display: flex;
+    justify-content: center;
+}
+
+.privacyPolicy {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+    color: #717680;
+    max-width: 276px;
+    text-align: center;
+}
+

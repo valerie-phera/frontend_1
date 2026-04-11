@@ -9,7 +9,7 @@
 .containerInner {
     display: flex;
     flex-direction: column;
-    padding-bottom: 81px;
+    /* padding-bottom: 81px; */
 
     flex: 1;
 }
@@ -70,14 +70,15 @@
 
     box-sizing: content-box;
     padding: 11px;
+    border: none;
+    background: transparent;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
-
-.scaleMarker {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+.actionsInner:focus-visible {
+    outline: 2px solid var(--main-color, #263e3a);
+    outline-offset: 2px;
 }
 
 .num {
@@ -101,14 +102,34 @@
     margin-top: 14px;
     margin-bottom: 10px;
     position: relative;
+    cursor: default;
 }
 
-.scaleMarker {
+.scaleMarkerWrap {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
-    transition: left 0.3s ease;
+    padding: 12px;
+    box-sizing: content-box;
+    pointer-events: none;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scaleMarker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-sizing: border-box;
+    background-color: transparent;
+    background-clip: padding-box;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+    pointer-events: none;
 }
 
 .scalePart1,
@@ -117,12 +138,11 @@
 .scalePart4,
 .scalePart5 {
     flex: 1;
-    max-width: 63px;
     height: 17px;
 }
 
 .scalePart1 {
-    background: #00343D;
+    background: #C6C955;
     border-top-left-radius: 100px;
     border-bottom-left-radius: 100px;
 }
@@ -136,7 +156,7 @@
 }
 
 .scalePart4 {
-    background: #C6C955;
+    background: #33372D;
 }
 
 .scalePart5 {
@@ -149,7 +169,6 @@
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    padding: 0 10px;
 }
 
 .infoBlock {
@@ -295,6 +314,29 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+}
+
+.btns {
+    display: flex;
+    gap: 15px;
+}
+
+.btns button {
+    font-size: 14px;
+}
+
+.privacyPolicyWrap {
+    display: flex;
+    justify-content: center;
+}
+
+.privacyPolicy {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.3;
+    color: #717680;
+    max-width: 253px;
+    text-align: center;
 }
 
 @media (max-width: 393px) {

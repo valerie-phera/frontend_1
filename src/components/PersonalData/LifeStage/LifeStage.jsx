@@ -1,23 +1,21 @@
 import { memo } from "react";
+
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
-import styles from "./HormoneDiagnoses.module.css";
+import styles from "./LifeStage.module.css";
 
 const options = [
-    "Adenomyosis",
-    "Amenorhea",
-    "Cushing’s syndrome",
-    "Diabetes",
-    "Endometriosis",
-    "Intersex status",
-    "Thyroid disorder",
-    "Uterine fibroids",
-    "Polycystic ovary syndrome (PCOS)",
-    "Premature ovarian insufficiency (POI)",
+    "None",
+    "Pregnant",
+    "Trying to conceive",
+    "Perimenopause",
+    "Menopause",
+    "Postmenopause",
 ];
 
-const HormoneDiagnoses = ({ hormoneDiagnoses, onChange }) => {
+const LifeStage = ({ lifeStage, onChange }) => {
+    const selected = Array.isArray(lifeStage) ? lifeStage : [];
     const list = options.map((item) => {
-        const isActive = hormoneDiagnoses.includes(item);
+        const isActive = selected.includes(item);
 
         return (
             <div
@@ -32,10 +30,10 @@ const HormoneDiagnoses = ({ hormoneDiagnoses, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Diagnoses related to hormones" showArrow={false} />
+            <InfoTooltip title="Life stage" showArrow={false} />
             <div className={styles.list}>{list}</div>
         </div>
     );
 };
 
-export default memo(HormoneDiagnoses);
+export default memo(LifeStage);

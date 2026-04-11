@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo } from "react";
 import Radio from "../../Radio/Radio";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import { toggleValue } from "../../../shared/utils/toggleValue";
@@ -8,9 +8,6 @@ const radioOptions = ["Estrogen only", "Estrogen + progestin"];
 const listOptions = ["Testosterone", "Estrogen blocker", "Puberty blocker"];
 
 const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapRef = useRef(null);
-
     const handleRadioChange = (value) => {
         setHormoneTherapy(prev => ({
             ...prev,
@@ -27,47 +24,11 @@ const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
         }));
     };
 
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        document.addEventListener("touchstart", handleClickOutside);
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-            document.removeEventListener("touchstart", handleClickOutside);
-        };
-    }, []);
-
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === "Escape") {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("keydown", handleEsc);
-        return () => document.removeEventListener("keydown", handleEsc);
-    }, []);
-
     return (
-        <div ref={wrapRef} className={styles.wrap} onClick={() => setIsOpen(v => !v)}>
-            <InfoTooltip
-                title="Hormone therapy"
-                onToggle={(e) => {
-                    e.stopPropagation();
-                    setIsOpen(v => !v);
-                }}
-                onToggleArrow={isOpen}
-            />
+        <div className={styles.wrap}>
+            <InfoTooltip title="Hormone therapy" showArrow={false} />
 
-            <div className={`${styles.wrapList} ${!isOpen ? styles.collapsed : ""}`} onClick={(e) => e.stopPropagation()}>
-
-                {/* RADIO */}
+            <div className={styles.wrapList}>
                 <div className={styles.section}>
                     {radioOptions.map(item => (
                         <Radio
@@ -81,7 +42,6 @@ const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
                     ))}
                 </div>
 
-                {/* LIST */}
                 <div className={styles.list}>
                     <h4 className={styles.heading}>
                         Hormone replacement therapy (HRT)
@@ -107,6 +67,3 @@ const HormoneTherapy = ({ hormoneTherapy, setHormoneTherapy }) => {
 };
 
 export default memo(HormoneTherapy);
-
-
-

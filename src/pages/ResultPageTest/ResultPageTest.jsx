@@ -160,7 +160,7 @@ const ResultPageTest = () => {
             <div className={styles.content}>
                 <Container>
                     <div className={styles.containerInner}>
-                        <div className={styles.title}>Your pH result</div>
+                        <div className={styles.title}>Enter your pH </div>
                         <div className={styles.visualBlock}>
                             <div className={styles.visualBlockTop}>
                                 <PhBadge level={phLevel} />
@@ -310,7 +310,7 @@ const ResultPageTest = () => {
                 <BottomBlock>
                     <Button
                         onClick={() =>
-                            navigate("/add-details", {
+                            navigate("/add-details/basic", {
                                 state: {
                                     phValue,
                                     phLevel,

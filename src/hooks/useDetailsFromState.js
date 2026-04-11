@@ -19,6 +19,7 @@ const useDetailsFromState = (state) => {
 
   const detailOptions = [
     state?.age,
+    ...(state?.lifeStage?.length ? state.lifeStage : []),
     ...(state?.ethnicBackground?.length ? state.ethnicBackground : []),
     ...(state?.menstrualCycle?.length ? state.menstrualCycle : []),
     ...(state?.hormoneDiagnoses?.length ? state.hormoneDiagnoses : []),

@@ -5,6 +5,7 @@ import ScrollToTop from "./ScrollToTop/ScrollToTop";
 import HomePage from "../pages/HomePage/HomePage";
 import HomePageTest from "../pages/HomePageTest/HomePageTest";
 import ResultPageTest from "../pages/ResultPageTest/ResultPageTest";
+import AddDetailsBasicPage from "../pages/AddDetailsBasicPage/AddDetailsBasicPage";
 
 import BeginTestPage from "../pages/BeginTestPage/BeginTestPage";
 import CameraViewPage from "../pages/CameraViewPage/CameraViewPage";
@@ -44,7 +45,8 @@ function App() {
         {/* <Route path="/" element={<HomePage />} /> */}
         <Route path="/" element={<AppLayout><HomePageTest /></AppLayout>} />
         <Route path="/result" element={<AppLayout><ResultPageTest /></AppLayout>} />
-        
+        <Route path="/add-details/basic" element={<AppLayout><AddDetailsBasicPage /></AppLayout>} />
+
         <Route path="/begin-test" element={<AppLayout><BeginTestPage /></AppLayout>} />
         <Route path="/camera-view" element={<CameraViewPage />} />
         <Route path="/result-without-details" element={<AppLayout><ResultWithoutDetailsPage /></AppLayout>} />
