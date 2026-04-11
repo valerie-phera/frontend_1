@@ -159,7 +159,7 @@ import PhBadge from "../../components/PhBadge/PhBadge";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
 import ShareIcon from "../../assets/icons/ShareIcon";
 import ScaleMarker from "../../assets/icons/ScaleMarker";
-import { getInterpretation } from "../../shared/utils/getInterpretation";
+import { getInterpretationParts } from "../../shared/utils/getInterpretation";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
 
@@ -205,7 +205,11 @@ const ResultWithoutDetailsPage = () => {
     const phValue = Number((resultData.phValue || 0).toFixed(2));
     const phLevel = getPhLevel(phValue);
     const timestamp = resultData.date || new Date().toISOString();
-    const interpretation = getInterpretation(phLevel, phValue.toFixed(2));
+    const { lead: interpretationLead, suffix: interpretationSuffix } = getInterpretationParts(
+        phLevel,
+        phValue.toFixed(2)
+    );
+    const interpretation = `${interpretationLead}${interpretationSuffix}`;
     const recommendations = resultData.agent_reply;
     console.log(recommendations);
 
@@ -262,7 +266,10 @@ const ResultWithoutDetailsPage = () => {
                             </div>
                         </div>
                         <div className={styles.textBlock}>
-                            <p className={styles.textResult}>{interpretation}</p>
+                            <p className={styles.textResult}>
+                                <strong>{interpretationLead}</strong>
+                                {interpretationSuffix}
+                            </p>
 
                             <div className={styles.advice}>
                                 <h3 className={styles.heading}>Personalize results</h3>

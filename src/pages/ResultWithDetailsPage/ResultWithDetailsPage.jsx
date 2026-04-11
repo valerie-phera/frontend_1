@@ -191,7 +191,7 @@ import ShareIcon from "../../assets/icons/ShareIcon";
 import ScaleMarker from "../../assets/icons/ScaleMarker";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
-import { getInterpretation } from "../../shared/utils/getInterpretation";
+import { getInterpretationParts } from "../../shared/utils/getInterpretation";
 import useDetailsFromState from "../../hooks/useDetailsFromState";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
@@ -205,7 +205,11 @@ const ResultWithDetailsPage = () => {
     const phValue = state?.phValue;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
-    const interpretation = getInterpretation(phLevel, Number(phValue).toFixed(2));
+    const { lead: interpretationLead, suffix: interpretationSuffix } = getInterpretationParts(
+        phLevel,
+        Number(phValue).toFixed(2)
+    );
+    const interpretation = `${interpretationLead}${interpretationSuffix}`;
     const currentRecommendations = state?.recommendations;
     const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
@@ -300,7 +304,10 @@ const ResultWithDetailsPage = () => {
                             </div>
                         </div>
                         <div className={styles.infoBlock}>
-                            <p className={styles.textResult}>{interpretation}</p>
+                            <p className={styles.textResult}>
+                                <strong>{interpretationLead}</strong>
+                                {interpretationSuffix}
+                            </p>
                             <div className={styles.details}>
                                 <div className={styles.wrapHeading}>
                                     <h4 className={styles.heading}>Details for this result</h4>
