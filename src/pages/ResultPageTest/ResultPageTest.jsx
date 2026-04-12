@@ -14,6 +14,10 @@ import Plus from "../../assets/icons/Plus";
 import Lock from "../../assets/icons/Lock";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
+import {
+    consumePendingInterceptResultToBasic,
+    resolveBasicFormState,
+} from "../../shared/utils/basicFormSessionStorage";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
 
@@ -45,6 +49,25 @@ const MARKER_PX = 24;
 const ResultPageTest = () => {
     const navigate = useNavigate();
     const { handleExport } = useExportResults();
+
+    useLayoutEffect(() => {
+        const meta = consumePendingInterceptResultToBasic();
+        if (!meta) return;
+        const { phValue, timestamp, recommendations } = meta;
+        const resolved = resolveBasicFormState({ phValue, timestamp });
+        navigate("/add-details/basic", {
+            replace: true,
+            state: {
+                phValue,
+                timestamp,
+                recommendations: recommendations ?? [],
+                age: resolved.age,
+                lifeStage: resolved.lifeStage,
+                ethnicBackground: resolved.ethnicChips,
+                ethnicOtherText: resolved.ethnicOtherText,
+            },
+        });
+    }, [navigate]);
 
     const handleImportedData = (data) => {
         console.log("📥 Импортировано:", data);

@@ -12,6 +12,11 @@ import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
 import Container from "../../components/Container/Container";
 import { analyzePh } from "../../shared/api/images-api";
 import { getInterpretation } from "../../shared/utils/getInterpretation";
+import {
+    writeBasicFormSnapshot,
+    resolveBasicFormState,
+    markPendingInterceptResultToBasic,
+} from "../../shared/utils/basicFormSessionStorage";
 
 import InfoCircle from "../../assets/icons/InfoCircle";
 
@@ -29,38 +34,6 @@ const toArray = (value) => {
     return [value].filter(Boolean);
 };
 
-const KNOWN_ETHNIC_CHIPS = new Set(ETHNIC_OPTIONS);
-
-const normalizeEthnicFromRoute = (savedBg, savedOtherText) => {
-    const arr = Array.isArray(savedBg) ? savedBg : [];
-    const savedTrim = String(savedOtherText ?? "").trim().slice(0, 50);
-
-    const unknownCustom = [];
-    const knownSet = new Set();
-
-    for (const item of arr) {
-        if (!item) continue;
-        if (KNOWN_ETHNIC_CHIPS.has(item)) {
-            if (item !== ETHNIC_OTHER_OPTION) {
-                knownSet.add(item);
-            }
-        } else {
-            unknownCustom.push(item);
-        }
-    }
-
-    const otherText = savedTrim || String(unknownCustom[0] ?? "").trim().slice(0, 50);
-
-    const chips = ETHNIC_OPTIONS.filter(
-        (o) => o !== ETHNIC_OTHER_OPTION && knownSet.has(o)
-    );
-    if (otherText) {
-        chips.push(ETHNIC_OTHER_OPTION);
-    }
-
-    return { chips, otherText };
-};
-
 const buildEthnicBackgroundsForSubmit = (backgrounds, otherText) => {
     const trimmed = String(otherText ?? "").trim().slice(0, 50);
     const bgSet = new Set(backgrounds);
@@ -72,96 +45,6 @@ const buildEthnicBackgroundsForSubmit = (backgrounds, otherText) => {
         return mainOrdered;
     }
     return [...mainOrdered, trimmed];
-};
-
-const legacyEthnicSessionStorageKey = (phValue, timestamp) =>
-    `phera_basic_ethnic_v1_${String(phValue)}_${encodeURIComponent(String(timestamp ?? ""))}`;
-
-const basicFormSessionStorageKey = (phValue, timestamp) =>
-    `phera_basic_form_v2_${String(phValue)}_${encodeURIComponent(String(timestamp ?? ""))}`;
-
-const readBasicFormSnapshot = (phValue, timestamp) => {
-    if (phValue === undefined || phValue === null) return null;
-    try {
-        const v2 = sessionStorage.getItem(
-            basicFormSessionStorageKey(phValue, timestamp)
-        );
-        if (v2) {
-            const data = JSON.parse(v2);
-            if (data && Array.isArray(data.ethnicBackground)) {
-                return data;
-            }
-        }
-        const legacy = sessionStorage.getItem(
-            legacyEthnicSessionStorageKey(phValue, timestamp)
-        );
-        if (legacy) {
-            const data = JSON.parse(legacy);
-            if (data && Array.isArray(data.ethnicBackground)) {
-                return {
-                    ethnicBackground: data.ethnicBackground,
-                    ethnicOtherText: data.ethnicOtherText ?? "",
-                };
-            }
-        }
-        return null;
-    } catch {
-        return null;
-    }
-};
-
-const writeBasicFormSnapshot = (
-    phValue,
-    timestamp,
-    { age, lifeStage, ethnicBackground, ethnicOtherText }
-) => {
-    if (phValue === undefined || phValue === null) return;
-    try {
-        sessionStorage.setItem(
-            basicFormSessionStorageKey(phValue, timestamp),
-            JSON.stringify({
-                age,
-                lifeStage: Array.isArray(lifeStage) ? lifeStage : [],
-                ethnicBackground,
-                ethnicOtherText: ethnicOtherText ?? "",
-            })
-        );
-    } catch {
-        /* ignore quota / private mode */
-    }
-};
-
-const resolveBasicFormState = (routeState) => {
-    const snap = readBasicFormSnapshot(
-        routeState?.phValue,
-        routeState?.timestamp
-    );
-
-    const ethnicNorm = snap?.ethnicBackground
-        ? normalizeEthnicFromRoute(
-              snap.ethnicBackground,
-              snap.ethnicOtherText
-          )
-        : normalizeEthnicFromRoute(
-              routeState?.ethnicBackground,
-              routeState?.ethnicOtherText
-          );
-
-    const age =
-        snap && Object.prototype.hasOwnProperty.call(snap, "age")
-            ? snap.age
-            : (routeState?.age ?? "");
-    const lifeStage =
-        snap && Array.isArray(snap.lifeStage)
-            ? snap.lifeStage
-            : routeState?.lifeStage || [];
-
-    return {
-        age,
-        lifeStage,
-        ethnicChips: ethnicNorm.chips,
-        ethnicOtherText: ethnicNorm.otherText,
-    };
 };
 
 const computeBasicSectionIssues = (
@@ -349,6 +232,13 @@ const AddDetailsBasicPage = () => {
                 lifeStage,
                 ethnicBackground: ethnicForApi,
                 ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+            });
+
+            markPendingInterceptResultToBasic({
+                phValue,
+                timestamp,
+                recommendations:
+                    backendResponse?.agent_reply ?? recommendations,
             });
 
             navigate("/result-with-details", {
