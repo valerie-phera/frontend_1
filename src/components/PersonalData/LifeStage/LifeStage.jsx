@@ -12,7 +12,7 @@ const options = [
     "Postmenopause",
 ];
 
-const LifeStage = ({ lifeStage, onChange }) => {
+const LifeStage = ({ lifeStage, onChange, showHeadingError = false }) => {
     const selected = Array.isArray(lifeStage) ? lifeStage : [];
     const list = options.map((item) => {
         const isActive = selected.includes(item);
@@ -30,7 +30,11 @@ const LifeStage = ({ lifeStage, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Life stage" showArrow={false} />
+            <InfoTooltip
+                title="Life stage"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            />
             <div className={styles.list}>{list}</div>
         </div>
     );

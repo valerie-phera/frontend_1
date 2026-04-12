@@ -4,6 +4,15 @@
     gap: 7px;
     position: relative;
     cursor: pointer;
+    width: 100%;
+}
+
+.wrapTitleTrailing {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .title {
@@ -29,6 +38,11 @@
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
     z-index: 9999;
     animation: popoverFadeIn 180ms ease-out forwards;
+}
+
+.popoverAge {
+    top: 22px;
+    left: 55%;
 }
 
 .content {
@@ -65,10 +79,18 @@
     touch-action: manipulation;
     display: flex;
     align-items: center;
+    color: #A4A7AE;
+}
+
+.errorCircle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #CC3433;
+    flex-shrink: 0;
 }
 
 .arrow {
-    margin-left: auto;
     display: flex;
     transition: transform 0.25s ease;
     transform-origin: center;

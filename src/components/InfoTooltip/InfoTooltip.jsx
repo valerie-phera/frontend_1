@@ -9,7 +9,9 @@ const InfoTooltip = ({
     onToggle,
     onToggleArrow,
     showArrow = true,
-    iconOnly = false
+    iconOnly = false,
+    popoverClassName = "",
+    showErrorCircle = false,
 }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -42,7 +44,10 @@ const InfoTooltip = ({
                 </div>
 
                 {open && (
-                    <div className={styles.popover} role="tooltip">
+                    <div
+                        className={`${styles.popover} ${popoverClassName}`.trim()}
+                        role="tooltip"
+                    >
                         <div className={styles.content}>{children}</div>
                         <span className={styles.popoverArrow} />
                     </div>
@@ -69,18 +74,32 @@ const InfoTooltip = ({
                     </div>
                 )}
 
-                {showArrow && (
-                    <div
-                        className={`${styles.arrow} ${onToggleArrow ? styles.arrowOpen : ""
-                            }`}
-                    >
-                        <ArrowDown />
+                {(showErrorCircle || showArrow) && (
+                    <div className={styles.wrapTitleTrailing}>
+                        {showErrorCircle && (
+                            <span
+                                className={styles.errorCircle}
+                                aria-hidden
+                            />
+                        )}
+                        {showArrow && (
+                            <div
+                                className={`${styles.arrow} ${
+                                    onToggleArrow ? styles.arrowOpen : ""
+                                }`}
+                            >
+                                <ArrowDown />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
             {open && (
-                <div className={styles.popover} role="tooltip">
+                <div
+                    className={`${styles.popover} ${popoverClassName}`.trim()}
+                    role="tooltip"
+                >
                     <div className={styles.content}>{children}</div>
                     <span className={styles.popoverArrow} />
                 </div>

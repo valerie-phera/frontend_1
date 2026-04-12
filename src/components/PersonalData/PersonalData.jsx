@@ -15,34 +15,60 @@ import InfoTooltip from "../InfoTooltip/InfoTooltip";
 
 import styles from "./PersonalData.module.css";
 
+const noop = () => {};
+
 const PersonalData = ({
+    variant = "full",
     age,
     setAge,
     lifeStage,
     setLifeStage,
     ethnicBackground,
     setEthnicBackground,
-    menstrualCycle,
-    setMenstrualCycle,
-    hormoneDiagnoses,
-    setHormoneDiagnoses,
-    birthControl,
-    setBirthControl,
-    hormoneTherapy,
-    setHormoneTherapy,
-    fertilityJourney,
-    setFertilityJourney,
-    discharge,
-    setDischarge,
-    vulvaCondition,
-    setVulvaCondition,
-    smell,
-    setSmell,
-    urination,
-    setUrination,
-    notes,
-    setNotes,
+    ethnicOtherText = "",
+    setEthnicOtherText = noop,
+    menstrualCycle = [],
+    setMenstrualCycle = noop,
+    hormoneDiagnoses = [],
+    setHormoneDiagnoses = noop,
+    birthControl = {
+        general: null,
+        pill: null,
+        iud: null,
+        otherHormonalMethods: null,
+        permanentMethods: null,
+    },
+    setBirthControl = noop,
+    hormoneTherapy = { general: null, hormoneReplacement: [] },
+    setHormoneTherapy = noop,
+    fertilityJourney = { currentStatus: null, fertilityTreatments: [] },
+    setFertilityJourney = noop,
+    discharge = [],
+    setDischarge = noop,
+    vulvaCondition = [],
+    setVulvaCondition = noop,
+    smell = [],
+    setSmell = noop,
+    urination = [],
+    setUrination = noop,
+    notes = "",
+    setNotes = noop,
+    basicValidationVisible = false,
+    basicSectionIssues = {
+        ageMissing: false,
+        lifeMissing: false,
+        ethnicMissing: false,
+        count: 0,
+    },
 }) => {
+    const showFullForm = variant !== "basic";
+
+    const showAgeHeadingError =
+        !showFullForm && basicValidationVisible && basicSectionIssues.ageMissing;
+    const showLifeHeadingError =
+        !showFullForm && basicValidationVisible && basicSectionIssues.lifeMissing;
+    const showEthnicHeadingError =
+        !showFullForm && basicValidationVisible && basicSectionIssues.ethnicMissing;
 
     const handleLifeStageChange = (value) => {
         setLifeStage((prev) =>
@@ -112,31 +138,50 @@ const PersonalData = ({
         <>
             <div className={styles.wrapper}>
                 <form className={styles.form}>
-                    <AgeInput age={age} onChange={setAge} />
-                    <LifeStage lifeStage={lifeStage} onChange={handleLifeStageChange} />
-                    <EthnicBackground ethnicBackground={ethnicBackground} onChange={handleEthnicBackgroundChange} />
+                    <AgeInput
+                        age={age}
+                        onChange={setAge}
+                        showHeadingError={showAgeHeadingError}
+                    />
+                    <LifeStage
+                        lifeStage={lifeStage}
+                        onChange={handleLifeStageChange}
+                        showHeadingError={showLifeHeadingError}
+                    />
+                    <EthnicBackground
+                        ethnicBackground={ethnicBackground}
+                        onChange={handleEthnicBackgroundChange}
+                        otherText={ethnicOtherText}
+                        onOtherTextChange={setEthnicOtherText}
+                        otherInputMode={showFullForm ? "always" : "when_other"}
+                        showHeadingError={showEthnicHeadingError}
+                    />
 
-                    <div className={styles.wrapHeading}>
-                        <div className={styles.heading}>Hormone status</div>
-                        <div className={styles.icon}>
-                            <InfoTooltip iconOnly>
-                                Knowing your hormone status helps us understand the main factors that influence your pH level.
-                            </InfoTooltip>
-                        </div>
-                    </div>
+                    {showFullForm && (
+                        <>
+                            <div className={styles.wrapHeading}>
+                                <div className={styles.heading}>Hormone status</div>
+                                <div className={styles.icon}>
+                                    <InfoTooltip iconOnly>
+                                        Knowing your hormone status helps us understand the main factors that influence your pH level.
+                                    </InfoTooltip>
+                                </div>
+                            </div>
 
-                    <MenstrualCycle menstrualCycle={menstrualCycle} onChange={handleMenstrualCycleChange} />
-                    <HormoneDiagnoses hormoneDiagnoses={hormoneDiagnoses} onChange={handleHormoneDiagnosesChange} />
-                    <BirthControl birthControl={birthControl} setBirthControl={setBirthControl} />
-                    <HormoneTherapy hormoneTherapy={hormoneTherapy} setHormoneTherapy={setHormoneTherapy} />
-                    <FertilityJourney fertilityJourney={fertilityJourney} setFertilityJourney={setFertilityJourney} />
+                            <MenstrualCycle menstrualCycle={menstrualCycle} onChange={handleMenstrualCycleChange} />
+                            <HormoneDiagnoses hormoneDiagnoses={hormoneDiagnoses} onChange={handleHormoneDiagnosesChange} />
+                            <BirthControl birthControl={birthControl} setBirthControl={setBirthControl} />
+                            <HormoneTherapy hormoneTherapy={hormoneTherapy} setHormoneTherapy={setHormoneTherapy} />
+                            <FertilityJourney fertilityJourney={fertilityJourney} setFertilityJourney={setFertilityJourney} />
 
-                    <div className={styles.heading}>Symptoms</div>
-                    <Discharge discharge={discharge} onChange={handleDischargeChange} />
-                    <VulvaCondition vulvaCondition={vulvaCondition} onChange={handleVulvaConditionChange} />
-                    <Smell smell={smell} onChange={handleSmellChange} />
-                    <Urination urination={urination} onChange={handleUrinationChange} />
-                    <Notes notes={notes} setNotes={setNotes} />
+                            <div className={styles.heading}>Symptoms</div>
+                            <Discharge discharge={discharge} onChange={handleDischargeChange} />
+                            <VulvaCondition vulvaCondition={vulvaCondition} onChange={handleVulvaConditionChange} />
+                            <Smell smell={smell} onChange={handleSmellChange} />
+                            <Urination urination={urination} onChange={handleUrinationChange} />
+                            <Notes notes={notes} setNotes={setNotes} />
+                        </>
+                    )}
                 </form>
             </div>
         </>
