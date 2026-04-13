@@ -109,19 +109,33 @@ const HormonalHealthPage = () => {
     };
 
     const handleDiagnosesChange = (value) => {
-        setHormoneDiagnoses((prev) =>
-            prev.includes(value)
-                ? prev.filter((x) => x !== value)
-                : [...prev, value]
-        );
+        setHormoneDiagnoses((prev) => {
+            const NONE = "None";
+
+            if (value === NONE) {
+                return prev.includes(NONE) ? [] : [NONE];
+            }
+
+            const withoutNone = prev.filter((x) => x !== NONE);
+            return withoutNone.includes(value)
+                ? withoutNone.filter((x) => x !== value)
+                : [...withoutNone, value];
+        });
     };
 
     const handleMedicationsChange = (value) => {
-        setCurrentMedications((prev) =>
-            prev.includes(value)
-                ? prev.filter((x) => x !== value)
-                : [...prev, value]
-        );
+        setCurrentMedications((prev) => {
+            const NONE = "None";
+
+            if (value === NONE) {
+                return prev.includes(NONE) ? [] : [NONE];
+            }
+
+            const withoutNone = prev.filter((x) => x !== NONE);
+            return withoutNone.includes(value)
+                ? withoutNone.filter((x) => x !== value)
+                : [...withoutNone, value];
+        });
     };
 
     const handleNext = () => {
@@ -137,6 +151,13 @@ const HormonalHealthPage = () => {
         }
         setValidationVisible(false);
 
+        const medicationsForNext = Array.isArray(currentMedications)
+            ? currentMedications.filter((x) => x !== "None")
+            : [];
+        const diagnosesForNext = Array.isArray(hormoneDiagnoses)
+            ? hormoneDiagnoses.filter((x) => x !== "None")
+            : [];
+
         writeAddDetailsDraft(phValue, timestamp, {
             menstrualCycle,
             hormoneDiagnoses,
@@ -147,8 +168,8 @@ const HormonalHealthPage = () => {
             state: {
                 ...state,
                 menstrualCycle,
-                hormoneDiagnoses,
-                currentMedications,
+                hormoneDiagnoses: diagnosesForNext,
+                currentMedications: medicationsForNext,
             },
         });
     };

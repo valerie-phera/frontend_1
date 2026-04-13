@@ -17,6 +17,20 @@ import styles from "./PersonalData.module.css";
 
 const noop = () => {};
 
+const toggleWithNone = (prev, value) => {
+    const NONE = "None";
+    const arr = Array.isArray(prev) ? prev : [];
+
+    if (value === NONE) {
+        return arr.includes(NONE) ? [] : [NONE];
+    }
+
+    const withoutNone = arr.filter((x) => x !== NONE);
+    return withoutNone.includes(value)
+        ? withoutNone.filter((x) => x !== value)
+        : [...withoutNone, value];
+};
+
 const PersonalData = ({
     variant = "full",
     age,
@@ -71,11 +85,7 @@ const PersonalData = ({
         !showFullForm && basicValidationVisible && basicSectionIssues.ethnicMissing;
 
     const handleLifeStageChange = (value) => {
-        setLifeStage((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setLifeStage((prev) => toggleWithNone(prev, value));
     };
 
     const handleEthnicBackgroundChange = (value) => {
@@ -95,11 +105,7 @@ const PersonalData = ({
     };
 
     const handleHormoneDiagnosesChange = (value) => {
-        setHormoneDiagnoses((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setHormoneDiagnoses((prev) => toggleWithNone(prev, value));
     };
 
     const handleDischargeChange = (value) => {
@@ -111,27 +117,15 @@ const PersonalData = ({
     };
 
     const handleVulvaConditionChange = (value) => {
-        setVulvaCondition((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setVulvaCondition((prev) => toggleWithNone(prev, value));
     };
 
     const handleSmellChange = (value) => {
-        setSmell((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setSmell((prev) => toggleWithNone(prev, value));
     };
 
     const handleUrinationChange = (value) => {
-        setUrination((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setUrination((prev) => toggleWithNone(prev, value));
     };
 
     return (

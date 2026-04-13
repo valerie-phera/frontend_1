@@ -123,11 +123,19 @@ const SymptomsPage = () => {
     }, [errorBannerScrollToken]);
 
     const toggleInList = (setter) => (value) => {
-        setter((prev) =>
-            prev.includes(value)
-                ? prev.filter((x) => x !== value)
-                : [...prev, value]
-        );
+        setter((prev) => {
+            const NONE = "None";
+            const arr = Array.isArray(prev) ? prev : [];
+
+            if (value === NONE) {
+                return arr.includes(NONE) ? [] : [NONE];
+            }
+
+            const withoutNone = arr.filter((x) => x !== NONE);
+            return withoutNone.includes(value)
+                ? withoutNone.filter((x) => x !== value)
+                : [...withoutNone, value];
+        });
     };
 
     const handleNext = () => {
@@ -151,6 +159,9 @@ const SymptomsPage = () => {
             notes,
         });
 
+        const stripNone = (v) =>
+            Array.isArray(v) ? v.filter((x) => x !== "None") : [];
+
         const phLevel = state?.phLevel ?? getPhLevel(phValue);
         const interpretation =
             state?.interpretation ??
@@ -159,14 +170,17 @@ const SymptomsPage = () => {
         navigate("/result-with-details", {
             state: {
                 ...state,
-                discharge,
-                vulvaCondition,
-                smell,
-                urination,
+                discharge: stripNone(discharge),
+                vulvaCondition: stripNone(vulvaCondition),
+                smell: stripNone(smell),
+                urination: stripNone(urination),
                 notes,
                 phLevel,
                 interpretation,
                 citations: state?.citations ?? [],
+                lifeStage: stripNone(state?.lifeStage),
+                hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
+                currentMedications: stripNone(state?.currentMedications),
             },
         });
     };
