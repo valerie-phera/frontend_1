@@ -10,23 +10,15 @@ import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
 import Container from "../../components/Container/Container";
-import { analyzePh } from "../../shared/api/images-api";
-import { getInterpretation } from "../../shared/utils/getInterpretation";
 import {
     writeBasicFormSnapshot,
     resolveBasicFormState,
-    markPendingInterceptResultToBasic,
 } from "../../shared/utils/basicFormSessionStorage";
+import { writeAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
 
 import InfoCircle from "../../assets/icons/InfoCircle";
 
 import styles from "./AddDetailsBasicPage.module.css";
-
-const getPhLevel = (ph) => {
-    if (ph < 4.5) return "Normal";
-    if (ph >= 4.5 && ph <= 4.9) return "Slightly Elevated";
-    return "Elevated";
-};
 
 const toArray = (value) => {
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -94,7 +86,6 @@ const AddDetailsBasicPage = () => {
     const [ethnicOtherText, setEthnicOtherText] = useState(
         () => resolveBasicFormState(state).ethnicOtherText
     );
-    const [isSaving, setIsSaving] = useState(false);
     const [basicValidationVisible, setBasicValidationVisible] = useState(false);
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
     const errorTextWrapRef = useRef(null);
@@ -184,83 +175,31 @@ const AddDetailsBasicPage = () => {
             .slice(0, 50);
         const hasOtherChip = ethnicBackground.includes(ETHNIC_OTHER_OPTION);
 
-        const payload = {
-            ph_value: Number(phValue),
-            age: ageForApi ?? null,
-            life_stage: toArray(lifeStage),
-            diagnoses: [],
-            ethnic_backgrounds: ethnicForApi,
-            menstrual_cycle: null,
-            birth_control: {
-                general: null,
-                pill: null,
-                iud: null,
-                other_methods: [],
-                permanent: [],
-            },
-            hormone_therapy: [],
-            hrt: [],
-            fertility_journey: {
-                current_status: null,
-                fertility_treatments: [],
-            },
-            symptoms: {
-                discharge: [],
-                vulva_vagina: [],
-                smell: [],
-                urine: [],
-                notes: "",
-            },
-        };
-        console.log("Request:", payload);
+        // Persist locally for the next steps (no backend yet)
+        writeBasicFormSnapshot(phValue, timestamp, {
+            age,
+            lifeStage,
+            ethnicBackground: ethnicForApi,
+            ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+        });
+        writeAddDetailsDraft(phValue, timestamp, {
+            age,
+            lifeStage,
+            ethnicBackground: ethnicForApi,
+            ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+        });
 
-        setIsSaving(true);
-        try {
-            const backendResponse = await analyzePh(payload);
-            console.log("Analyze API raw response:", backendResponse);
-            const nextPhValue = Number(
-                backendResponse?.phValue ?? backendResponse?.ph_value ?? phValue
-            );
-            const nextPhLevel = getPhLevel(nextPhValue);
-            const nextInterpretation = getInterpretation(
-                nextPhLevel,
-                nextPhValue.toFixed(2)
-            );
-
-            writeBasicFormSnapshot(phValue, timestamp, {
+        navigate("/hormonal-health", {
+            state: {
+                phValue,
+                timestamp,
+                recommendations,
                 age,
                 lifeStage,
                 ethnicBackground: ethnicForApi,
                 ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-            });
-
-            markPendingInterceptResultToBasic({
-                phValue,
-                timestamp,
-                recommendations:
-                    backendResponse?.agent_reply ?? recommendations,
-            });
-
-            navigate("/result-with-details", {
-                state: {
-                    phValue: nextPhValue,
-                    phLevel: nextPhLevel,
-                    timestamp,
-                    interpretation: nextInterpretation,
-                    recommendations:
-                        backendResponse?.agent_reply ?? recommendations,
-                    citations: backendResponse?.citations ?? [],
-                    age,
-                    lifeStage,
-                    ethnicBackground: ethnicForApi,
-                    ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-                },
-            });
-        } catch (err) {
-            alert(`Failed: ${err.message}`);
-        } finally {
-            setIsSaving(false);
-        }
+            },
+        });
     };
 
     return (
@@ -320,11 +259,10 @@ const AddDetailsBasicPage = () => {
                 <BottomBlock>
                     <Button
                         onClick={handleSaveDetails}
-                        disabled={isSaving}
                     >
-                        {isSaving ? "Saving…" : "Save details"}
+                        Next
                     </Button>
-                    <ButtonReverse onClick={() => navigate("/result-without-details")}>Go back</ButtonReverse>
+                    <ButtonReverse onClick={() => navigate("/result")}>Go back</ButtonReverse>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
                             We respect your privacy. Only you can save and see your results.

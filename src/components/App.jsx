@@ -52,6 +52,7 @@ function App() {
         <Route path="/result" element={<AppLayout><ResultPageTest /></AppLayout>} />
         <Route path="/add-details/basic" element={<AppLayout><AddDetailsBasicPage /></AppLayout>} />
         <Route path="/add-details/hormonal-health" element={<AppLayout><HormonalHealthPage /></AppLayout>} />
+        <Route path="/hormonal-health" element={<AppLayout><HormonalHealthPage /></AppLayout>} />
         <Route path="/add-details/symptoms" element={<AppLayout><SymptomsPage /></AppLayout>} />
         <Route path="/add-details/paths/hormone-therapy" element={<AppLayout><HormoneTherapyPage /></AppLayout>} />
         <Route path="/add-details/paths/fertility-journey" element={<AppLayout><FertilityJourneyPage /></AppLayout>} />

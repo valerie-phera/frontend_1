@@ -4,11 +4,16 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./VulvaCondition.module.css";
 
 const options = [
+    "None",
     "Dry",
     "Itchy",
 ];
 
-const VulvaCondition = ({ vulvaCondition, onChange }) => {
+const VulvaCondition = ({
+    vulvaCondition,
+    onChange,
+    showHeadingError = false,
+}) => {
     const list = options.map((item) => {
         const isActive = vulvaCondition.includes(item);
 
@@ -25,7 +30,11 @@ const VulvaCondition = ({ vulvaCondition, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Vulva & Vagina" showArrow={false}>
+            <InfoTooltip
+                title="Vulva & Vagina"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            >
                 It is normal to experience occasional dryness or itchiness - after shaving, using a new hygiene product, or wearing tight clothes. If such sensations become uncomfortable and appear along with other symptoms, they may signal an infection.
             </InfoTooltip>
             <div className={styles.list}>{list}</div>

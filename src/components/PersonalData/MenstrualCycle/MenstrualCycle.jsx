@@ -4,15 +4,19 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./MenstrualCycle.module.css";
 
 const options = [
+    "No period for 12+ months",
     "Regular",
     "Irregular",
-    "No period for 12+ months",
+    "Postpartum",
     "Never had a period",
-    "Perimenopause",
-    "Postmenopause",
+    "Polycystic ovary syndrome (PCOS)",
 ];
 
-const MenstrualCycle = ({ menstrualCycle, onChange }) => {
+const MenstrualCycle = ({
+    menstrualCycle,
+    onChange,
+    showHeadingError = false,
+}) => {
     const list = options.map((item) => {
         const isActive = menstrualCycle.includes(item);
 
@@ -29,7 +33,11 @@ const MenstrualCycle = ({ menstrualCycle, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Menstrual cycle" showArrow={false} />
+            <InfoTooltip
+                title="Menstrual cycle"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            />
             <div className={styles.list}>{list}</div>
         </div>
     );

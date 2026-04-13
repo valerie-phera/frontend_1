@@ -23,7 +23,7 @@
 
 .popover {
     position: absolute;
-    top: -10px;
+    top: 0px;
     left: 50%;
     transform: translate(-50%, -100%) scale(0.95);
     opacity: 0;
@@ -38,11 +38,6 @@
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
     z-index: 9999;
     animation: popoverFadeIn 180ms ease-out forwards;
-}
-
-.popoverAge {
-    top: 22px;
-    left: 55%;
 }
 
 .content {

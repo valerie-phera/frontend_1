@@ -4,13 +4,14 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./Smell.module.css";
 
 const options = [
+    "None",
     "Strong and unpleasant (“fishy”)",
     "Sour",
     "Chemical-like",
     "Very strong or rotten",
 ];
 
-const Smell = ({ smell, onChange }) => {
+const Smell = ({ smell, onChange, showHeadingError = false }) => {
     const list = options.map((item) => {
         const isActive = smell.includes(item);
 
@@ -27,7 +28,11 @@ const Smell = ({ smell, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Smell" showArrow={false}>
+            <InfoTooltip
+                title="Smell"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            >
                 A healthy vagina can have a natural scent that is metallic, musky, earthy, or tangy - all of these are normal! If you notice any of the unusual odors, such as those listed below, it might be helpful to mention them to your clinician.
             </InfoTooltip>
             <div className={styles.list}>{list}</div>

@@ -3,19 +3,23 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./HormoneDiagnoses.module.css";
 
 const options = [
+    "None",
     "Adenomyosis",
     "Amenorhea",
     "Cushing’s syndrome",
     "Diabetes",
     "Endometriosis",
-    "Intersex status",
+    "Intersex",
     "Thyroid disorder",
     "Uterine fibroids",
-    "Polycystic ovary syndrome (PCOS)",
     "Premature ovarian insufficiency (POI)",
 ];
 
-const HormoneDiagnoses = ({ hormoneDiagnoses, onChange }) => {
+const HormoneDiagnoses = ({
+    hormoneDiagnoses,
+    onChange,
+    showHeadingError = false,
+}) => {
     const list = options.map((item) => {
         const isActive = hormoneDiagnoses.includes(item);
 
@@ -32,7 +36,11 @@ const HormoneDiagnoses = ({ hormoneDiagnoses, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Diagnoses related to hormones" showArrow={false} />
+            <InfoTooltip
+                title="Diagnoses related to hormones"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            />
             <div className={styles.list}>{list}</div>
         </div>
     );

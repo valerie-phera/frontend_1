@@ -14,7 +14,7 @@ const options = [
     "Red / Brown",
 ];
 
-const Discharge = ({ discharge, onChange }) => {
+const Discharge = ({ discharge, onChange, showHeadingError = false }) => {
     const list = options.map((item) => {
         const isActive = discharge.includes(item);
 
@@ -31,7 +31,11 @@ const Discharge = ({ discharge, onChange }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Discharge" showArrow={false}>
+            <InfoTooltip
+                title="Discharge"
+                showArrow={false}
+                showErrorCircle={showHeadingError}
+            >
                 Discharge varies from person to person. It is influenced by your cycle, hygiene products, medications, stress, and a lot of other factors. Look out for discharge of unusual colour and texture.
             </InfoTooltip>
             <div className={styles.list}>{list}</div>

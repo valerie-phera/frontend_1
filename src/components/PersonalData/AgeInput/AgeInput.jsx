@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
-import infoTooltipStyles from "../../InfoTooltip/InfoTooltip.module.css";
 import styles from "./AgeInput.module.css";
 
 const MAX_AGE = 120;
@@ -53,7 +52,6 @@ const AgeInput = ({ age, onChange, showHeadingError = false }) => {
             <InfoTooltip
                 title="Age"
                 showArrow={false}
-                popoverClassName={infoTooltipStyles.popoverAge}
                 showErrorCircle={showHeadingError}
             >
                 It is normal for vaginal pH to change with age, because of how hormones work at different life stages. Such shifts can slightly affect natural self-lubrication and odor.
