@@ -8,6 +8,7 @@ import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
 
 import MenstrualCycle from "../../components/PersonalData/MenstrualCycle/MenstrualCycle";
 import HormoneDiagnoses from "../../components/PersonalData/HormoneDiagnoses/HormoneDiagnoses";
+import CurrentMedications from "../../components/PersonalData/CurrentMedications/CurrentMedications";
 
 import {
     readAddDetailsDraft,
@@ -16,14 +17,22 @@ import {
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import InfoCircle from "../../assets/icons/InfoCircle";
 
-const computeHormonalSectionIssues = (menstrualCycle, hormoneDiagnoses) => {
+const computeHormonalSectionIssues = (
+    menstrualCycle,
+    hormoneDiagnoses,
+    currentMedications
+) => {
     const menstrualMissing =
         !Array.isArray(menstrualCycle) || menstrualCycle.length === 0;
     const diagnosesMissing =
         !Array.isArray(hormoneDiagnoses) || hormoneDiagnoses.length === 0;
+    const medicationsMissing =
+        !Array.isArray(currentMedications) || currentMedications.length === 0;
     const count =
-        (menstrualMissing ? 1 : 0) + (diagnosesMissing ? 1 : 0);
-    return { menstrualMissing, diagnosesMissing, count };
+        (menstrualMissing ? 1 : 0) +
+        (diagnosesMissing ? 1 : 0) +
+        (medicationsMissing ? 1 : 0);
+    return { menstrualMissing, diagnosesMissing, medicationsMissing, count };
 };
 
 const HormonalHealthPage = () => {
@@ -44,18 +53,27 @@ const HormonalHealthPage = () => {
     const [hormoneDiagnoses, setHormoneDiagnoses] = useState(
         draft?.hormoneDiagnoses || []
     );
+    const [currentMedications, setCurrentMedications] = useState(
+        draft?.currentMedications || []
+    );
     useEffect(() => {
         setMenstrualCycle(draft?.menstrualCycle || []);
         setHormoneDiagnoses(draft?.hormoneDiagnoses || []);
-    }, [draft?.menstrualCycle, draft?.hormoneDiagnoses]);
+        setCurrentMedications(draft?.currentMedications || []);
+    }, [draft?.menstrualCycle, draft?.hormoneDiagnoses, draft?.currentMedications]);
 
     const [validationVisible, setValidationVisible] = useState(false);
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
     const errorTextWrapRef = useRef(null);
 
     const sectionIssues = useMemo(
-        () => computeHormonalSectionIssues(menstrualCycle, hormoneDiagnoses),
-        [menstrualCycle, hormoneDiagnoses]
+        () =>
+            computeHormonalSectionIssues(
+                menstrualCycle,
+                hormoneDiagnoses,
+                currentMedications
+            ),
+        [menstrualCycle, hormoneDiagnoses, currentMedications]
     );
 
     useEffect(() => {
@@ -98,6 +116,14 @@ const HormonalHealthPage = () => {
         );
     };
 
+    const handleMedicationsChange = (value) => {
+        setCurrentMedications((prev) =>
+            prev.includes(value)
+                ? prev.filter((x) => x !== value)
+                : [...prev, value]
+        );
+    };
+
     const handleNext = () => {
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
@@ -114,6 +140,7 @@ const HormonalHealthPage = () => {
         writeAddDetailsDraft(phValue, timestamp, {
             menstrualCycle,
             hormoneDiagnoses,
+            currentMedications,
         });
 
         navigate("/add-details/symptoms", {
@@ -121,6 +148,7 @@ const HormonalHealthPage = () => {
                 ...state,
                 menstrualCycle,
                 hormoneDiagnoses,
+                currentMedications,
             },
         });
     };
@@ -164,6 +192,14 @@ const HormonalHealthPage = () => {
                                     sectionIssues.diagnosesMissing
                                 }
                             />
+                            <CurrentMedications
+                                currentMedications={currentMedications}
+                                onChange={handleMedicationsChange}
+                                showHeadingError={
+                                    validationVisible &&
+                                    sectionIssues.medicationsMissing
+                                }
+                            />
                         </div>
                         {validationVisible && sectionIssues.count > 0 && (
                             <div
@@ -180,7 +216,9 @@ const HormonalHealthPage = () => {
                                 <p className={basicStyles.errorText}>
                                     {sectionIssues.count === 1
                                         ? "1 section still needs a selection"
-                                        : "2 sections still need a selection"}
+                                        : sectionIssues.count === 2
+                                            ? "2 sections still need a selection"
+                                            : "3 sections still need a selection"}
                                 </p>
                             </div>
                         )}
