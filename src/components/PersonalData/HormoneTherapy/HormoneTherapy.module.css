@@ -1,9 +1,17 @@
-.wrap {
+/* .wrap {
     display: block;
     position: relative;
     padding: 20px 16px 20px 16px;
     background-color: #FFFFFF;
     border-radius: 10px;
+} */
+
+.wrap {
+    display: block;
+    position: relative;
+    /* padding: 20px 16px 20px 16px;
+    background-color: #FFFFFF;
+    border-radius: 10px; */
 }
 
 .wrapList {

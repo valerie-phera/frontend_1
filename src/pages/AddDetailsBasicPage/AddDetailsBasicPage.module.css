@@ -39,6 +39,14 @@
     background-color: #6F988F;
 }
 
+.itemColoredYellow {
+    flex: 1;
+    max-width: 114px;
+    height: 9px;
+    border-radius: 100px;
+    background-color: #C6C955;
+}
+
 .item {
     background-color: #D5D7DA;
 }
