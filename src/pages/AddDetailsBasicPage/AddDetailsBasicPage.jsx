@@ -189,7 +189,7 @@ const AddDetailsBasicPage = () => {
             ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
         });
 
-        navigate("/hormonal-health", {
+        navigate("/add-details/hormonal-health", {
             state: {
                 phValue,
                 timestamp,

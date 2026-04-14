@@ -265,7 +265,7 @@ const SymptomsPage = () => {
                 <BottomBlock>
                     <Button onClick={handleNext}>Next</Button>
                     <ButtonReverse
-                        onClick={() => navigate("/hormonal-health", { state })}
+                        onClick={() => navigate("/add-details/hormonal-health", { state })}
                     >
                         Go back
                     </ButtonReverse>

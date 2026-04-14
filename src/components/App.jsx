@@ -11,6 +11,7 @@ import SymptomsPage from "../pages/SymptomsPage/SymptomsPage";
 import HormoneTherapyPage from "../pages/HormoneTherapyPage/HormoneTherapyPage";
 import FertilityJourneyPage from "../pages/FertilityJourneyPage/FertilityJourneyPage";
 import BirthControlPage from "../pages/BirthControlPage/BirthControlPage";
+import NextStepsPage from "../pages/NextStepsPage/NextStepsPage";
 
 import BeginTestPage from "../pages/BeginTestPage/BeginTestPage";
 import CameraViewPage from "../pages/CameraViewPage/CameraViewPage";
@@ -52,11 +53,12 @@ function App() {
         <Route path="/result" element={<AppLayout><ResultPageTest /></AppLayout>} />
         <Route path="/add-details/basic" element={<AppLayout><AddDetailsBasicPage /></AppLayout>} />
         <Route path="/add-details/hormonal-health" element={<AppLayout><HormonalHealthPage /></AppLayout>} />
-        <Route path="/hormonal-health" element={<AppLayout><HormonalHealthPage /></AppLayout>} />
+        {/* <Route path="/hormonal-health" element={<AppLayout><HormonalHealthPage /></AppLayout>} /> */}
         <Route path="/add-details/symptoms" element={<AppLayout><SymptomsPage /></AppLayout>} />
         <Route path="/add-details/paths/hormone-therapy" element={<AppLayout><HormoneTherapyPage /></AppLayout>} />
         <Route path="/add-details/paths/fertility-journey" element={<AppLayout><FertilityJourneyPage /></AppLayout>} />
         <Route path="/add-details/paths/birth-control" element={<AppLayout><BirthControlPage /></AppLayout>} />
+        <Route path="/add-details/next-steps" element={<AppLayout><NextStepsPage /></AppLayout>} />
 
         <Route path="/begin-test" element={<AppLayout><BeginTestPage /></AppLayout>} />
         <Route path="/camera-view" element={<CameraViewPage />} />
