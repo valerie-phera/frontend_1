@@ -7,7 +7,7 @@ import styles from "./FertilityJourney.module.css";
 const radioOptions = ["I am pregnant", "I had a baby (last 12 months)", "I am not able to get pregnant", "I am trying to conceive"];
 const listOptions = ["Ovulation induction", "Intrauterine insemination (IUI)", "In vitro fertilisation (IVF)", "Egg freezing stimulation", "Luteal progesterone"];
 
-const FertilityJourney = ({ fertilityJourney, setFertilityJourney }) => {
+const FertilityJourney = ({ fertilityJourney, setFertilityJourney, variant = "full" }) => {
     const handleRadioChange = (value) => {
         setFertilityJourney(prev => ({
             ...prev,
@@ -26,25 +26,27 @@ const FertilityJourney = ({ fertilityJourney, setFertilityJourney }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Fertility journey" showArrow={false} />
+            {/* <InfoTooltip title="Fertility journey" showArrow={false} /> */}
 
             <div className={styles.wrapList}>
-                <div className={styles.section}>
-                    <h4 className={styles.heading}>Current status:</h4>
-                    {radioOptions.map(item => (
-                        <Radio
-                            key={item}
-                            name="fertility-journey-status"
-                            value={item}
-                            label={item}
-                            checked={fertilityJourney.currentStatus === item}
-                            onClick={() => handleRadioChange(item)}
-                        />
-                    ))}
-                </div>
+                {variant !== "treatmentsOnly" && (
+                    <div className={styles.section}>
+                        <h4 className={styles.heading}>Current status:</h4>
+                        {radioOptions.map(item => (
+                            <Radio
+                                key={item}
+                                name="fertility-journey-status"
+                                value={item}
+                                label={item}
+                                checked={fertilityJourney.currentStatus === item}
+                                onClick={() => handleRadioChange(item)}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 <div className={styles.list}>
-                    <h4 className={styles.heading}>Fertility treatments (last 3 months)</h4>
+                    <h4 className={styles.heading}>Any treatments in the last 3 months?</h4>
                     {listOptions.map(item => {
                         const isActive = fertilityJourney.fertilityTreatments.includes(item);
 

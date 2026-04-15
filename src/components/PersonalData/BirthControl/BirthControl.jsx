@@ -6,9 +6,9 @@ import styles from "./BirthControl.module.css";
 
 const options = {
     general: [
-        "No birth control or hormonal birth control",
         "Stopped birth control in the last 3 months",
         "Morning after-pill / emergency contraception in the last 7 days",
+        "Neither",
     ],
     pill: ["Combined pill", "Progestin-only pill"],
     iud: ["Hormonal IUD", "Copper IUD"],
@@ -50,7 +50,7 @@ const BirthControl = ({ birthControl, setBirthControl }) => {
 
     return (
         <div className={styles.wrap}>
-            <InfoTooltip title="Birth control" showArrow={false} />
+            <InfoTooltip title="Recent changes" showArrow={false} />
             <div className={styles.list}>{sections}</div>
         </div>
     );
