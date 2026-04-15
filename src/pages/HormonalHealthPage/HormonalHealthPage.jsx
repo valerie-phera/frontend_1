@@ -41,6 +41,7 @@ const HormonalHealthPage = () => {
 
     const phValue = state?.phValue;
     const timestamp = state?.timestamp;
+    const lifeStage = Array.isArray(state?.lifeStage) ? state.lifeStage : [];
 
     const draft = useMemo(
         () => readAddDetailsDraft(phValue, timestamp),
@@ -61,6 +62,18 @@ const HormonalHealthPage = () => {
         setHormoneDiagnoses(draft?.hormoneDiagnoses || []);
         setCurrentMedications(draft?.currentMedications || []);
     }, [draft?.menstrualCycle, draft?.hormoneDiagnoses, draft?.currentMedications]);
+
+    const isBirthControlDisabled = useMemo(() => {
+        const block = new Set(["Menopause", "Postmenopause", "Trying to conceive"]);
+        return lifeStage.some((x) => block.has(x));
+    }, [lifeStage]);
+
+    useEffect(() => {
+        if (!isBirthControlDisabled) return;
+        setCurrentMedications((prev) =>
+            Array.isArray(prev) ? prev.filter((x) => x !== "Birth control") : []
+        );
+    }, [isBirthControlDisabled]);
 
     const [validationVisible, setValidationVisible] = useState(false);
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
@@ -219,6 +232,9 @@ const HormonalHealthPage = () => {
                                 showHeadingError={
                                     validationVisible &&
                                     sectionIssues.medicationsMissing
+                                }
+                                disabledItems={
+                                    isBirthControlDisabled ? ["Birth control"] : []
                                 }
                             />
                         </div>

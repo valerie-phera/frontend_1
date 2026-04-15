@@ -16,7 +16,6 @@ import {
     readAddDetailsDraft,
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
-import { getInterpretation } from "../../shared/utils/getInterpretation";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import InfoCircle from "../../assets/icons/InfoCircle";
 
@@ -45,14 +44,6 @@ const computeSymptomsSectionIssues = (
         urinationMissing,
         count,
     };
-};
-
-const getPhLevel = (ph) => {
-    const n = Number(ph);
-    if (Number.isNaN(n)) return "Elevated";
-    if (n < 4.5) return "Normal";
-    if (n >= 4.5 && n <= 4.9) return "Slightly Elevated";
-    return "Elevated";
 };
 
 const SymptomsPage = () => {
@@ -162,12 +153,42 @@ const SymptomsPage = () => {
         const stripNone = (v) =>
             Array.isArray(v) ? v.filter((x) => x !== "None") : [];
 
-        const phLevel = state?.phLevel ?? getPhLevel(phValue);
-        const interpretation =
-            state?.interpretation ??
-            getInterpretation(phLevel, Number(phValue).toFixed(2));
+        const lifeStage = stripNone(state?.lifeStage);
+        const currentMedications = stripNone(state?.currentMedications);
 
-        navigate("/result-with-details", {
+        const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
+        const hasPeri = has(lifeStage, "Perimenopause");
+        const hasMeno =
+            has(lifeStage, "Menopause") || has(lifeStage, "Postmenopause");
+        const hasTrying = has(lifeStage, "Trying to conceive");
+        const hasBirthControl = has(currentMedications, "Birth control");
+
+        const nextPath = (() => {
+            // 5
+            if (hasPeri && hasBirthControl) {
+                return "/add-details/next-steps/birth-control-hormone-therapy";
+            }
+            // 6
+            if (hasPeri && hasTrying) {
+                return "/add-details/next-steps/birth-control-fertility-treatment";
+            }
+            // 3
+            if (hasTrying) {
+                return "/add-details/next-steps/fertility-treatment";
+            }
+            // 2
+            if (hasPeri || hasMeno) {
+                return "/add-details/next-steps/hormone-therapy";
+            }
+            // 4
+            if (hasBirthControl) {
+                return "/add-details/next-steps/birth-control";
+            }
+            // 1
+            return "/analyzing-data";
+        })();
+
+        navigate(nextPath, {
             state: {
                 ...state,
                 discharge: stripNone(discharge),
@@ -175,12 +196,9 @@ const SymptomsPage = () => {
                 smell: stripNone(smell),
                 urination: stripNone(urination),
                 notes,
-                phLevel,
-                interpretation,
-                citations: state?.citations ?? [],
-                lifeStage: stripNone(state?.lifeStage),
+                lifeStage,
                 hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
-                currentMedications: stripNone(state?.currentMedications),
+                currentMedications,
             },
         });
     };

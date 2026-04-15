@@ -38,3 +38,15 @@
     cursor: pointer;
 }
 
+.itemDisabled {
+    padding: 8px 10px 9px;
+    border: 1px solid #C9D3D6;
+    border-radius: 100px;
+    cursor: not-allowed;
+    font-size: 14px;
+    background-color: #F3F6F7;
+    color: #9AA6AA;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
