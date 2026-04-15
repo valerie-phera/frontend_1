@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import NextStepsPage from "../NextStepsPage";
 
 import BottomBlock from "../../../components/BottomBlock/BottomBlock";
@@ -9,11 +9,18 @@ import basicStyles from "../NextStepsPage.module.css";
 
 const NextStepsBirthControlPage = () => {
     const navigate = useNavigate();
+    const { state } = useLocation();
     return (
         <>
             <NextStepsPage lockedItems={["Birth control"]} totalSteps={4} />;
             <BottomBlock>
-                <Button onClick={() => navigate("/add-details/paths/birth-control")}>
+                <Button
+                    onClick={() =>
+                        navigate("/add-details/paths/birth-control", {
+                            state: { ...state, birthControlFlow: "submit" },
+                        })
+                    }
+                >
                     Add more details
                 </Button>
                 <ButtonReverse>View report now</ButtonReverse>

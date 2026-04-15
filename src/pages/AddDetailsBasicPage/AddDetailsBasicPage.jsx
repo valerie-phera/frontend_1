@@ -15,6 +15,7 @@ import {
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
 import { writeAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
+import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 
 import InfoCircle from "../../assets/icons/InfoCircle";
 
@@ -188,6 +189,7 @@ const AddDetailsBasicPage = () => {
             ethnicBackground: ethnicForApi,
             ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
         });
+        writeActiveResultMeta({ phValue, timestamp });
 
         navigate("/add-details/hormonal-health", {
             state: {

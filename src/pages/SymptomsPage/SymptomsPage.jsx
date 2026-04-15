@@ -16,6 +16,7 @@ import {
     readAddDetailsDraft,
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
+import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import InfoCircle from "../../assets/icons/InfoCircle";
 
@@ -149,6 +150,7 @@ const SymptomsPage = () => {
             urination,
             notes,
         });
+        writeActiveResultMeta({ phValue, timestamp });
 
         const stripNone = (v) =>
             Array.isArray(v) ? v.filter((x) => x !== "None") : [];
@@ -202,6 +204,17 @@ const SymptomsPage = () => {
             },
         });
     };
+
+    const submitFromSymptoms =
+        !Array.isArray(state?.lifeStage) ||
+        !state.lifeStage.some((x) =>
+            ["Perimenopause", "Menopause", "Postmenopause", "Trying to conceive"].includes(
+                x
+            )
+        )
+            ? !Array.isArray(state?.currentMedications) ||
+              !state.currentMedications.includes("Birth control")
+            : false;
 
     return (
         <>
@@ -281,7 +294,9 @@ const SymptomsPage = () => {
                 </Container>
 
                 <BottomBlock>
-                    <Button onClick={handleNext}>Next</Button>
+                    <Button onClick={handleNext}>
+                        {submitFromSymptoms ? "Submit" : "Next"}
+                    </Button>
                     <ButtonReverse
                         onClick={() => navigate("/add-details/hormonal-health", { state })}
                     >

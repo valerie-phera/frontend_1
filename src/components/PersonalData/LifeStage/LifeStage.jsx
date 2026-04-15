@@ -12,16 +12,33 @@ const options = [
     "Postmenopause",
 ];
 
-const LifeStage = ({ lifeStage, onChange, showHeadingError = false }) => {
+const LifeStage = ({
+    lifeStage,
+    onChange,
+    showHeadingError = false,
+    disabledItems = [],
+}) => {
     const selected = Array.isArray(lifeStage) ? lifeStage : [];
+    const disabledSet = new Set(Array.isArray(disabledItems) ? disabledItems : []);
     const list = options.map((item) => {
         const isActive = selected.includes(item);
+        const isDisabled = disabledSet.has(item);
 
         return (
             <div
                 key={item}
-                className={isActive ? styles.itemSelected : styles.item}
-                onClick={() => onChange(item)}
+                className={
+                    isDisabled
+                        ? styles.itemDisabled
+                        : isActive
+                            ? styles.itemSelected
+                            : styles.item
+                }
+                onClick={() => {
+                    if (isDisabled) return;
+                    onChange(item);
+                }}
+                aria-disabled={isDisabled}
             >
                 <span>{item}</span>
             </div>

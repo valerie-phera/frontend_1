@@ -8,10 +8,23 @@ import Container from "../../components/Container/Container";
 import HormoneTherapy from "../../components/PersonalData/HormoneTherapy/HormoneTherapy";
 
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
+import {
+    writeAddDetailsDraft,
+} from "../../shared/utils/addDetailsDraftSessionStorage";
+import {
+    readActiveResultMeta,
+    writeActiveResultMeta,
+} from "../../shared/utils/activeResultSessionStorage";
+import { writePendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 
 const HormoneTherapyPage = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
+
+    const activeMeta = readActiveResultMeta();
+    const phValue = state?.phValue ?? activeMeta?.phValue;
+    const timestamp = state?.timestamp ?? activeMeta?.timestamp;
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [hormoneTherapy, setHormoneTherapy] = useState(() => ({
         general: state?.hormoneTherapy?.general ?? null,
@@ -19,6 +32,19 @@ const HormoneTherapyPage = () => {
             ? state.hormoneTherapy.hormoneReplacement
             : [],
     }));
+
+    const handleSubmit = async () => {
+        const nextState = { ...state, hormoneTherapy };
+        writeAddDetailsDraft(phValue, timestamp, { hormoneTherapy });
+        writeActiveResultMeta({ phValue, timestamp });
+        writePendingAnalysis({ phValue, timestamp, startedAt: Date.now() });
+
+        if (phValue === undefined || phValue === null) {
+            alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+        navigate("/analyzing-data", { state: nextState });
+    };
 
     return (
         <>
@@ -53,13 +79,10 @@ const HormoneTherapyPage = () => {
 
                 <BottomBlock>
                     <Button
-                        onClick={() =>
-                            navigate("/result", {
-                                state: { ...state, hormoneTherapy },
-                            })
-                        }
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
                     >
-                        Submit
+                        {isSubmitting ? "Submitting…" : "Submit"}
                     </Button>
                     <ButtonReverse
                         onClick={() =>

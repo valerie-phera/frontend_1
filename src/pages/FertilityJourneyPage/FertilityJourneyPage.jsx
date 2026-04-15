@@ -8,10 +8,23 @@ import Container from "../../components/Container/Container";
 import FertilityJourney from "../../components/PersonalData/FertilityJourney/FertilityJourney";
 
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
+import {
+    writeAddDetailsDraft,
+} from "../../shared/utils/addDetailsDraftSessionStorage";
+import {
+    readActiveResultMeta,
+    writeActiveResultMeta,
+} from "../../shared/utils/activeResultSessionStorage";
+import { writePendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 
 const FertilityJourneyPage = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
+
+    const activeMeta = readActiveResultMeta();
+    const phValue = state?.phValue ?? activeMeta?.phValue;
+    const timestamp = state?.timestamp ?? activeMeta?.timestamp;
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [fertilityJourney, setFertilityJourney] = useState(() => ({
         currentStatus: state?.fertilityJourney?.currentStatus ?? null,
@@ -19,6 +32,19 @@ const FertilityJourneyPage = () => {
             ? state.fertilityJourney.fertilityTreatments
             : [],
     }));
+
+    const handleSubmit = async () => {
+        const nextState = { ...state, fertilityJourney };
+        writeAddDetailsDraft(phValue, timestamp, { fertilityJourney });
+        writeActiveResultMeta({ phValue, timestamp });
+        writePendingAnalysis({ phValue, timestamp, startedAt: Date.now() });
+
+        if (phValue === undefined || phValue === null) {
+            alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+        navigate("/analyzing-data", { state: nextState });
+    };
 
     return (
         <>
@@ -53,13 +79,10 @@ const FertilityJourneyPage = () => {
 
                 <BottomBlock>
                     <Button
-                        onClick={() =>
-                            navigate("/result", {
-                                state: { ...state, fertilityJourney },
-                            })
-                        }
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
                     >
-                        Submit
+                        {isSubmitting ? "Submitting…" : "Submit"}
                     </Button>
                     <ButtonReverse
                         onClick={() =>

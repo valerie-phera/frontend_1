@@ -84,8 +84,29 @@ const PersonalData = ({
     const showEthnicHeadingError =
         !showFullForm && basicValidationVisible && basicSectionIssues.ethnicMissing;
 
+    const isTryingToConceive = Array.isArray(lifeStage)
+        ? lifeStage.includes("Trying to conceive")
+        : false;
+
     const handleLifeStageChange = (value) => {
-        setLifeStage((prev) => toggleWithNone(prev, value));
+        setLifeStage((prev) => {
+            const disabledWhenTrying = new Set(["Menopause", "Postmenopause"]);
+            const prevArr = Array.isArray(prev) ? prev : [];
+            const tryingSelected = prevArr.includes("Trying to conceive");
+
+            if (tryingSelected && disabledWhenTrying.has(value)) {
+                return prevArr;
+            }
+
+            let next = toggleWithNone(prevArr, value);
+
+            // If user selects "Trying to conceive", force-remove Menopause/Postmenopause
+            if (next.includes("Trying to conceive")) {
+                next = next.filter((x) => !disabledWhenTrying.has(x));
+            }
+
+            return next;
+        });
     };
 
     const handleEthnicBackgroundChange = (value) => {
@@ -141,6 +162,9 @@ const PersonalData = ({
                         lifeStage={lifeStage}
                         onChange={handleLifeStageChange}
                         showHeadingError={showLifeHeadingError}
+                        disabledItems={
+                            isTryingToConceive ? ["Menopause", "Postmenopause"] : []
+                        }
                     />
                     <EthnicBackground
                         ethnicBackground={ethnicBackground}

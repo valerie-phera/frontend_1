@@ -83,8 +83,8 @@ const ResultWithDetailsPage = () => {
     }, [state, navigate]);
 
     const detailOptions = useDetailsFromState(state);
-    const detailsList = detailOptions.map((item) => (
-        <div key={item} className={styles.item}>{item}</div>
+    const detailsList = detailOptions.map((item, idx) => (
+        <div key={`${item}-${idx}`} className={styles.item}>{item}</div>
     ));
 
     const phForScale = clampPhDisplay(phValue);
