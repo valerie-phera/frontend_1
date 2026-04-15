@@ -1,0 +1,149 @@
+.content {
+    background-color: var(--main-background-color);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-top: 56px;
+}
+
+.imgWrap {
+    display: flex;
+    justify-content: center;
+}
+
+.img {
+    padding: 20px 0 29px;
+    max-width: 243px;
+    align-items: center;
+}
+
+.textBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding-bottom: 24px;
+    margin: 0 auto;
+    max-width: 312px;
+}
+
+.greeting {
+    font-size: 12px;
+    color: var(--main-color);
+    text-transform: uppercase;
+}
+
+.heading {
+    font-size: 22px;
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--main-color);
+}
+
+.text {
+    line-height: 1.3;
+    color: var(--main-color-secondary);
+}
+
+.reviewingBlock {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px 16px;
+}
+
+.reviewingHeadingWrap {
+    display: flex;
+    justify-content: space-between;
+}
+
+.reviewingHeading {
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--main-color-secondary);
+}
+
+.reviewingValue {
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: #3E5D57;
+}
+
+.scale {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.greyArea {
+    width: 100%;
+    height: 9px;
+    border-radius: 100px;
+    background-color: #D5D7DA;    
+}
+
+.greenArea {
+    width: 25%;
+    height: 9px;
+    border-radius: 100px;
+    background: linear-gradient(to right, #00343D, #5DAAB2);
+
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.elements {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.itemIconGray {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #A4A7AE;
+    border-radius: 50%;
+}
+
+.itemTxt {
+    font-size: 14px;
+    font-weight: 600;
+    color: #414651;
+}
+
+.itemTxtGray {
+    font-size: 14px;
+    font-weight: 600;
+    color: #A4A7AE;
+}
+
+.itemTxtProcessing {
+    font-size: 14px;
+    font-weight: 600;
+    color: #567A72;
+}
+
+.bottomText {
+    font-size: 12px;
+    color: #717680;
+    text-align: center;
+    line-height: 1.3;
+
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.bottomText p {
+    max-width: 276px;
+}
