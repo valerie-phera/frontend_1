@@ -117,21 +117,8 @@ const NextStepsPage = ({ lockedItems: lockedItemsProp, totalSteps: totalStepsPro
                             </ul>
                         </div>
                     </div>
-
-                    {/* <BottomBlock>
-                        <Button onClick={() => navigate("/result")}>
-                            Add more details
-                        </Button>
-                        <ButtonReverse>View report now</ButtonReverse>
-                        <div className={styles.bottomText}>
-                            <p>
-                                We respect your privacy. Only you can save and see
-                                your results.
-                            </p>
-                        </div>
-                    </BottomBlock> */}
                 </Container>
-                <BottomBlock>
+                {/* <BottomBlock>
                     <Button onClick={() => navigate("/result")}>
                         Add more details
                     </Button>
@@ -142,7 +129,7 @@ const NextStepsPage = ({ lockedItems: lockedItemsProp, totalSteps: totalStepsPro
                             your results.
                         </p>
                     </div>
-                </BottomBlock>
+                </BottomBlock> */}
             </div>
         </>
     );
