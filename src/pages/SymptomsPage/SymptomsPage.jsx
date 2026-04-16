@@ -130,6 +130,22 @@ const SymptomsPage = () => {
         });
     };
 
+    const handleDischargeChange = (value) => {
+        setDischarge((prev) => {
+            const NONE = "No discharge";
+            const arr = Array.isArray(prev) ? prev : [];
+
+            if (value === NONE) {
+                return arr.includes(NONE) ? [] : [NONE];
+            }
+
+            const withoutNone = arr.filter((x) => x !== NONE);
+            return withoutNone.includes(value)
+                ? withoutNone.filter((x) => x !== value)
+                : [...withoutNone, value];
+        });
+    };
+
     const handleNext = () => {
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
@@ -239,7 +255,7 @@ const SymptomsPage = () => {
                         <div className={basicStyles.personalData}>
                             <Discharge
                                 discharge={discharge}
-                                onChange={toggleInList(setDischarge)}
+                                onChange={handleDischargeChange}
                                 showHeadingError={
                                     validationVisible &&
                                     sectionIssues.dischargeMissing

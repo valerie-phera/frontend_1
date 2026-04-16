@@ -15,7 +15,7 @@ import { readActiveResultMeta } from "../../shared/utils/activeResultSessionStor
 import { clearPendingAnalysis, readPendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 import { getInterpretation } from "../../shared/utils/getInterpretation";
 
-const MIN_WAIT_MS = 12_000;
+const MIN_WAIT_MS = 6_000;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -38,6 +38,16 @@ const toArray = (value) => {
     if (value === undefined || value === null || value === "") return [];
     return [value].filter(Boolean);
 };
+
+const stripTokens = (value, tokens) => {
+    const arr = toArray(value);
+    if (!Array.isArray(tokens) || tokens.length === 0) return arr;
+    const set = new Set(tokens);
+    return arr.filter((x) => !set.has(x));
+};
+
+const toArrayForApi = (value, extraTokens = []) =>
+    stripTokens(value, ["None", ...extraTokens]);
 
 const AnalyzingData = () => {
     const navigate = useNavigate();
@@ -83,9 +93,11 @@ const AnalyzingData = () => {
             return {
                 ph_value: Number(phValue),
                 age: ageForApi ?? null,
-                life_stage: toArray(draft?.lifeStage ?? state?.lifeStage),
-                diagnoses: toArray(draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses),
-                ethnic_backgrounds: toArray(
+                life_stage: toArrayForApi(draft?.lifeStage ?? state?.lifeStage),
+                diagnoses: toArrayForApi(
+                    draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses
+                ),
+                ethnic_backgrounds: toArrayForApi(
                     draft?.ethnicBackground ?? state?.ethnicBackground
                 ),
                 menstrual_cycle: firstOrNull(draft?.menstrualCycle ?? state?.menstrualCycle),
@@ -93,20 +105,26 @@ const AnalyzingData = () => {
                     general: birthControl?.general ?? null,
                     pill: birthControl?.pill ?? null,
                     iud: birthControl?.iud ?? null,
-                    other_methods: toArray(birthControl?.otherHormonalMethods),
-                    permanent: toArray(birthControl?.permanentMethods),
+                    other_methods: toArrayForApi(birthControl?.otherHormonalMethods),
+                    permanent: toArrayForApi(birthControl?.permanentMethods),
                 },
-                hormone_therapy: toArray(hormoneTherapy?.general),
-                hrt: toArray(hormoneTherapy?.hormoneReplacement),
+                hormone_therapy: toArrayForApi(hormoneTherapy?.general),
+                hrt: toArrayForApi(hormoneTherapy?.hormoneReplacement),
                 fertility_journey: {
                     current_status: fertilityJourney?.currentStatus ?? null,
-                    fertility_treatments: toArray(fertilityJourney?.fertilityTreatments),
+                    fertility_treatments: toArrayForApi(
+                        fertilityJourney?.fertilityTreatments
+                    ),
                 },
                 symptoms: {
-                    discharge: toArray(draft?.discharge ?? state?.discharge),
-                    vulva_vagina: toArray(draft?.vulvaCondition ?? state?.vulvaCondition),
-                    smell: toArray(draft?.smell ?? state?.smell),
-                    urine: toArray(draft?.urination ?? state?.urination),
+                    discharge: toArrayForApi(draft?.discharge ?? state?.discharge, [
+                        "No discharge",
+                    ]),
+                    vulva_vagina: toArrayForApi(
+                        draft?.vulvaCondition ?? state?.vulvaCondition
+                    ),
+                    smell: toArrayForApi(draft?.smell ?? state?.smell),
+                    urine: toArrayForApi(draft?.urination ?? state?.urination),
                     notes: String((draft?.notes ?? state?.notes) ?? ""),
                 },
             };
@@ -147,18 +165,34 @@ const AnalyzingData = () => {
                         recommendations: backendResponse?.agent_reply ?? state?.recommendations,
                         citations: backendResponse?.citations ?? state?.citations ?? [],
                         age: draft?.age ?? state?.age,
-                        lifeStage: draft?.lifeStage ?? state?.lifeStage,
+                        lifeStage: stripTokens(draft?.lifeStage ?? state?.lifeStage, [
+                            "None",
+                        ]),
                         ethnicBackground: draft?.ethnicBackground ?? state?.ethnicBackground,
                         menstrualCycle: draft?.menstrualCycle ?? state?.menstrualCycle,
-                        hormoneDiagnoses: draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses,
-                        currentMedications: draft?.currentMedications ?? state?.currentMedications,
+                        hormoneDiagnoses: stripTokens(
+                            draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses,
+                            ["None"]
+                        ),
+                        currentMedications: stripTokens(
+                            draft?.currentMedications ?? state?.currentMedications,
+                            ["None"]
+                        ),
                         birthControl: draft?.birthControl ?? state?.birthControl,
                         hormoneTherapy: draft?.hormoneTherapy ?? state?.hormoneTherapy,
                         fertilityJourney: draft?.fertilityJourney ?? state?.fertilityJourney,
-                        discharge: draft?.discharge ?? state?.discharge,
-                        vulvaCondition: draft?.vulvaCondition ?? state?.vulvaCondition,
-                        smell: draft?.smell ?? state?.smell,
-                        urination: draft?.urination ?? state?.urination,
+                        discharge: stripTokens(draft?.discharge ?? state?.discharge, [
+                            "None",
+                            "No discharge",
+                        ]),
+                        vulvaCondition: stripTokens(
+                            draft?.vulvaCondition ?? state?.vulvaCondition,
+                            ["None"]
+                        ),
+                        smell: stripTokens(draft?.smell ?? state?.smell, ["None"]),
+                        urination: stripTokens(draft?.urination ?? state?.urination, [
+                            "None",
+                        ]),
                         notes: draft?.notes ?? state?.notes,
                     },
                 });

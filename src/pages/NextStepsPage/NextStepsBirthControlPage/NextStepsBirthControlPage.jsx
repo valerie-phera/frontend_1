@@ -12,7 +12,7 @@ const NextStepsBirthControlPage = () => {
     const { state } = useLocation();
     return (
         <>
-            <NextStepsPage lockedItems={["Birth control"]} totalSteps={4} />;
+            <NextStepsPage lockedItems={["Birth control"]} totalSteps={4} />
             <BottomBlock>
                 <Button
                     onClick={() =>
@@ -23,7 +23,11 @@ const NextStepsBirthControlPage = () => {
                 >
                     Add more details
                 </Button>
-                <ButtonReverse>View report now</ButtonReverse>
+                <ButtonReverse
+                    onClick={() => navigate("/analyzing-data", { state })}
+                >
+                    View report now
+                </ButtonReverse>
                 <div className={basicStyles.bottomText}>
                     <p>
                         We respect your privacy. Only you can save and see

@@ -88,11 +88,21 @@ const PersonalData = ({
         ? lifeStage.includes("Trying to conceive")
         : false;
 
+    const isPregnant = Array.isArray(lifeStage)
+        ? lifeStage.includes("Pregnant")
+        : false;
+
     const handleLifeStageChange = (value) => {
         setLifeStage((prev) => {
             const disabledWhenTrying = new Set(["Menopause", "Postmenopause"]);
+            const disabledWhenPregnant = new Set([
+                "Trying to conceive",
+                "Menopause",
+                "Postmenopause",
+            ]);
             const prevArr = Array.isArray(prev) ? prev : [];
             const tryingSelected = prevArr.includes("Trying to conceive");
+            const pregnantSelected = prevArr.includes("Pregnant");
 
             if (tryingSelected && disabledWhenTrying.has(value)) {
                 return prevArr;
@@ -103,6 +113,14 @@ const PersonalData = ({
             // If user selects "Trying to conceive", force-remove Menopause/Postmenopause
             if (next.includes("Trying to conceive")) {
                 next = next.filter((x) => !disabledWhenTrying.has(x));
+            }
+
+            // If "Pregnant" is selected, block conflicting life stages and remove them if present.
+            if (pregnantSelected && disabledWhenPregnant.has(value)) {
+                return prevArr;
+            }
+            if (next.includes("Pregnant")) {
+                next = next.filter((x) => !disabledWhenPregnant.has(x));
             }
 
             return next;
@@ -163,7 +181,11 @@ const PersonalData = ({
                         onChange={handleLifeStageChange}
                         showHeadingError={showLifeHeadingError}
                         disabledItems={
-                            isTryingToConceive ? ["Menopause", "Postmenopause"] : []
+                            isPregnant
+                                ? ["Trying to conceive", "Menopause", "Postmenopause"]
+                                : isTryingToConceive
+                                    ? ["Menopause", "Postmenopause"]
+                                    : []
                         }
                     />
                     <EthnicBackground

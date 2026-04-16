@@ -64,7 +64,12 @@ const HormonalHealthPage = () => {
     }, [draft?.menstrualCycle, draft?.hormoneDiagnoses, draft?.currentMedications]);
 
     const isBirthControlDisabled = useMemo(() => {
-        const block = new Set(["Menopause", "Postmenopause", "Trying to conceive"]);
+        const block = new Set([
+            "Menopause",
+            "Postmenopause",
+            "Trying to conceive",
+            "Pregnant",
+        ]);
         return lifeStage.some((x) => block.has(x));
     }, [lifeStage]);
 
