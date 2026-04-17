@@ -1,5 +1,5 @@
 function buildInterpretationParts(phLevel, phValue) {
-    const lead = `Your vaginal pH of ${phValue}`;
+    const lead = `A vaginal pH of ${phValue}`;
     if (phLevel === "Normal") {
         return {
             lead,
@@ -14,7 +14,7 @@ function buildInterpretationParts(phLevel, phValue) {
     }
     return {
         lead,
-        suffix: " is elevated and not considered within the usual range. We recommend speaking to a doctor for further assessment.",
+        suffix: " is elevated and not considered within the usual range. We recommend adding more details to personalize your result and speaking to a doctor for further assessment.",
     };
 }
 

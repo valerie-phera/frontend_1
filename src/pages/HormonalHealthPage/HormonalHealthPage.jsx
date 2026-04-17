@@ -192,6 +192,17 @@ const HormonalHealthPage = () => {
         });
     };
 
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            writeAddDetailsDraft(phValue, timestamp, {
+                menstrualCycle,
+                hormoneDiagnoses,
+                currentMedications,
+            });
+        }
+        navigate(-1);
+    };
+
     return (
         <>
             <div className={basicStyles.content} data-scroll-container>
@@ -269,7 +280,7 @@ const HormonalHealthPage = () => {
 
                 <BottomBlock>
                     <Button onClick={handleNext}>Next</Button>
-                    <ButtonReverse onClick={() => navigate("/add-details/basic")}>
+                    <ButtonReverse onClick={handleGoBack}>
                         Go back
                     </ButtonReverse>
                     <div className={basicStyles.privacyPolicyWrap}>

@@ -21,6 +21,10 @@
     color: var(--main-color-secondary);
 }
 
+.inputError {
+    border: 1px solid #CC3433;
+}
+
 .input::placeholder {
     color: #A4A7AE;
 }
@@ -30,13 +34,9 @@
 }
 
 .warn {
-    margin-top: 4px;
+    margin-top: 10px;
     font-size: 14px;
-    background: #FFF8E1;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border-left: 3px solid #FBBF24;
-    color: #5A4A00;
+    color: #CC3433;
 }
 
 .arrow {

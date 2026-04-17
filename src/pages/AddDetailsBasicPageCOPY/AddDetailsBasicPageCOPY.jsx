@@ -211,7 +211,7 @@ const AddDetailsBasicPage = () => {
                     >
                         {isSaving ? "Saving…" : "Save details"}
                     </Button>
-                    <ButtonReverse onClick={() => navigate("/result-without-details")}>Go back</ButtonReverse>
+                    <ButtonReverse onClick={() => navigate(-1)}>Go back</ButtonReverse>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
                             We respect your privacy. Only you can save and see your results.

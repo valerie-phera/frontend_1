@@ -42,20 +42,33 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 3px;
     padding: 0 20px 4px;
-}
 
-.inputBlockReveal {
+    /* Always mounted; animate open/close via transitions for snappy UX */
     overflow: hidden;
     scroll-margin-bottom: min(200px, 32dvh);
-    animation: ethnicOtherInputReveal 0.42s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-12px) scale(0.985);
+    margin-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+
+    transition:
+        max-height 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.18s ease-out,
+        transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        margin-top 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        padding-bottom 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.inputBlockHide {
-    overflow: hidden;
-    scroll-margin-bottom: min(200px, 32dvh);
-    animation: ethnicOtherInputHide 0.42s cubic-bezier(0.4, 0, 0.75, 0.35) forwards;
+.inputBlockOpen {
+    max-height: 320px;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    margin-top: 3px;
+    padding-bottom: 8px;
+    pointer-events: auto;
 }
 
 .inputHint {
@@ -66,45 +79,11 @@
     scroll-margin-bottom: min(200px, 32dvh);
 }
 
-@keyframes ethnicOtherInputReveal {
-    from {
-        opacity: 0;
-        max-height: 0;
-        margin-top: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        transform: translateY(-16px) scale(0.98);
-    }
-
-    to {
-        opacity: 1;
-        max-height: 320px;
-        margin-top: 3px;
-        padding-top: 0;
-        padding-bottom: 8px;
-        transform: translateY(0) scale(1);
-    }
+.inputHintError {
+    color: #CC3433;
 }
 
-@keyframes ethnicOtherInputHide {
-    from {
-        opacity: 1;
-        max-height: 320px;
-        margin-top: 3px;
-        padding-top: 0;
-        padding-bottom: 8px;
-        transform: translateY(0) scale(1);
-    }
-
-    to {
-        opacity: 0;
-        max-height: 0;
-        margin-top: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        transform: translateY(-16px) scale(0.98);
-    }
-}
+/* keyframes removed in favor of transitions */
 
 .input {
     border: 1px solid #0C121E;
@@ -112,6 +91,10 @@
     padding: 10px 26px 10px 14px;
     width: 100%;
     font-size: 16px;
+}
+
+.inputError {
+    border: 1px solid #CC3433;
 }
 
 .input::placeholder{

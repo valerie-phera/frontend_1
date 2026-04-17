@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
@@ -8,7 +8,10 @@ import Container from "../../components/Container/Container";
 import BirthControl from "../../components/PersonalData/BirthControl/BirthControl";
 
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
-import { writeAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
+import {
+    readAddDetailsDraft,
+    writeAddDetailsDraft,
+} from "../../shared/utils/addDetailsDraftSessionStorage";
 import { readActiveResultMeta, writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 import { writePendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 
@@ -21,12 +24,23 @@ const BirthControlPage = () => {
     const phValue = state?.phValue ?? activeMeta?.phValue;
     const timestamp = state?.timestamp ?? activeMeta?.timestamp;
 
+    const draft = useMemo(
+        () => readAddDetailsDraft(phValue, timestamp),
+        [phValue, timestamp]
+    );
+
     const [birthControl, setBirthControl] = useState(() => ({
-        general: state?.birthControl?.general ?? null,
-        pill: state?.birthControl?.pill ?? null,
-        iud: state?.birthControl?.iud ?? null,
-        otherHormonalMethods: state?.birthControl?.otherHormonalMethods ?? null,
-        permanentMethods: state?.birthControl?.permanentMethods ?? null,
+        general: state?.birthControl?.general ?? draft?.birthControl?.general ?? null,
+        pill: state?.birthControl?.pill ?? draft?.birthControl?.pill ?? null,
+        iud: state?.birthControl?.iud ?? draft?.birthControl?.iud ?? null,
+        otherHormonalMethods:
+            state?.birthControl?.otherHormonalMethods ??
+            draft?.birthControl?.otherHormonalMethods ??
+            null,
+        permanentMethods:
+            state?.birthControl?.permanentMethods ??
+            draft?.birthControl?.permanentMethods ??
+            null,
     }));
 
     const flow = state?.birthControlFlow ?? "submit";
@@ -57,6 +71,14 @@ const BirthControlPage = () => {
             return;
         }
         navigate("/analyzing-data", { state: nextState });
+    };
+
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            writeAddDetailsDraft(phValue, timestamp, { birthControl });
+            writeActiveResultMeta({ phValue, timestamp });
+        }
+        navigate(-1);
     };
  
     return (
@@ -98,11 +120,7 @@ const BirthControlPage = () => {
                         {isSubmitting ? "Submitting…" : primaryButtonLabel}
                     </Button>
                     <ButtonReverse
-                        onClick={() =>
-                            navigate("/add-details/symptoms", {
-                                state: { ...state, birthControl },
-                            })
-                        }
+                        onClick={handleGoBack}
                     >
                         Go back
                     </ButtonReverse>

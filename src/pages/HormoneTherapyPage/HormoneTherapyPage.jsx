@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
@@ -9,6 +9,7 @@ import HormoneTherapy from "../../components/PersonalData/HormoneTherapy/Hormone
 
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import {
+    readAddDetailsDraft,
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import {
@@ -26,10 +27,20 @@ const HormoneTherapyPage = () => {
     const timestamp = state?.timestamp ?? activeMeta?.timestamp;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const draft = useMemo(
+        () => readAddDetailsDraft(phValue, timestamp),
+        [phValue, timestamp]
+    );
+
     const [hormoneTherapy, setHormoneTherapy] = useState(() => ({
-        general: state?.hormoneTherapy?.general ?? null,
+        general:
+            state?.hormoneTherapy?.general ??
+            draft?.hormoneTherapy?.general ??
+            null,
         hormoneReplacement: Array.isArray(state?.hormoneTherapy?.hormoneReplacement)
             ? state.hormoneTherapy.hormoneReplacement
+            : Array.isArray(draft?.hormoneTherapy?.hormoneReplacement)
+                ? draft.hormoneTherapy.hormoneReplacement
             : [],
     }));
 
@@ -44,6 +55,14 @@ const HormoneTherapyPage = () => {
             return;
         }
         navigate("/analyzing-data", { state: nextState });
+    };
+
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            writeAddDetailsDraft(phValue, timestamp, { hormoneTherapy });
+            writeActiveResultMeta({ phValue, timestamp });
+        }
+        navigate(-1);
     };
 
     return (
@@ -85,11 +104,7 @@ const HormoneTherapyPage = () => {
                         {isSubmitting ? "Submitting…" : "Submit"}
                     </Button>
                     <ButtonReverse
-                        onClick={() =>
-                            navigate("/add-details/symptoms", {
-                                state: { ...state, hormoneTherapy },
-                            })
-                        }
+                        onClick={handleGoBack}
                     >
                         Go back
                     </ButtonReverse>

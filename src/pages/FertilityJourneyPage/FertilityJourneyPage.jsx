@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
@@ -9,6 +9,7 @@ import FertilityJourney from "../../components/PersonalData/FertilityJourney/Fer
 
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import {
+    readAddDetailsDraft,
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import {
@@ -26,10 +27,20 @@ const FertilityJourneyPage = () => {
     const timestamp = state?.timestamp ?? activeMeta?.timestamp;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const draft = useMemo(
+        () => readAddDetailsDraft(phValue, timestamp),
+        [phValue, timestamp]
+    );
+
     const [fertilityJourney, setFertilityJourney] = useState(() => ({
-        currentStatus: state?.fertilityJourney?.currentStatus ?? null,
+        currentStatus:
+            state?.fertilityJourney?.currentStatus ??
+            draft?.fertilityJourney?.currentStatus ??
+            null,
         fertilityTreatments: Array.isArray(state?.fertilityJourney?.fertilityTreatments)
             ? state.fertilityJourney.fertilityTreatments
+            : Array.isArray(draft?.fertilityJourney?.fertilityTreatments)
+                ? draft.fertilityJourney.fertilityTreatments
             : [],
     }));
 
@@ -44,6 +55,14 @@ const FertilityJourneyPage = () => {
             return;
         }
         navigate("/analyzing-data", { state: nextState });
+    };
+
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            writeAddDetailsDraft(phValue, timestamp, { fertilityJourney });
+            writeActiveResultMeta({ phValue, timestamp });
+        }
+        navigate(-1);
     };
 
     return (
@@ -85,11 +104,7 @@ const FertilityJourneyPage = () => {
                         {isSubmitting ? "Submitting…" : "Submit"}
                     </Button>
                     <ButtonReverse
-                        onClick={() =>
-                            navigate("/add-details/symptoms", {
-                                state: { ...state, fertilityJourney },
-                            })
-                        }
+                        onClick={handleGoBack}
                     >
                         Go back
                     </ButtonReverse>

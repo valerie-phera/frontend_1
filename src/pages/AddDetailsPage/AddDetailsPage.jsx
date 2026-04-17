@@ -347,7 +347,7 @@ const AddDetailsPage = () => {
                     >
                         {isSaving ? "Saving…" : "Save details"}
                     </Button>
-                    <ButtonReverse onClick={() => navigate("/result-without-details")}>Go back</ButtonReverse>
+                    <ButtonReverse onClick={() => navigate(-1)}>Go back</ButtonReverse>
                 </BottomBlock>
             </div>
         </>

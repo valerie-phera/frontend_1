@@ -70,15 +70,19 @@ const PersonalData = ({
     basicValidationVisible = false,
     basicSectionIssues = {
         ageMissing: false,
+        ageInvalid: false,
         lifeMissing: false,
         ethnicMissing: false,
+        ethnicOtherMissing: false,
         count: 0,
     },
 }) => {
     const showFullForm = variant !== "basic";
 
     const showAgeHeadingError =
-        !showFullForm && basicValidationVisible && basicSectionIssues.ageMissing;
+        !showFullForm &&
+        basicValidationVisible &&
+        (basicSectionIssues.ageMissing || basicSectionIssues.ageInvalid);
     const showLifeHeadingError =
         !showFullForm && basicValidationVisible && basicSectionIssues.lifeMissing;
     const showEthnicHeadingError =
@@ -175,6 +179,10 @@ const PersonalData = ({
                         age={age}
                         onChange={setAge}
                         showHeadingError={showAgeHeadingError}
+                        showError={
+                            !showFullForm &&
+                            basicValidationVisible && basicSectionIssues.ageInvalid
+                        }
                     />
                     <LifeStage
                         lifeStage={lifeStage}
@@ -195,6 +203,11 @@ const PersonalData = ({
                         onOtherTextChange={setEthnicOtherText}
                         otherInputMode={showFullForm ? "always" : "when_other"}
                         showHeadingError={showEthnicHeadingError}
+                        showOtherError={
+                            !showFullForm &&
+                            basicValidationVisible &&
+                            basicSectionIssues.ethnicOtherMissing
+                        }
                     />
 
                     {showFullForm && (

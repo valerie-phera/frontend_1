@@ -8,6 +8,24 @@ const Notes = ({ notes, setNotes }) => {
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
 
+  const sanitizeNotes = (value) => {
+    const raw = String(value ?? "");
+    const normalized = raw
+      .normalize("NFKC")
+      .replace(/\r\n?/g, "\n")
+      // Remove control chars but keep newlines and tabs for readability
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+      // Avoid tag-like input; keep the rest of punctuation as-is
+      .replace(/[<>]/g, "")
+      // Collapse spaces/tabs, without touching line breaks
+      .replace(/[ \t]+/g, " ")
+      // Limit multiple blank lines
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    return normalized.slice(0, 500);
+  };
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -48,7 +66,7 @@ const Notes = ({ notes, setNotes }) => {
           className={styles.textarea}
           value={notes}
           maxLength={500}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
           autoFocus
         />
       ) : (

@@ -221,6 +221,19 @@ const SymptomsPage = () => {
         });
     };
 
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            writeAddDetailsDraft(phValue, timestamp, {
+                discharge,
+                vulvaCondition,
+                smell,
+                urination,
+                notes,
+            });
+        }
+        navigate(-1);
+    };
+
     const submitFromSymptoms =
         !Array.isArray(state?.lifeStage) ||
         !state.lifeStage.some((x) =>
@@ -313,9 +326,7 @@ const SymptomsPage = () => {
                     <Button onClick={handleNext}>
                         {submitFromSymptoms ? "Submit" : "Next"}
                     </Button>
-                    <ButtonReverse
-                        onClick={() => navigate("/add-details/hormonal-health", { state })}
-                    >
+                    <ButtonReverse onClick={handleGoBack}>
                         Go back
                     </ButtonReverse>
                     <div className={basicStyles.privacyPolicyWrap}>

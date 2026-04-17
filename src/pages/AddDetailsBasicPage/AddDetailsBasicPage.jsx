@@ -46,28 +46,54 @@ const computeBasicSectionIssues = (
     ethnicBackground,
     ethnicOtherText
 ) => {
+    const AGE_MIN = 18;
+    const AGE_MAX = 120;
+
     const ageMissing =
         age === "" ||
         age === undefined ||
         age === null ||
         (typeof age === "number" && Number.isNaN(age));
 
+    const parsedAge =
+        ageMissing
+            ? null
+            : typeof age === "number"
+                ? age
+                : Number(String(age).trim());
+    const ageInvalid =
+        !ageMissing &&
+        (parsedAge === null ||
+            Number.isNaN(parsedAge) ||
+            parsedAge < AGE_MIN ||
+            parsedAge > AGE_MAX);
+
     const lifeMissing = !Array.isArray(lifeStage) || lifeStage.length === 0;
 
     const ethnicEmpty =
         !Array.isArray(ethnicBackground) || ethnicBackground.length === 0;
-    const otherIncomplete =
+    const ethnicOtherMissing =
         Array.isArray(ethnicBackground) &&
         ethnicBackground.includes(ETHNIC_OTHER_OPTION) &&
         String(ethnicOtherText ?? "").trim() === "";
-    const ethnicMissing = ethnicEmpty || otherIncomplete;
+    const ethnicMissing = ethnicEmpty || ethnicOtherMissing;
 
     const count =
-        (ageMissing ? 1 : 0) +
+        ((ageMissing || ageInvalid) ? 1 : 0) +
         (lifeMissing ? 1 : 0) +
         (ethnicMissing ? 1 : 0);
 
-    return { ageMissing, lifeMissing, ethnicMissing, count };
+    const bannerCount = count - (ethnicOtherMissing ? 1 : 0);
+
+    return {
+        ageMissing,
+        ageInvalid,
+        lifeMissing,
+        ethnicMissing,
+        ethnicOtherMissing,
+        count,
+        bannerCount,
+    };
 };
 
 const AddDetailsBasicPage = () => {
@@ -204,6 +230,35 @@ const AddDetailsBasicPage = () => {
         });
     };
 
+    const handleGoBack = () => {
+        if (phValue !== undefined && phValue !== null) {
+            const trimmedOtherForState = String(ethnicOtherText ?? "")
+                .trim()
+                .slice(0, 50);
+            const hasOtherChip = Array.isArray(ethnicBackground)
+                ? ethnicBackground.includes(ETHNIC_OTHER_OPTION)
+                : false;
+            const ethnicForState = Array.isArray(ethnicBackground)
+                ? buildEthnicBackgroundsForSubmit(ethnicBackground, ethnicOtherText)
+                : [];
+
+            writeBasicFormSnapshot(phValue, timestamp, {
+                age,
+                lifeStage,
+                ethnicBackground: ethnicForState,
+                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+            });
+            writeAddDetailsDraft(phValue, timestamp, {
+                age,
+                lifeStage,
+                ethnicBackground: ethnicForState,
+                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+            });
+            writeActiveResultMeta({ phValue, timestamp });
+        }
+        navigate(-1);
+    };
+
     return (
         <>
             <div className={styles.content} data-scroll-container>
@@ -235,7 +290,7 @@ const AddDetailsBasicPage = () => {
                             />
                         </div>
                         {basicValidationVisible &&
-                            basicSectionIssues.count > 0 && (
+                            (basicSectionIssues.bannerCount ?? basicSectionIssues.count) > 0 && (
                                 <div
                                     ref={errorTextWrapRef}
                                     className={styles.errorTextWrap}
@@ -248,9 +303,9 @@ const AddDetailsBasicPage = () => {
                                         <InfoCircle />
                                     </div>
                                     <p className={styles.errorText}>
-                                        {basicSectionIssues.count === 1
+                                        {(basicSectionIssues.bannerCount ?? basicSectionIssues.count) === 1
                                             ? "1 section still needs a selection"
-                                            : basicSectionIssues.count === 2
+                                            : (basicSectionIssues.bannerCount ?? basicSectionIssues.count) === 2
                                                 ? "2 sections still need a selection"
                                                 : "3 sections still need a selection"}
                                     </p>
@@ -264,7 +319,7 @@ const AddDetailsBasicPage = () => {
                     >
                         Next
                     </Button>
-                    <ButtonReverse onClick={() => navigate("/result")}>Go back</ButtonReverse>
+                    <ButtonReverse onClick={handleGoBack}>Go back</ButtonReverse>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
                             We respect your privacy. Only you can save and see your results.

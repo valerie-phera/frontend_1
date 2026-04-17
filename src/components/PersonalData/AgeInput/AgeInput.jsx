@@ -3,49 +3,47 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./AgeInput.module.css";
 
 const MAX_AGE = 120;
-const MIN_AGE = 1;
+const MIN_AGE = 18;
 
-const AgeInput = ({ age, onChange, showHeadingError = false }) => {
+const ERROR_TEXT = "Please enter an age between 18-120";
+
+const AgeInput = ({
+    age,
+    onChange,
+    showHeadingError = false,
+    showError = false,
+}) => {
     const [localAge, setLocalAge] = useState(age ?? "");
-    const [warning, setWarning] = useState("");
+    const [error, setError] = useState("");
+    const [touched, setTouched] = useState(false);
 
     useEffect(() => {
         setLocalAge(age ?? "");
     }, [age]);
 
+    const validate = (valueStr) => {
+        if (valueStr === "") return "";
+        const value = Number(valueStr);
+        if (Number.isNaN(value)) return ERROR_TEXT;
+        if (value < MIN_AGE || value > MAX_AGE) return ERROR_TEXT;
+        return "";
+    };
+
     const handleChange = (e) => {
         const raw = e.target.value;
         setLocalAge(raw);
-        setWarning("");
-        onChange(raw === "" ? "" : Number(raw));
+        // Don't validate while typing; validate on blur / submit.
+        setError("");
+        onChange(raw === "" ? "" : raw);
     };
 
-    const validateAndFix = (valueStr) => {
-        if (valueStr === "") {
-            setWarning("");
-            return;
-        }
-
-        let value = Number(valueStr);
-        if (Number.isNaN(value)) {
-            setWarning("Please enter a valid number");
-            return;
-        }
-
-        if (value < MIN_AGE) value = MIN_AGE;
-        if (value > MAX_AGE) value = MAX_AGE;
-
-        onChange(value);
-        setLocalAge(String(value));
-
-        if (value < 10) {
-            setWarning("Please double-check your age.");
-        } else if (value > 90) {
-            setWarning("Is the age correct?");
-        } else {
-            setWarning("");
-        }
+    const handleBlur = (e) => {
+        setTouched(true);
+        setError(validate(e.target.value));
     };
+
+    const showInlineError = (touched && !!error) || showError;
+    const inlineErrorText = error || (showError ? ERROR_TEXT : "");
 
     return (
         <div className={styles.wrap}>
@@ -61,16 +59,20 @@ const AgeInput = ({ age, onChange, showHeadingError = false }) => {
                 type="number"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={styles.input}
+                className={`${styles.input} ${
+                    showInlineError ? styles.inputError : ""
+                }`}
                 placeholder="Enter your age"
                 value={localAge}
                 onChange={handleChange}
-                onBlur={(e) => validateAndFix(e.target.value)}
+                onBlur={handleBlur}
                 min={MIN_AGE}
                 max={MAX_AGE}
             />
 
-            {warning && <p className={styles.warn}>{warning}</p>}
+            {showInlineError && inlineErrorText && (
+                <p className={styles.warn}>{inlineErrorText}</p>
+            )}
         </div>
     );
 };
