@@ -47,6 +47,11 @@ const HormoneTherapyPage = () => {
     const showDoubleYellowCrumbs =
         state?.fertilityJourneyFlow === "toHormoneTherapy" ||
         state?.birthControlFlow === "toHormoneTherapy";
+    const stepLabel =
+        state?.fertilityJourneyFlow === "toHormoneTherapy" ||
+        state?.birthControlFlow === "toHormoneTherapy"
+        ? "Step 5 of 5 - Hormones therapy (optional)"
+        : "Step 4 of 4 - Hormones therapy (optional)";
 
     const handleSubmit = async () => {
         const nextState = { ...state, hormoneTherapy };
@@ -84,7 +89,7 @@ const HormoneTherapyPage = () => {
                             )}
                         </div>
                         <div className={basicStyles.step}>
-                            Step 4 of 4 - Hormones therapy (optional)
+                            {stepLabel}
                         </div>
                         <div className={basicStyles.heading}>
                             <h1 className={basicStyles.title}>Hormone therapy</h1>

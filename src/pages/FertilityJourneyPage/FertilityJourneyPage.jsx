@@ -47,6 +47,9 @@ const FertilityJourneyPage = () => {
     const flow = state?.fertilityJourneyFlow ?? "submit";
     const primaryButtonLabel = flow === "toHormoneTherapy" ? "Next" : "Submit";
     const showExtraCrumb = flow === "toHormoneTherapy";
+    const stepLabel = showExtraCrumb
+        ? "Step 4 of 5 - Fertility treatment (optional)"
+        : "Step 4 of 4 - Fertility (optional)";
 
     const handlePrimary = async () => {
         const nextState = { ...state, fertilityJourney };
@@ -87,7 +90,7 @@ const FertilityJourneyPage = () => {
                             {showExtraCrumb && <div className={basicStyles.item}></div>}
                         </div>
                         <div className={basicStyles.step}>
-                            Step 4 of 4 - Fertility (optional)
+                            {stepLabel}
                         </div>
                         <div className={basicStyles.heading}>
                             <h1 className={basicStyles.title}>Your fertility journey</h1>

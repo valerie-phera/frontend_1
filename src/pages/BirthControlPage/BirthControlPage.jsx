@@ -50,6 +50,10 @@ const BirthControlPage = () => {
             : "Submit";
     const showExtraCrumb =
         flow === "toHormoneTherapy" || flow === "toFertilityJourney";
+    const stepLabel =
+        flow === "toHormoneTherapy"
+            ? "Step 4 of 5 - Birth control (optional)"
+            : "Step 4 of 4 - Birth control (optional)";
 
     const handlePrimary = async () => {
         const nextState = { ...state, birthControl };
@@ -96,7 +100,7 @@ const BirthControlPage = () => {
                             {showExtraCrumb && <div className={basicStyles.item}></div>}
                         </div>
                         <div className={basicStyles.step}>
-                            Step 4 of 4 - Birth control (optional)
+                            {stepLabel}
                         </div>
                         <div className={basicStyles.heading}>
                             <h1 className={basicStyles.title}>Birth control</h1>
