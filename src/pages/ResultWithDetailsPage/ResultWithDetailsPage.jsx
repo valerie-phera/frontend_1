@@ -306,7 +306,7 @@ const ResultWithDetailsPage = () => {
                     </div>
                 </Container>
                 <BottomBlock>
-                    <Button >Finish test</Button>
+                    <Button onClick={() => navigate("/test-complete")}>Finish test</Button>
                     <div className={styles.btns}>
                         <Button onClick={onExportClick} >Export results</Button>
                         <Button onClick={handleImportClick}>Import results</Button>

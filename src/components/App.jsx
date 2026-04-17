@@ -17,7 +17,9 @@ import NextStepsFertilityTreatmentPage from "../pages/NextStepsPage/NextStepsFer
 import NextStepsBirthControlPage from "../pages/NextStepsPage/NextStepsBirthControlPage/NextStepsBirthControlPage";
 import NextStepsBirthControlHormoneTherapyPage from "../pages/NextStepsPage/NextStepsBirthControlHormoneTherapyPage/NextStepsBirthControlHormoneTherapyPage";
 import NextStepsBirthControlFertilityTreatmentPage from "../pages/NextStepsPage/NextStepsBirthControlFertilityTreatmentPage/NextStepsBirthControlFertilityTreatmentPage";
+
 import AnalyzingData from "../pages/AnalyzingData/AnalyzingData";
+import TestCompletePage from "../pages/TestCompletePage/TestCompletePage";
 
 import BeginTestPage from "../pages/BeginTestPage/BeginTestPage";
 import CameraViewPage from "../pages/CameraViewPage/CameraViewPage";
@@ -73,6 +75,7 @@ function App() {
         <Route path="/add-details/next-steps/birth-control-fertility-treatment" element={<AppLayout><NextStepsBirthControlFertilityTreatmentPage /></AppLayout>} />
 
         <Route path="/analyzing-data" element={<AppLayout><AnalyzingData /></AppLayout>} />
+        <Route path="/test-complete" element={<AppLayout><TestCompletePage /></AppLayout>} />
 
         <Route path="/begin-test" element={<AppLayout><BeginTestPage /></AppLayout>} />
         <Route path="/camera-view" element={<CameraViewPage />} />
