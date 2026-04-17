@@ -7,20 +7,20 @@ import ButtonReverse from "../../../components/ButtonReverse/ButtonReverse";
 
 import basicStyles from "../NextStepsPage.module.css";
 
-const NextStepsBirthControlFertilityTreatmentPage = () => {
+const NextStepsFertilityTreatmentHormoneTherapyPage = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
     return (
         <>
             <NextStepsPage
-                lockedItems={["Birth control", "Fertility treatment"]}
+                lockedItems={["Fertility treatment", "Hormone therapy"]}
                 totalSteps={5}
             />
             <BottomBlock>
                 <Button
                     onClick={() =>
-                        navigate("/add-details/paths/birth-control", {
-                            state: { ...state, birthControlFlow: "toFertilityJourney" },
+                        navigate("/add-details/paths/fertility-journey", {
+                            state: { ...state, fertilityJourneyFlow: "toHormoneTherapy" },
                         })
                     }
                 >
@@ -42,5 +42,5 @@ const NextStepsBirthControlFertilityTreatmentPage = () => {
     );
 };
 
-export default NextStepsBirthControlFertilityTreatmentPage;
+export default NextStepsFertilityTreatmentHormoneTherapyPage;
 

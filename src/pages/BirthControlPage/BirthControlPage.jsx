@@ -48,6 +48,8 @@ const BirthControlPage = () => {
         flow === "toHormoneTherapy" || flow === "toFertilityJourney"
             ? "Next"
             : "Submit";
+    const showExtraCrumb =
+        flow === "toHormoneTherapy" || flow === "toFertilityJourney";
 
     const handlePrimary = async () => {
         const nextState = { ...state, birthControl };
@@ -91,6 +93,7 @@ const BirthControlPage = () => {
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColoredYellow}></div>
+                            {showExtraCrumb && <div className={basicStyles.item}></div>}
                         </div>
                         <div className={basicStyles.step}>
                             Step 4 of 4 - Birth control (optional)

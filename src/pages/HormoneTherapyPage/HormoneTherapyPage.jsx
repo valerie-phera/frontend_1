@@ -44,6 +44,10 @@ const HormoneTherapyPage = () => {
             : [],
     }));
 
+    const showDoubleYellowCrumbs =
+        state?.fertilityJourneyFlow === "toHormoneTherapy" ||
+        state?.birthControlFlow === "toHormoneTherapy";
+
     const handleSubmit = async () => {
         const nextState = { ...state, hormoneTherapy };
         writeAddDetailsDraft(phValue, timestamp, { hormoneTherapy });
@@ -75,6 +79,9 @@ const HormoneTherapyPage = () => {
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColoredYellow}></div>
+                            {showDoubleYellowCrumbs && (
+                                <div className={basicStyles.itemColoredYellow}></div>
+                            )}
                         </div>
                         <div className={basicStyles.step}>
                             Step 4 of 4 - Hormones therapy (optional)

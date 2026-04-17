@@ -16,7 +16,7 @@ import NextStepsHormoneTherapyPage from "../pages/NextStepsPage/NextStepsHormone
 import NextStepsFertilityTreatmentPage from "../pages/NextStepsPage/NextStepsFertilityTreatmentPage/NextStepsFertilityTreatmentPage";
 import NextStepsBirthControlPage from "../pages/NextStepsPage/NextStepsBirthControlPage/NextStepsBirthControlPage";
 import NextStepsBirthControlHormoneTherapyPage from "../pages/NextStepsPage/NextStepsBirthControlHormoneTherapyPage/NextStepsBirthControlHormoneTherapyPage";
-import NextStepsBirthControlFertilityTreatmentPage from "../pages/NextStepsPage/NextStepsBirthControlFertilityTreatmentPage/NextStepsBirthControlFertilityTreatmentPage";
+import NextStepsFertilityTreatmentHormoneTherapyPage from "../pages/NextStepsPage/NextStepsFertilityTreatmentHormoneTherapyPage/NextStepsFertilityTreatmentHormoneTherapyPage";
 
 import AnalyzingData from "../pages/AnalyzingData/AnalyzingData";
 import TestCompletePage from "../pages/TestCompletePage/TestCompletePage";
@@ -72,7 +72,7 @@ function App() {
         <Route path="/add-details/next-steps/fertility-treatment" element={<AppLayout><NextStepsFertilityTreatmentPage /></AppLayout>} />
         <Route path="/add-details/next-steps/birth-control" element={<AppLayout><NextStepsBirthControlPage /></AppLayout>} />
         <Route path="/add-details/next-steps/birth-control-hormone-therapy" element={<AppLayout><NextStepsBirthControlHormoneTherapyPage /></AppLayout>} />
-        <Route path="/add-details/next-steps/birth-control-fertility-treatment" element={<AppLayout><NextStepsBirthControlFertilityTreatmentPage /></AppLayout>} />
+        <Route path="/add-details/next-steps/birth-control-fertility-treatment" element={<AppLayout><NextStepsFertilityTreatmentHormoneTherapyPage /></AppLayout>} />
 
         <Route path="/analyzing-data" element={<AppLayout><AnalyzingData /></AppLayout>} />
         <Route path="/test-complete" element={<AppLayout><TestCompletePage /></AppLayout>} />

@@ -44,11 +44,20 @@ const FertilityJourneyPage = () => {
             : [],
     }));
 
-    const handleSubmit = async () => {
+    const flow = state?.fertilityJourneyFlow ?? "submit";
+    const primaryButtonLabel = flow === "toHormoneTherapy" ? "Next" : "Submit";
+    const showExtraCrumb = flow === "toHormoneTherapy";
+
+    const handlePrimary = async () => {
         const nextState = { ...state, fertilityJourney };
         writeAddDetailsDraft(phValue, timestamp, { fertilityJourney });
         writeActiveResultMeta({ phValue, timestamp });
         writePendingAnalysis({ phValue, timestamp, startedAt: Date.now() });
+
+        if (flow === "toHormoneTherapy") {
+            navigate("/add-details/paths/hormone-therapy", { state: nextState });
+            return;
+        }
 
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
@@ -75,6 +84,7 @@ const FertilityJourneyPage = () => {
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColored}></div>
                             <div className={basicStyles.itemColoredYellow}></div>
+                            {showExtraCrumb && <div className={basicStyles.item}></div>}
                         </div>
                         <div className={basicStyles.step}>
                             Step 4 of 4 - Fertility (optional)
@@ -98,10 +108,10 @@ const FertilityJourneyPage = () => {
 
                 <BottomBlock>
                     <Button
-                        onClick={handleSubmit}
+                        onClick={handlePrimary}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Submitting…" : "Submit"}
+                        {isSubmitting ? "Submitting…" : primaryButtonLabel}
                     </Button>
                     <ButtonReverse
                         onClick={handleGoBack}
