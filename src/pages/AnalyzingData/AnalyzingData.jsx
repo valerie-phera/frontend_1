@@ -58,7 +58,7 @@ const AnalyzingData = () => {
     const [retryToken, setRetryToken] = useState(0);
     const [progress, setProgress] = useState(0);
     // 0..3 = index of current "in-progress" item, 4 = all done
-    const [stepIndex, setStepIndex] = useState(1);
+    const [stepIndex, setStepIndex] = useState(0);
 
     const activeMeta = readActiveResultMeta();
     const pending = readPendingAnalysis();
@@ -139,7 +139,7 @@ const AnalyzingData = () => {
         setStatus("loading");
         setErrorText("");
         setProgress(0);
-        setStepIndex(1);
+        setStepIndex(0);
 
         (async () => {
             try {
@@ -171,6 +171,7 @@ const AnalyzingData = () => {
                 );
 
                 clearPendingAnalysis();
+                setProgress(100);
                 // Ensure the last step flips to "done" before navigation.
                 setStepIndex(4);
                 await new Promise((resolve) => window.requestAnimationFrame(resolve));
@@ -235,11 +236,11 @@ const AnalyzingData = () => {
 
         // Строго без промежуточных значений: 0 → 30 → 50 → 75 → 100
         const steps = [
-            { ms: 0, v: 0, step: 1 }, // Reviewing...
-            { ms: 2_000, v: 30, step: 2 }, // Matching...
-            { ms: 4_000, v: 50, step: 3 }, // Building...
-            { ms: 6_000, v: 75, step: 3 },
-            { ms: 8_000, v: 100, step: 3 }, // Keep spinning last until backend resolves
+            { ms: 0, v: 0, step: 0 }, // 0%: 1st item spins
+            { ms: 2_000, v: 30, step: 1 }, // 30%: 1st done, 2nd spins
+            { ms: 4_000, v: 50, step: 2 }, // 50%: 2nd done, 3rd spins
+            { ms: 6_000, v: 75, step: 3 }, // 75%: 3rd done, 4th spins
+            { ms: 8_000, v: 99, step: 3 }, // 99%: keep 4th spinning until backend resolves
         ];
 
         const ids = steps.map((s) =>

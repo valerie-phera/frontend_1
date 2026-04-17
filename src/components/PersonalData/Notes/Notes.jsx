@@ -20,8 +20,7 @@ const Notes = ({ notes, setNotes }) => {
       // Collapse spaces/tabs, without touching line breaks
       .replace(/[ \t]+/g, " ")
       // Limit multiple blank lines
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+      .replace(/\n{3,}/g, "\n\n");
 
     return normalized.slice(0, 500);
   };
