@@ -16,6 +16,7 @@ import { clearPendingAnalysis, readPendingAnalysis } from "../../shared/utils/pe
 import { getInterpretation } from "../../shared/utils/getInterpretation";
 
 const MIN_WAIT_MS = 8_000;
+const BACKEND_TIMEOUT_MS = 90_000;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -56,6 +57,8 @@ const AnalyzingData = () => {
     const [errorText, setErrorText] = useState("");
     const [retryToken, setRetryToken] = useState(0);
     const [progress, setProgress] = useState(0);
+    // 0..3 = index of current "in-progress" item, 4 = all done
+    const [stepIndex, setStepIndex] = useState(1);
 
     const activeMeta = readActiveResultMeta();
     const pending = readPendingAnalysis();
@@ -136,14 +139,24 @@ const AnalyzingData = () => {
         setStatus("loading");
         setErrorText("");
         setProgress(0);
+        setStepIndex(1);
 
         (async () => {
             try {
                 const payload = buildPayload();
                 const minWaitMs = Math.max(0, MIN_WAIT_MS - (Date.now() - startedAt));
 
-                const [backendResponse] = await Promise.all([
+                const backendPromise = Promise.race([
                     analyzePh(payload),
+                    sleep(BACKEND_TIMEOUT_MS).then(() => {
+                        throw new Error(
+                            "Analysis is taking longer than expected. Please try again."
+                        );
+                    }),
+                ]);
+
+                const [backendResponse] = await Promise.all([
+                    backendPromise,
                     sleep(minWaitMs),
                 ]);
                 if (cancelled) return;
@@ -158,6 +171,11 @@ const AnalyzingData = () => {
                 );
 
                 clearPendingAnalysis();
+                // Ensure the last step flips to "done" before navigation.
+                setStepIndex(4);
+                await new Promise((resolve) => window.requestAnimationFrame(resolve));
+                await sleep(1_000);
+                if (cancelled) return;
                 navigate("/result-with-details", {
                     state: {
                         ...state,
@@ -217,21 +235,48 @@ const AnalyzingData = () => {
 
         // Строго без промежуточных значений: 0 → 30 → 50 → 75 → 100
         const steps = [
-            { ms: 0, v: 0 },
-            { ms: 2_000, v: 30 },
-            { ms: 4_000, v: 50 },
-            { ms: 6_000, v: 75 },
-            { ms: 8_000, v: 100 },
+            { ms: 0, v: 0, step: 1 }, // Reviewing...
+            { ms: 2_000, v: 30, step: 2 }, // Matching...
+            { ms: 4_000, v: 50, step: 3 }, // Building...
+            { ms: 6_000, v: 75, step: 3 },
+            { ms: 8_000, v: 100, step: 3 }, // Keep spinning last until backend resolves
         ];
 
         const ids = steps.map((s) =>
             window.setTimeout(() => {
                 setProgress(s.v);
+                setStepIndex(s.step);
             }, s.ms)
         );
 
         return () => ids.forEach((id) => window.clearTimeout(id));
     }, [status, retryToken]);
+
+    const renderItemIcon = (index) => {
+        if (stepIndex > index) {
+            return (
+                <div className={styles.itemIcon}>
+                    <CheckIcon_16 />
+                </div>
+            );
+        }
+
+        if (stepIndex === index) {
+            return (
+                <div className={styles.itemIconRotation}>
+                    <CheckCircle />
+                </div>
+            );
+        }
+
+        return <div className={styles.itemIconGray}></div>;
+    };
+
+    const getItemTextClass = (index) => {
+        if (stepIndex > index) return styles.itemTxt;
+        if (stepIndex === index) return styles.itemTxtProcessing;
+        return styles.itemTxtGray;
+    };
 
     return (
         <>
@@ -263,20 +308,20 @@ const AnalyzingData = () => {
                         </div>
                         <ul className={styles.elements}>
                             <li className={styles.item}>
-                                <div className={styles.itemIcon}><CheckIcon_16 /></div>
-                                <div className={styles.itemTxt}>pH value recorded</div>
+                                {renderItemIcon(0)}
+                                <div className={getItemTextClass(0)}>pH value recorded</div>
                             </li>
                             <li className={styles.item}>
-                                <div className={styles.itemIconRotation}><CheckCircle /></div>
-                                <div className={styles.itemTxtProcessing}>Reviewing your details</div>
+                                {renderItemIcon(1)}
+                                <div className={getItemTextClass(1)}>Reviewing your details</div>
                             </li>
                             <li className={styles.item}>
-                                <div className={styles.itemIconGray}></div>
-                                <div className={styles.itemTxtGray}>Matching to research data</div>
+                                {renderItemIcon(2)}
+                                <div className={getItemTextClass(2)}>Matching to research data</div>
                             </li>
                             <li className={styles.item}>
-                                <div className={styles.itemIconGray}></div>
-                                <div className={styles.itemTxtGray}>Building your tailored report</div>
+                                {renderItemIcon(3)}
+                                <div className={getItemTextClass(3)}>Building your tailored report</div>
                             </li>
                         </ul>
                     </div>

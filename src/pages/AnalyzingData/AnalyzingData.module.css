@@ -85,16 +85,17 @@
 }
 
 .greenArea {
-    width: 0px;
+    width: var(--progress, 0%);
     height: 9px;
     border-radius: 100px;
     background: linear-gradient(to right, #00343D, #5DAAB2);
-    animation: analyzingFill 8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     z-index: 1;
 
     position: absolute;
     left: 0;
     top: 0;
+
+    transition: width 250ms linear;
 }
 
 .greyArea {
