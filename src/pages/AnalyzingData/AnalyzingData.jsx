@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import analyzingDataImg from "../../assets/images/analyzingDataImg.png"
 
@@ -15,7 +15,7 @@ import { readActiveResultMeta } from "../../shared/utils/activeResultSessionStor
 import { clearPendingAnalysis, readPendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 import { getInterpretation } from "../../shared/utils/getInterpretation";
 
-const MIN_WAIT_MS = 6_000;
+const MIN_WAIT_MS = 8_000;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -55,6 +55,7 @@ const AnalyzingData = () => {
     const [status, setStatus] = useState("idle"); // idle | loading | error
     const [errorText, setErrorText] = useState("");
     const [retryToken, setRetryToken] = useState(0);
+    const [progress, setProgress] = useState(0);
 
     const activeMeta = readActiveResultMeta();
     const pending = readPendingAnalysis();
@@ -62,7 +63,8 @@ const AnalyzingData = () => {
     const phValue = state?.phValue ?? pending?.phValue ?? activeMeta?.phValue;
     const timestamp = state?.timestamp ?? pending?.timestamp ?? activeMeta?.timestamp;
 
-    const startedAt = pending?.startedAt ?? Date.now();
+    const startedAtRef = useRef(pending?.startedAt ?? Date.now());
+    const startedAt = pending?.startedAt ?? startedAtRef.current;
 
     const draft = useMemo(
         () => readAddDetailsDraft(phValue, timestamp),
@@ -133,6 +135,7 @@ const AnalyzingData = () => {
         let cancelled = false;
         setStatus("loading");
         setErrorText("");
+        setProgress(0);
 
         (async () => {
             try {
@@ -207,7 +210,28 @@ const AnalyzingData = () => {
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [phValue, timestamp, startedAt, retryToken, navigate]);
+    }, [phValue, timestamp, retryToken, navigate]);
+
+    useEffect(() => {
+        if (status !== "loading") return;
+
+        // Строго без промежуточных значений: 0 → 30 → 50 → 75 → 100
+        const steps = [
+            { ms: 0, v: 0 },
+            { ms: 2_000, v: 30 },
+            { ms: 4_000, v: 50 },
+            { ms: 6_000, v: 75 },
+            { ms: 8_000, v: 100 },
+        ];
+
+        const ids = steps.map((s) =>
+            window.setTimeout(() => {
+                setProgress(s.v);
+            }, s.ms)
+        );
+
+        return () => ids.forEach((id) => window.clearTimeout(id));
+    }, [status, retryToken]);
 
     return (
         <>
@@ -228,11 +252,14 @@ const AnalyzingData = () => {
                     <div className={styles.reviewingBlock}>
                         <div className={styles.reviewingHeadingWrap}>
                             <div className={styles.reviewingHeading}>Reviewing your details...</div>
-                            <div className={styles.reviewingValue}>30%</div>
+                            <div className={styles.reviewingValue}>{progress}%</div>
                         </div>
-                        <div className={styles.scale}>
+                        <div
+                            className={styles.scale}
+                            style={{ "--progress": `${progress}%` }}
+                        >
                             <div className={styles.greyArea}></div>
-                            <div className={styles.greenArea}></div>
+                            <div key={retryToken} className={styles.greenArea}></div>
                         </div>
                         <ul className={styles.elements}>
                             <li className={styles.item}>
@@ -240,7 +267,7 @@ const AnalyzingData = () => {
                                 <div className={styles.itemTxt}>pH value recorded</div>
                             </li>
                             <li className={styles.item}>
-                                <div className={styles.itemIcon}><CheckCircle /></div>
+                                <div className={styles.itemIconRotation}><CheckCircle /></div>
                                 <div className={styles.itemTxtProcessing}>Reviewing your details</div>
                             </li>
                             <li className={styles.item}>
