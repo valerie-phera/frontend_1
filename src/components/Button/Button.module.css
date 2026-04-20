@@ -19,6 +19,11 @@
     border: none;
 }
 
+.btn:disabled {
+    background-color: #D5D7DA;
+    cursor: not-allowed;
+}
+
 .btn:disabled:hover {
     background-color: #D5D7DA;
 }

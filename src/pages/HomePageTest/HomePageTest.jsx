@@ -1,14 +1,24 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import homeImg from "../../assets/images/homeImg.png"
 
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import ImageWrapper from "../../components/ImageWrapper/ImageWrapper";
+import BottomBlock from "../../components/BottomBlock/BottomBlock";
 
 import styles from "./HomePageTest.module.css";
 
 const HomePageTest = () => {
     const navigate = useNavigate();
+    const [isConfirmed, setIsConfirmed] = useState(false);
+
+    const checkboxId = useMemo(() => "home-age-confirm", []);
+
+    const handleContinue = () => {
+        if (!isConfirmed) return;
+        navigate("/result");
+    };
 
     return (
         <>
@@ -20,18 +30,43 @@ const HomePageTest = () => {
                         </div>
                     </div>
                     <div className={styles.textBlock}>
-                        <div className={styles.greeting}>DATA PRIVACY</div>
-                        <h1 className={styles.heading}>Your health data is yours.</h1>
+                        <div className={styles.greeting}>PRIVACY & SECURITY</div>
+                        <h1 className={styles.heading}>Before we begin</h1>
                         <p className={styles.text}>
-                            We built pHera to be a safe space. Your personal details are completely confidential, encrypted, and protected by European GDPR standards.
+                            This service processes health-related information and is intended only for users aged 18 and over.
                         </p>
-                    </div>
-                    <div className={styles.btnsBlock}>
-                        <Button onClick={() => navigate("/result")}>Continue</Button>
-                        <div className={styles.privPolicy}> <a href="#">Privacy policy</a></div>
-                        <div className={styles.bottomText}><p>We respect your privacy. Only you can save and see your results.</p> </div>
+                        <label className={styles.checkBlock} htmlFor={checkboxId}>
+                            <div className={styles.input}>
+                                <input
+                                    id={checkboxId}
+                                    type="checkbox"
+                                    checked={isConfirmed}
+                                    onChange={(e) => setIsConfirmed(e.target.checked)}
+                                />
+                            </div>
+                            <div className={styles.checkBlockText}>I confirm that I am <span>at least 18 years old.</span></div>
+                        </label>
+                        <div className={styles.infoBox}>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoPunkt}></div>
+                                <div className={styles.infoText}>By continuing you agree to pHera processing your health data as described in the next screen.</div>
+                            </div>
+                            <div className={styles.infoItem}>
+                                <div className={styles.infoPunkt}></div>
+                                <div className={styles.infoText}>You may use this service anonymously. No account is required.</div>
+                            </div>
+                        </div>
                     </div>
                 </Container>
+                <BottomBlock>
+                    <div className={styles.btnsBlock}>
+                        <Button onClick={handleContinue} disabled={!isConfirmed}>
+                            Continue
+                        </Button>
+                        {/* <div className={styles.privPolicy}> <a href="#">Privacy policy</a></div> */}
+                        <div className={styles.bottomText}><p>You must confirm your age before proceeding.</p> </div>
+                    </div>
+                </BottomBlock>
             </div>
         </>
     )
