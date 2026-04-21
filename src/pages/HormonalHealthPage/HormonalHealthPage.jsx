@@ -234,14 +234,6 @@ const HormonalHealthPage = () => {
                                     sectionIssues.menstrualMissing
                                 }
                             />
-                            <HormoneDiagnoses
-                                hormoneDiagnoses={hormoneDiagnoses}
-                                onChange={handleDiagnosesChange}
-                                showHeadingError={
-                                    validationVisible &&
-                                    sectionIssues.diagnosesMissing
-                                }
-                            />
                             <CurrentMedications
                                 currentMedications={currentMedications}
                                 onChange={handleMedicationsChange}
@@ -251,6 +243,14 @@ const HormonalHealthPage = () => {
                                 }
                                 disabledItems={
                                     isBirthControlDisabled ? ["Birth control"] : []
+                                }
+                            />
+                                   <HormoneDiagnoses
+                                hormoneDiagnoses={hormoneDiagnoses}
+                                onChange={handleDiagnosesChange}
+                                showHeadingError={
+                                    validationVisible &&
+                                    sectionIssues.diagnosesMissing
                                 }
                             />
                         </div>
