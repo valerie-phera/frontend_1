@@ -17,7 +17,7 @@ const HomePageTest = () => {
 
     const handleContinue = () => {
         if (!isConfirmed) return;
-        navigate("/result");
+        navigate("/privacy-and-consent");
     };
 
     return (
@@ -63,7 +63,6 @@ const HomePageTest = () => {
                         <Button onClick={handleContinue} disabled={!isConfirmed}>
                             Continue
                         </Button>
-                        {/* <div className={styles.privPolicy}> <a href="#">Privacy policy</a></div> */}
                         <div className={styles.bottomText}><p>You must confirm your age before proceeding.</p> </div>
                     </div>
                 </BottomBlock>

@@ -4,6 +4,7 @@ import AppLayout from "./Layout/AppLayout";
 import ScrollToTop from "./ScrollToTop/ScrollToTop";
 import HomePage from "../pages/HomePage/HomePage";
 import HomePageTest from "../pages/HomePageTest/HomePageTest";
+import PrivacyAndConsentPage from "../pages/PrivacyAndConsentPage/PrivacyAndConsentPage";
 import ResultPageTest from "../pages/ResultPageTest/ResultPageTest";
 import AddDetailsBasicPage from "../pages/AddDetailsBasicPage/AddDetailsBasicPage";
 import HormonalHealthPage from "../pages/HormonalHealthPage/HormonalHealthPage";
@@ -58,6 +59,8 @@ function App() {
       <Routes>
         {/* <Route path="/" element={<HomePage />} /> */}
         <Route path="/" element={<AppLayout><HomePageTest /></AppLayout>} />
+        <Route path="/privacy-and-consent" element={<AppLayout><PrivacyAndConsentPage /></AppLayout>} />
+
         <Route path="/result" element={<AppLayout><ResultPageTest /></AppLayout>} />
 
         <Route path="/add-details/basic" element={<AppLayout><AddDetailsBasicPage /></AppLayout>} />
