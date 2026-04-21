@@ -212,6 +212,11 @@
     word-break: break-word;
 }
 
+.bracketRef {
+    color: #2F8E96;
+    font-weight: 600;
+}
+
 .wrapText {
     display: flex;
     flex-direction: column;
@@ -221,28 +226,80 @@
 .quotesBlock {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin-top: 14px;
 }
 
-.quoteItem {
+.citationItem {
     display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #D5D7DA;
 }
 
-.quoteText {
+.citationItem:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.citationNumber {
     font-size: 14px;
+    color: #2F8E96;
+    line-height: 1.3;
+    flex: 0 0 auto;
+}
+
+.citationContent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.citationTitle {
+    font-size: 14px;
+    font-weight: 600;
     color: #1F1F1F;
     line-height: 1.3;
     overflow-wrap: anywhere;
     word-break: break-word;
 }
 
-.quoteTitle {
-    font-weight: 700;
+.citationText {
+    font-size: 14px;
+    color: #414651;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
-.quoteDash {
-    font-weight: 400;
+.citationJournal {
+    font-style: italic;
+    font-size: 14px;
+    color: #000000;
+}
+
+.citationLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.citationLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #2F8E96;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.citationLinkIcon {
+    flex: 0 0 auto;
 }
 
 .text {
@@ -255,7 +312,7 @@
     position: relative;
     min-width: 7px;
     height: 7px;
-    background-color: #006D5B;
+    background-color: #6F988F;
     border-radius: 50%;
     top: 5px;
 }
@@ -270,6 +327,12 @@
     color: #1F1F1F;
     font-size: 16px;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.recommendationsIcon {
+    margin-right: 8px;
 }
 
 .arrow {

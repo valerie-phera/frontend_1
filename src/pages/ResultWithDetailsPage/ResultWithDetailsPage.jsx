@@ -11,6 +11,9 @@ import DownloadIcon from "../../assets/icons/DownloadIcon";
 import ShareIcon from "../../assets/icons/ShareIcon";
 import InfoCircle_24 from "../../assets/icons/InfoCircle_24";
 import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
+import RecomendationsIcon from "../../assets/icons/RecomendationsIcon";
+import CitationsIcon from "../../assets/icons/CitationsIcon";
+import ArrowUpLink from "../../assets/icons/ArrowUpLink";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
@@ -40,23 +43,85 @@ const SCALE_GRADIENT = `linear-gradient(90deg, ${SCALE_SEGMENT_COLORS.map((c, i)
     return `${c} ${a}% ${b}%`;
 }).join(", ")})`;
 
+const extractCitationLinks = (rawText) => {
+    const text = String(rawText ?? "");
+
+    const doiMatch = text.match(/doi:\s*([^\s,;]+)/i);
+    const pmidMatch = text.match(/PMID:\s*([A-Za-z0-9]+)/i);
+    const pmcidMatch =
+        text.match(/PMCID:\s*([A-Za-z0-9]+)/i) ||
+        text.match(/PubMed Central PMCID:\s*([A-Za-z0-9]+)/i);
+
+    const links = [];
+    if (doiMatch?.[1]) links.push(`doi:${doiMatch[1]}`);
+    if (pmidMatch?.[1]) links.push(`PMID:${pmidMatch[1]}`);
+    if (pmcidMatch?.[1]) links.push(`PMCID:${pmcidMatch[1]}`);
+
+    let main = text;
+    main = main.replace(/doi:\s*[^\s,;]+/gi, "");
+    main = main.replace(/PMID:\s*[A-Za-z0-9]+/gi, "");
+    main = main.replace(/PMCID:\s*[A-Za-z0-9]+/gi, "");
+    main = main.replace(/PubMed Central PMCID:\s*[A-Za-z0-9]+/gi, "");
+
+    // cleanup duplicated punctuation/spaces after stripping
+    main = main.replace(/\s{2,}/g, " ").replace(/\s+\./g, ".").trim();
+
+    return { mainText: main, links };
+};
+
+const splitCitationTitleAndBody = (rawText) => {
+    const { mainText, links } = extractCitationLinks(rawText);
+    const parts = mainText.split(". ").map((p) => p.trim()).filter(Boolean);
+
+    // typical format: "Authors. Title. Journal. Year ..."
+    const title = parts[1] ? parts[1].replace(/\.$/, "") : mainText;
+    const body = parts.length > 2 ? parts.slice(2).join(". ").trim() : "";
+
+    return { title, body, links };
+};
+
+const renderWithItalicJournal = (text) => {
+    const s = String(text ?? "");
+    if (!s) return null;
+
+    // Most citations look like: "<Journal>. <Year> ..."
+    // Italicize the first segment before the first ". "
+    const parts = s.split(". ");
+    if (parts.length < 2) return s;
+
+    const journal = (parts[0] ?? "").trim();
+    const rest = parts.slice(1).join(". ").trim();
+
+    // Avoid italicizing long fragments if parsing failed
+    if (!journal || journal.length > 60) return s;
+
+    return (
+        <>
+            <span className={styles.citationJournal}>{journal}</span>
+            {rest ? `.${" "}${rest}` : "."}
+        </>
+    );
+};
+
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
-    const [isOpen, setIsOpen] = useState(true);
+    const [citationsOpen, setCitationsOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
     const { state } = useLocation();
     const phValue = state?.phValue;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
-    const { lead: interpretationLead, suffix: interpretationSuffix } = getInterpretationParts(
+    const backendInterpretation = state?.interpretation;
+    const { lead: computedLead, suffix: computedSuffix } = getInterpretationParts(
         phLevel,
         Number(phValue).toFixed(2)
     );
-    const interpretation = `${interpretationLead}${interpretationSuffix}`;
+    const interpretationLead = backendInterpretation ? String(backendInterpretation) : computedLead;
+    const interpretationSuffix = backendInterpretation ? "" : computedSuffix;
+    const interpretation = backendInterpretation ? String(backendInterpretation) : `${computedLead}${computedSuffix}`;
     const currentRecommendations = state?.recommendations;
     const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
-    const contentRef = useRef(null);
     const scaleRef = useRef(null);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
 
@@ -82,6 +147,13 @@ const ResultWithDetailsPage = () => {
         }
     }, [state, navigate]);
 
+    useEffect(() => {
+        // Данные на эту страницу приходят через navigate(..., { state })
+        console.log("[ResultWithDetailsPage] payload (location.state):", state);
+        console.log("[ResultWithDetailsPage] recommendations:", state?.recommendations);
+        console.log("[ResultWithDetailsPage] `citations`:", state?.citations);
+    }, [state]);
+
     const detailOptions = useDetailsFromState(state);
     const detailsList = detailOptions.map((item, idx) => (
         <div key={`${item}-${idx}`} className={styles.item}>{item}</div>
@@ -97,8 +169,8 @@ const ResultWithDetailsPage = () => {
     const cleaned = Array.isArray(currentRecommendations)
         ? currentRecommendations.join("\n\n")
         : (currentRecommendations || "")
-            .replace(/\[\d+(?:\s*,\s*\d+)*\]/g, "")
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\[[^\]]+\]/g, (m) => `<span class="${styles.bracketRef}">${m}</span>`);
 
     const paragraphs = cleaned      //converts text with paragraphs into an array of individual paragraphs
         .split(/\n\s*\n/)  // by double line break
@@ -109,8 +181,11 @@ const ResultWithDetailsPage = () => {
         ? rawCitations
             .map((c) => {
                 if (!c || typeof c !== "object") return null;
+                // Backend can send either:
+                // - { title, relevant_section } (old)
+                // - { id, reference_citation } (current)
                 const title = c.title;
-                const text = c.relevant_section;
+                const text = c.relevant_section ?? c.reference_citation;
                 if (!title && !text) return null;
                 return {
                     title: title == null ? "" : String(title),
@@ -136,7 +211,7 @@ const ResultWithDetailsPage = () => {
             <div className={styles.content} data-scroll-container>
                 <Container>
                     <div className={styles.containerInner}>
-                        <h1 className={styles.title}>Your pH result</h1>
+                        <h1 className={styles.title}>Your full pH result</h1>
                         <div className={styles.visualBlock}>
                             <div className={styles.visualBlockTop}>
                                 <PhBadge level={phLevel} />
@@ -257,22 +332,10 @@ const ResultWithDetailsPage = () => {
                                 </div>
                             </div>
                             <div className={styles.recommendations}>
-                                <div className={styles.wrapHeading} onClick={() => setIsOpen(!isOpen)}>
-                                    <h3 className={styles.heading}>Recommendations</h3>
-                                    <span className={`${styles.arrow} ${!isOpen ? styles.arrowOpen : ""}`}>
-                                        <ArrowDownGrey />
-                                    </span>
+                                <div className={styles.wrapHeading}>
+                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon}/> Personalised tailored insights</h3>
                                 </div>
-                                <div
-                                    ref={contentRef}
-                                    className={styles.wrapText}
-                                    style={{
-                                        maxHeight: isOpen ? 5000 : 0,
-                                        opacity: isOpen ? 1 : 0,
-                                        overflow: "hidden",
-                                        transition: "max-height 0.35s ease, opacity 0.35s ease"
-                                    }}
-                                >
+                                <div className={styles.wrapText}>
                                     {paragraphs.map((rec, index) => (
                                         <div key={index} className={styles.text}>
                                             <div className={styles.point}></div>
@@ -282,26 +345,58 @@ const ResultWithDetailsPage = () => {
                                             />
                                         </div>
                                     ))}
-
-                                    {citations.length > 0 && (
-                                        <div className={styles.quotesBlock}>
-                                            {citations.map((q, index) => (
-                                                <div key={index} className={styles.quoteItem}>
-                                                    <p className={styles.quoteText}>
-                                                        {q.title ? (
-                                                            <>
-                                                                <span className={styles.quoteTitle}>{q.title}</span>
-                                                                <span className={styles.quoteDash}> — </span>
-                                                            </>
-                                                        ) : null}
-                                                        <span>{q.text}</span>
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
+                            {citations.length > 0 && (
+                                <div className={styles.recommendations}>
+                                    <div className={styles.wrapHeading} onClick={() => setCitationsOpen((v) => !v)}>
+                                        <h3 className={styles.heading}>
+                                            <CitationsIcon className={styles.recommendationsIcon} /> Research sources
+                                        </h3>
+                                        <span className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}>
+                                            <ArrowDownGrey />
+                                        </span>
+                                    </div>
+                                    <div
+                                        className={styles.wrapText}
+                                        style={{
+                                            maxHeight: citationsOpen ? 5000 : 0,
+                                            opacity: citationsOpen ? 1 : 0,
+                                            overflow: "hidden",
+                                            transition: "max-height 0.35s ease, opacity 0.35s ease"
+                                        }}
+                                    >
+                                        <div className={styles.quotesBlock}>
+                                            {citations.map((q, index) => {
+                                                const { title, body, links } = splitCitationTitleAndBody(q.text);
+                                                return (
+                                                    <div key={index} className={styles.citationItem}>
+                                                        <div className={styles.citationNumber}>{index + 1}.</div>
+                                                        <div className={styles.citationContent}>
+                                                            <div className={styles.citationTitle}>{title}</div>
+                                                            {body ? (
+                                                                <div className={styles.citationText}>
+                                                                    {renderWithItalicJournal(body)}
+                                                                </div>
+                                                            ) : null}
+                                                            {links.length > 0 ? (
+                                                                <div className={styles.citationLinks}>
+                                                                    {links.map((l) => (
+                                                                        <span key={l} className={styles.citationLink}>
+                                                                            <span>{l}</span>
+                                                                            <ArrowUpLink className={styles.citationLinkIcon} />
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Container>
