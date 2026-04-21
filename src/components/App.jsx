@@ -5,6 +5,8 @@ import ScrollToTop from "./ScrollToTop/ScrollToTop";
 import HomePage from "../pages/HomePage/HomePage";
 import HomePageTest from "../pages/HomePageTest/HomePageTest";
 import PrivacyAndConsentPage from "../pages/PrivacyAndConsentPage/PrivacyAndConsentPage";
+import HowItWorksPage from "../pages/HowItWorksPage/HowItWorksPage";
+
 import ResultPageTest from "../pages/ResultPageTest/ResultPageTest";
 import AddDetailsBasicPage from "../pages/AddDetailsBasicPage/AddDetailsBasicPage";
 import HormonalHealthPage from "../pages/HormonalHealthPage/HormonalHealthPage";
@@ -60,6 +62,7 @@ function App() {
         {/* <Route path="/" element={<HomePage />} /> */}
         <Route path="/" element={<AppLayout><HomePageTest /></AppLayout>} />
         <Route path="/privacy-and-consent" element={<AppLayout><PrivacyAndConsentPage /></AppLayout>} />
+        <Route path="/how-it-works" element={<AppLayout><HowItWorksPage /></AppLayout>} />
 
         <Route path="/result" element={<AppLayout><ResultPageTest /></AppLayout>} />
 

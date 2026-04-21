@@ -21,7 +21,7 @@ const PrivacyAndConsentPage = () => {
 
     const handleContinue = () => {
         if (!isCoreConsent) return;
-        navigate("/result");
+        navigate("/how-it-works");
     };
 
     return (
@@ -46,7 +46,7 @@ const PrivacyAndConsentPage = () => {
                                             onChange={(e) => setIsCoreConsent(e.target.checked)}
                                         />
                                     </div>
-                                    <div className={styles.text}>I agree to the processing of my health-related data (such as pH value and any information I choose to provide) to generate personalised, evidence-based health insights.</div>
+                                    <p className={styles.text}>I agree to the processing of my health-related data (such as pH value and any information I choose to provide) to generate personalised, evidence-based health insights.</p>
                                 </label>
                                 <div className={styles.line}></div>
                             </div>
@@ -56,10 +56,11 @@ const PrivacyAndConsentPage = () => {
                                     <div className={styles.headerText}>2. Technical Processing (Required)*</div>
                                 </div>
                                 <div className={styles.textWrap}>
-                                    <div className={`${styles.text} ${styles.narrow}`}>
+                                    <p className={`${styles.text} ${styles.narrow}`}>
                                         We use limited technical data (timestamps and system logs) to ensure the service works correctly and securely. This data is not used to identify you.
-                                    </div>
+                                    </p>
                                 </div>
+                                <div className={styles.textGray}>Automatically applied - no action needed.</div>
                                 <div className={styles.line}></div>
                             </div>
                             <div className={styles.item}>
@@ -76,7 +77,7 @@ const PrivacyAndConsentPage = () => {
                                             onChange={(e) => setIsAnalyticsConsent(e.target.checked)}
                                         />
                                     </div>
-                                    <div className={styles.text}>I agree to the use of my anonymised data to improve the service</div>
+                                    <p className={styles.text}>I agree to the use of my anonymised data to improve the service</p>
                                 </label>
                             </div>
                         </div>

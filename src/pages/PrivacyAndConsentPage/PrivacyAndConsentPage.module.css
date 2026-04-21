@@ -44,12 +44,23 @@
 .headerText {
     font-size: 18px;
     font-weight: 600;
-     font-family: 'Cooper Hewitt', sans-serif;
+    font-family: 'Cooper Hewitt', sans-serif;
+    color: var(--main-color-secondary);
 }
 
 .textWrap {
     display: flex;
+    /* flex-direction: column; */
     align-items: flex-start;
+}
+
+.textGray {
+    max-width: 322px;
+    margin-left: 31px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #717680;
+    margin-bottom: 6px;
 }
 
 .checkBlock {
@@ -120,7 +131,7 @@
 }
 
 .line {
-border: 1px solid #D5D7DA;
+    border: 1px solid #D5D7DA;
 }
 
 
