@@ -17,6 +17,15 @@
     transform: translateZ(0);
 }
 
+@media (min-width: 768px) {
+    .wrapLogo {
+        position: sticky;
+        width: 100%;
+        left: auto;
+        right: auto;
+    }
+}
+
 .logo {
     width: 61px;
     height: 23px;

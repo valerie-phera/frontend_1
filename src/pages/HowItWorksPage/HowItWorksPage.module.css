@@ -48,8 +48,8 @@
 .headerText {
     font-size: 18px;
     font-weight: 600;
-     font-family: 'Cooper Hewitt', sans-serif;
-         color: var(--main-color-secondary);
+    font-family: 'Cooper Hewitt', sans-serif;
+    color: var(--main-color-secondary);
 }
 
 .textWrap {
@@ -68,7 +68,7 @@
 }
 
 .line {
-border: 1px solid #D5D7DA;
+    border: 1px solid #D5D7DA;
 }
 
 .bottomText {

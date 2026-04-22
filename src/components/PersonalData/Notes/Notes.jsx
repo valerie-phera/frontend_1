@@ -54,9 +54,14 @@ const Notes = ({ notes, setNotes }) => {
     <div className={styles.wrap} ref={containerRef}>
       <div className={styles.heading}>
         <h4 className={styles.title}>Notes</h4>
-        <div onClick={() => setIsEditing(true)} className={styles.edit}>
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className={styles.edit}
+          aria-label="Edit notes"
+        >
           <EditNotes />
-        </div>
+        </button>
       </div>
 
       {isEditing ? (

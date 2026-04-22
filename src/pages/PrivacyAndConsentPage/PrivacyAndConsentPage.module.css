@@ -65,6 +65,23 @@
 .checkBlock {
     cursor: pointer;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .checkBlock {
+        transition: opacity 120ms ease, transform 120ms ease;
+        touch-action: manipulation;
+    }
+
+    .checkBlock:active {
+        opacity: 0.72;
+        transform: scale(0.99);
+    }
+}
+
+.checkBlockStill {
+    -webkit-tap-highlight-color: transparent;
 }
 
 .input {

@@ -75,6 +75,7 @@
     background: transparent;
     cursor: pointer;
     flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .actionsInner:focus-visible {
@@ -132,12 +133,35 @@
     border: none;
     cursor: pointer;
     flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .plus:disabled,
 .minus:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .actionsInner,
+    .plus,
+    .minus {
+        transition: opacity 120ms ease, transform 120ms ease;
+        touch-action: manipulation;
+    }
+
+    .actionsInner:active,
+    .plus:active,
+    .minus:active {
+        opacity: 0.72;
+        transform: scale(0.99);
+    }
+
+    .plus:disabled:active,
+    .minus:disabled:active {
+        opacity: 0.35;
+        transform: none;
+    }
 }
 
 .date {

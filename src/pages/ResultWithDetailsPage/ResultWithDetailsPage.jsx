@@ -229,9 +229,14 @@ const ResultWithDetailsPage = () => {
                                             <InfoCircle_24 />
                                         </span>
                                     </button>
-                                    <div className={styles.actionsInner} onClick={handleImportClick}>
+                                    <button
+                                        type="button"
+                                        className={styles.actionsInner}
+                                        onClick={handleImportClick}
+                                        aria-label="Import results"
+                                    >
                                         <DownloadIcon />
-                                    </div>
+                                    </button>
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -239,9 +244,14 @@ const ResultWithDetailsPage = () => {
                                         style={{ display: "none" }}
                                         onChange={handleFileUpload}
                                     />
-                                    <div className={styles.actionsInner} onClick={onExportClick}>
+                                    <button
+                                        type="button"
+                                        className={styles.actionsInner}
+                                        onClick={onExportClick}
+                                        aria-label="Share results"
+                                    >
                                         <ShareIcon />
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
                             <div className={styles.num}>{Number(phValue).toFixed(2)}</div>
@@ -349,14 +359,19 @@ const ResultWithDetailsPage = () => {
                             </div>
                             {citations.length > 0 && (
                                 <div className={styles.recommendations}>
-                                    <div className={styles.wrapHeading} onClick={() => setCitationsOpen((v) => !v)}>
+                                    <button
+                                        type="button"
+                                        className={styles.wrapHeadingButton}
+                                        onClick={() => setCitationsOpen((v) => !v)}
+                                        aria-expanded={citationsOpen}
+                                    >
                                         <h3 className={styles.heading}>
                                             <CitationsIcon className={styles.recommendationsIcon} /> Research sources
                                         </h3>
                                         <span className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}>
                                             <ArrowDownGrey />
                                         </span>
-                                    </div>
+                                    </button>
                                     <div
                                         className={styles.wrapText}
                                         style={{

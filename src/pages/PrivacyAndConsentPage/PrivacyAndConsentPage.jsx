@@ -68,7 +68,7 @@ const PrivacyAndConsentPage = () => {
                                     <div className={styles.headerIcon}><ChartIcon /></div>
                                     <div className={styles.headerText}>3. Analytics (Optional)</div>
                                 </div>
-                                <label className={`${styles.textWrap} ${styles.checkBlock}`} htmlFor={analyticsConsentId}>
+                                <label className={`${styles.textWrap} ${styles.checkBlock} ${styles.checkBlockStill}`} htmlFor={analyticsConsentId}>
                                     <div className={styles.input}>
                                         <input
                                             id={analyticsConsentId}

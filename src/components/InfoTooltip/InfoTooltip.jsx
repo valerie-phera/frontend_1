@@ -36,12 +36,15 @@ const InfoTooltip = ({
     if (iconOnly) {
         return (
             <div className={styles.wrap} ref={ref}>
-                <div
+                <button
+                    type="button"
                     className={styles.infoCircle}
                     onClick={() => setOpen((v) => !v)}
+                    aria-expanded={open}
+                    aria-label="Toggle info"
                 >
                     <InfoCircle />
-                </div>
+                </button>
 
                 {open && (
                     <div
@@ -59,19 +62,30 @@ const InfoTooltip = ({
     // Default tooltip mode: title + optional info icon + arrow indicator
     return (
         <div className={styles.wrap} ref={ref}>
-            <div className={styles.wrapTitle} onClick={onToggle}>
+            <div
+                className={styles.wrapTitle}
+                role="button"
+                tabIndex={0}
+                onClick={onToggle}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") onToggle?.(e);
+                }}
+            >
                 <h4 className={styles.title}>{title}</h4>
 
                 {children && (
-                    <div
+                    <button
+                        type="button"
                         className={styles.infoCircle}
                         onClick={(e) => {
                             e.stopPropagation();
                             setOpen((v) => !v);
                         }}
+                        aria-expanded={open}
+                        aria-label="Toggle info"
                     >
                         <InfoCircle />
-                    </div>
+                    </button>
                 )}
 
                 {(showErrorCircle || showArrow) && (

@@ -1,0 +1,62 @@
+.viewport {
+  width: 100%;
+}
+
+/* Mobile: keep the app as-is */
+.shell {
+  display: none;
+}
+
+.screen {
+  width: 100%;
+}
+
+/* Desktop/tablet: center "phone" on the page */
+@media (min-width: 768px) {
+  .viewport {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    position: relative;
+  }
+
+  .shell {
+    display: block;
+    position: absolute;
+    width: 410px;
+    height: 852px;
+    filter: drop-shadow(0 22px 60px rgba(0, 0, 0, 0.22));
+    pointer-events: none;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .frame {
+    width: 410px;
+    height: 852px;
+    display: block;
+  }
+
+  .screen {
+    position: absolute;
+    width: 382px;
+    height: 824px;
+    border-radius: 44px;
+    overflow: hidden;
+    background: var(--main-background-color);
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Make app scroll inside the "screen" */
+  .screen {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+

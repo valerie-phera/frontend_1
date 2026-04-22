@@ -201,9 +201,14 @@ const ResultPageTest = () => {
                                             <InfoCircle_24 />
                                         </span>
                                     </button>
-                                    <div className={styles.actionsInner} onClick={handleImportClick}>
+                                    <button
+                                        type="button"
+                                        className={styles.actionsInner}
+                                        onClick={handleImportClick}
+                                        aria-label="Import results"
+                                    >
                                         <DownloadIcon />
-                                    </div>
+                                    </button>
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -211,9 +216,14 @@ const ResultPageTest = () => {
                                         style={{ display: "none" }}
                                         onChange={handleFileUpload}
                                     />
-                                    <div className={styles.actionsInner} onClick={onExportClick}>
+                                    <button
+                                        type="button"
+                                        className={styles.actionsInner}
+                                        onClick={onExportClick}
+                                        aria-label="Share results"
+                                    >
                                         <ShareIcon />
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
                             <div className={styles.numWrap}>

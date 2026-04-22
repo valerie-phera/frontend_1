@@ -14,11 +14,36 @@ const BurgerMenu = ({ isMenuOpen, onClose }) => {
     return (
         <div className={`${styles.overlay} ${isMenuOpen ? styles.open : ""}`} onClick={onClose}>
             <ul onClick={(e) => e.stopPropagation()}>
-                <li className={styles.item} onClick={() => goTo("/home/complete")}><span>Home</span><ArrowRightBlack /></li>
-                <li className={styles.item} onClick={() => goTo("/test-history")}><span>Test history</span><ArrowRightBlack /></li>
-                <li className={styles.item} onClick={() => goTo("/health-library")}><span>Health library</span><ArrowRightBlack /></li>
-                <li className={styles.item} onClick={() => goTo("/trend-preview")}><span>Trend preview</span><ArrowRightBlack /></li>
-                <li className={styles.item} onClick={() => goTo("/profile")}><span>Profile</span><ArrowRightBlack /></li>
+                <li className={styles.item}>
+                    <button type="button" className={styles.itemBtn} onClick={() => goTo("/home/complete")}>
+                        <span>Home</span>
+                        <ArrowRightBlack />
+                    </button>
+                </li>
+                <li className={styles.item}>
+                    <button type="button" className={styles.itemBtn} onClick={() => goTo("/test-history")}>
+                        <span>Test history</span>
+                        <ArrowRightBlack />
+                    </button>
+                </li>
+                <li className={styles.item}>
+                    <button type="button" className={styles.itemBtn} onClick={() => goTo("/health-library")}>
+                        <span>Health library</span>
+                        <ArrowRightBlack />
+                    </button>
+                </li>
+                <li className={styles.item}>
+                    <button type="button" className={styles.itemBtn} onClick={() => goTo("/trend-preview")}>
+                        <span>Trend preview</span>
+                        <ArrowRightBlack />
+                    </button>
+                </li>
+                <li className={styles.item}>
+                    <button type="button" className={styles.itemBtn} onClick={() => goTo("/profile")}>
+                        <span>Profile</span>
+                        <ArrowRightBlack />
+                    </button>
+                </li>
             </ul>
         </div>
     );

@@ -11,12 +11,18 @@
     color: #FFFFFF;
     border: none;
     transition: background-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
     background-color: var(--main-color);
     color: #fff;
     border: none;
+}
+
+.btn:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
 }
 
 .btn:disabled {
@@ -26,4 +32,21 @@
 
 .btn:disabled:hover {
     background-color: #D5D7DA;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        transition: background-color 0.2s, opacity 120ms ease, transform 120ms ease;
+        touch-action: manipulation;
+    }
+
+    .btn:active {
+        opacity: 0.72;
+        transform: scale(0.99);
+    }
+
+    .btn:disabled:active {
+        opacity: 1;
+        transform: none;
+    }
 }

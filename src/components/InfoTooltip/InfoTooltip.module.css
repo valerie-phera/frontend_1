@@ -5,6 +5,7 @@
     position: relative;
     cursor: pointer;
     width: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .wrapTitleTrailing {
@@ -75,6 +76,10 @@
     display: flex;
     align-items: center;
     color: #A4A7AE;
+    border: none;
+    background: transparent;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .errorCircle {
