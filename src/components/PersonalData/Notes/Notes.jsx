@@ -3,10 +3,99 @@ import EditNotes from "../../../assets/icons/EditNotes";
 
 import styles from "./Notes.module.css";
 
+const getScrollParent = (el) => {
+  let node = el;
+  while (node && node !== document.body) {
+    if (node instanceof HTMLElement) {
+      const style = window.getComputedStyle(node);
+      const overflowY = style.overflowY;
+      const canScroll =
+        (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+        node.scrollHeight > node.clientHeight + 1;
+      if (canScroll) return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+};
+
+const scrollRootToBottom = (behavior = "auto") => {
+  const docEl = document.documentElement;
+  const body = document.body;
+  const rootScroller = document.scrollingElement || docEl;
+  if (!docEl || !body || !rootScroller) return;
+
+  const maxScrollHeight = Math.max(
+    body.scrollHeight,
+    docEl.scrollHeight,
+    rootScroller.scrollHeight
+  );
+
+  // Try multiple scroll targets (mobile Safari/Chrome differ).
+  const top = Math.max(0, maxScrollHeight);
+  window.scrollTo({ top, behavior });
+  body.scrollTop = top;
+  docEl.scrollTop = top;
+  rootScroller.scrollTo({ top, behavior });
+};
+
 const Notes = ({ notes, setNotes }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    let cancelled = false;
+    const scrollAllToBottom = () => {
+      const anchor = containerRef.current;
+      const textarea = textareaRef.current;
+      if (!anchor || !textarea) return;
+
+      const scrollContainer = getScrollParent(anchor);
+      const scrollToBottom = (el) => {
+        const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
+        // Direct assignment is more reliable on mobile than smooth scrolling.
+        el.scrollTop = maxTop;
+      };
+
+      // 1) Desktop: scroll inside DeviceFrame ".screen"
+      if (scrollContainer) scrollToBottom(scrollContainer);
+
+      // 2) Mobile: scroll root document scroller
+      scrollRootToBottom("auto");
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+
+        scrollAllToBottom();
+
+        // On mobile, focusing too early can cancel the scroll.
+        window.setTimeout(() => {
+          if (cancelled) return;
+          scrollAllToBottom();
+          window.setTimeout(() => {
+            if (cancelled) return;
+            const el = textareaRef.current;
+            if (!el) return;
+            // Avoid browser auto-scrolling on focus (mobile)
+            try {
+              el.focus({ preventScroll: true });
+            } catch {
+              el.focus();
+            }
+          }, 120);
+        }, 80);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditing]);
 
   const sanitizeNotes = (value) => {
     const raw = String(value ?? "");
@@ -56,7 +145,16 @@ const Notes = ({ notes, setNotes }) => {
         <h4 className={styles.title}>Notes</h4>
         <button
           type="button"
-          onClick={() => setIsEditing(true)}
+          onClick={() => {
+            setIsEditing((prev) => {
+              const next = !prev;
+              if (next) {
+                // Run immediately in the click handler (works reliably on mobile)
+                scrollRootToBottom("auto");
+              }
+              return next;
+            });
+          }}
           className={styles.edit}
           aria-label="Edit notes"
         >

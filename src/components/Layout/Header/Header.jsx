@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import Logo from "../../../assets/Logo";
+import logo from "../../../assets/logo.svg";
 import BurgerButton from "./BurgerButton/BurgerButton";
 import ArrowLeft from "../../../assets/icons/ArrowLeft";
 import styles from "./Header.module.css";
@@ -27,7 +27,8 @@ const Header = ({ variant = "guest", onBurgerClick, isMenuOpen, showBack = false
                 )}
 
                 <Link to="/" className={styles.logo}>
-                    <Logo />
+                 <img src={logo} alt="pHera logo" width={61} height={24} />
+                    {/* <Logo /> */}
                 </Link>
             </div>
         </header>

@@ -6,6 +6,13 @@
     padding-top: 56px;
 }
 
+@media (min-width: 768px) {
+    .content {
+        padding-top: 0;
+        min-height: 100%;
+    }
+}
+
 .containerInner {
     display: flex;
     flex-direction: column;

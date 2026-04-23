@@ -124,6 +124,10 @@ const ResultWithDetailsPage = () => {
     const { handleExport } = useExportResults();
     const scaleRef = useRef(null);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
+    const pageRef = useRef(null);
+    const citationsContentRef = useRef(null);
+    const citationsScrollPendingRef = useRef(false);
+    const citationsBlockRef = useRef(null);
 
     const handleImportedData = (data) => {
         console.log("📥 Импортировано:", data);
@@ -146,6 +150,14 @@ const ResultWithDetailsPage = () => {
             navigate("/result-without-details");
         }
     }, [state, navigate]);
+
+    const toggleCitations = () => {
+        setCitationsOpen((v) => {
+            const next = !v;
+            if (next) citationsScrollPendingRef.current = true;
+            return next;
+        });
+    };
 
     useEffect(() => {
         // Данные на эту страницу приходят через navigate(..., { state })
@@ -208,7 +220,7 @@ const ResultWithDetailsPage = () => {
 
     return (
         <>
-            <div className={styles.content} data-scroll-container>
+            <div ref={pageRef} className={styles.content} data-scroll-container>
                 <Container>
                     <div className={styles.containerInner}>
                         <h1 className={styles.title}>Your full pH result</h1>
@@ -358,27 +370,47 @@ const ResultWithDetailsPage = () => {
                                 </div>
                             </div>
                             {citations.length > 0 && (
-                                <div className={styles.recommendations}>
-                                    <button
-                                        type="button"
-                                        className={styles.wrapHeadingButton}
-                                        onClick={() => setCitationsOpen((v) => !v)}
-                                        aria-expanded={citationsOpen}
-                                    >
+                                <div
+                                    ref={citationsBlockRef}
+                                    className={styles.recommendations}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={citationsOpen}
+                                    onClick={toggleCitations}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            toggleCitations();
+                                        }
+                                    }}
+                                >
+                                    <div className={styles.wrapHeadingButton}>
                                         <h3 className={styles.heading}>
                                             <CitationsIcon className={styles.recommendationsIcon} /> Research sources
                                         </h3>
                                         <span className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}>
                                             <ArrowDownGrey />
                                         </span>
-                                    </button>
+                                    </div>
                                     <div
-                                        className={styles.wrapText}
+                                        ref={citationsContentRef}
+                                        className={`${styles.wrapText} ${styles.citationsContent}`}
                                         style={{
                                             maxHeight: citationsOpen ? 5000 : 0,
                                             opacity: citationsOpen ? 1 : 0,
                                             overflow: "hidden",
                                             transition: "max-height 0.35s ease, opacity 0.35s ease"
+                                        }}
+                                        onTransitionEnd={(e) => {
+                                            if (e.propertyName !== "max-height") return;
+                                            if (!citationsOpen) return;
+                                            if (!citationsScrollPendingRef.current) return;
+                                            citationsScrollPendingRef.current = false;
+                                            (citationsBlockRef.current || citationsContentRef.current)?.scrollIntoView({
+                                                behavior: "smooth",
+                                                block: "start",
+                                                inline: "nearest",
+                                            });
                                         }}
                                     >
                                         <div className={styles.quotesBlock}>

@@ -19,6 +19,14 @@ body {
     background-color: var(--main-background-color);
 }
 
+/* Desktop/tablet: the app scrolls inside DeviceFrame ".screen" */
+@media (min-width: 768px) {
+    html,
+    body {
+        overflow: hidden;
+    }
+}
+
 /* Mobile tap feedback:
    - Remove the default tap highlight "flash"
    - Provide a custom, consistent pressed state

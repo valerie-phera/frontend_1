@@ -1,5 +1,6 @@
 import Frame from "../../../assets/images/Frame.jsx";
 import styles from "./DeviceFrame.module.css";
+import StatusBar from "./StatusBar.jsx";
 
 const DeviceFrame = ({ children }) => {
   return (
@@ -8,7 +9,10 @@ const DeviceFrame = ({ children }) => {
         <Frame className={styles.frame} />
       </div>
 
-      <div className={styles.screen}>{children}</div>
+      <div className={styles.screen}>
+        <StatusBar />
+        <div className={styles.screenContent}>{children}</div>
+      </div>
     </div>
   );
 };

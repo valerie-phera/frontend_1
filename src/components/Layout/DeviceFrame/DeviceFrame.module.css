@@ -11,6 +11,14 @@
   width: 100%;
 }
 
+.statusBar {
+  display: none;
+}
+
+.screenContent {
+  width: 100%;
+}
+
 /* Desktop/tablet: center "phone" on the page */
 @media (min-width: 768px) {
   .viewport {
@@ -42,7 +50,7 @@
 
   .screen {
     position: absolute;
-    width: 382px;
+    width: 393px;
     height: 824px;
     border-radius: 44px;
     overflow: hidden;
@@ -57,6 +65,73 @@
   .screen {
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  /* Hide scrollbar visuals inside the frame (keep scrolling) */
+  .screen {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
+  }
+
+  .screen::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .statusBar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    height: 51px;
+    padding-left: 50px;
+    background: #fff;
+  }
+
+  .statusBarLeft {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--main-color-secondary);
+    min-width: 36px;
+  }
+
+  .statusBarCenter {
+    display: flex;
+    align-items: center;
+    justify-content: right;
+    flex: 1;
+    max-width: 122px;
+    height: 36px;
+    background: #000;
+    border-radius: 50px;
+    margin-left: 43px;
+  }
+
+  .cameraEye {
+    width: 15px;
+    height: 15px;
+    background: #00000066;
+    border-radius: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+  }
+
+  .statusBarRight {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+  }
+
+  .statusBarRight svg {
+    max-height: 51px;
+  }
+
+  .screenContent {
+    width: 100%;
   }
 }
 
