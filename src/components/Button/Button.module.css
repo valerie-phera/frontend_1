@@ -42,7 +42,7 @@
 
     .btn:active {
         opacity: 0.72;
-        transform: scale(0.99);
+        transform: scale(0.98);
     }
 
     .btn:disabled:active {

@@ -42,6 +42,11 @@
     transform: translate(-50%, -50%);
   }
 
+  /* Ensure the decorative SVG frame never blocks clicks */
+  .shell * {
+    pointer-events: none;
+  }
+
   .frame {
     width: 410px;
     height: 852px;
@@ -59,6 +64,12 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+  }
+
+  /* Defensive: keep the app inside the screen clickable */
+  .screen,
+  .screenContent {
+    pointer-events: auto;
   }
 
   /* Make app scroll inside the "screen" */

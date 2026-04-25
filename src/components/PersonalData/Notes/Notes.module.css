@@ -4,11 +4,14 @@
     background-color: #FFFFFF;
     border-radius: 10px;
     width: 100%;
+    /* Keep the Notes block visible above sticky BottomBlock */
+    scroll-margin-bottom: 150px;
 }
 
 .heading {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 7px;
 }
 
 .title {
@@ -40,5 +43,6 @@
   font-size: 16px;
   resize: vertical; 
   padding: 8px;
+  scroll-margin-bottom: 150px;
 }
 

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import homeImg from "../../assets/images/homeImg.png"
-import homeWebP from "../../assets/images/homeWebP.webp"
+import homePageImg from "../../assets/images/homePageImg.webp"
 
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
@@ -27,7 +26,7 @@ const HomePageTest = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={homeWebP} alt="Home page img" width={243} height={249} />
+                            <ImageWrapper src={homePageImg} alt="Home page img"/>
                         </div>
                     </div>
                     <div className={styles.textBlock}>

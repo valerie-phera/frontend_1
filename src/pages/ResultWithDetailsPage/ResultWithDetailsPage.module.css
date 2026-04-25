@@ -84,9 +84,20 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.actionsInner:active {
+    opacity: 1;
+    transform: scale(1.12);
+}
+
 .actionsInner:focus-visible {
     outline: 2px solid var(--main-color, #263e3a);
     outline-offset: 2px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .actionsInner:active {
+        transform: scale(1.25);
+    }
 }
 
 .num {
@@ -204,12 +215,38 @@
     border-radius: 10px;
 }
 
+.sources {
+    padding: 20px 16px;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+}
+
 .recommendations[role="button"] {
     cursor: pointer;
     user-select: none;
 }
 
+.sources[role="button"] {
+    cursor: pointer;
+    user-select: none;
+}
+
+.recommendations[role="button"]:active {
+    background-color: #00343D0D;
+}
+
+.sources[role="button"]:active {
+    background-color: #00343D0D;
+}
+
 .recommendations[role="button"]:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+.sources[role="button"]:focus-visible {
     outline: 2px solid rgba(47, 142, 150, 0.35);
     outline-offset: 3px;
 }
@@ -251,6 +288,15 @@
     scroll-margin-top: 112px;
 }
 
+.sources[role="button"] {
+    scroll-margin-top: 112px;
+}
+
+/* `Sources` scroll target (header shouldn't hide under sticky bars) */
+.sources {
+    scroll-margin-top: 112px;
+}
+
 @media (max-width: 767px) {
     .citationsContent {
         /* Mobile: fixed header is ~56px */
@@ -258,6 +304,14 @@
     }
 
     .recommendations[role="button"] {
+        scroll-margin-top: 64px;
+    }
+
+    .sources[role="button"] {
+        scroll-margin-top: 64px;
+    }
+
+    .sources {
         scroll-margin-top: 64px;
     }
 }
@@ -367,12 +421,24 @@
     justify-content: space-between;
     cursor: pointer;
     width: 100%;
+    align-items: center;
+    position: relative;
 
     border: none;
     background: transparent;
     padding: 0;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
+}
+
+.wrapHeadingButton::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 44px;
+    transform: translateY(-50%);
 }
 
 .heading {
@@ -429,6 +495,56 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    position: relative;
+}
+
+.editBtn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+}
+
+.editBtn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background-color: #00343D0D;
+    opacity: 0;
+    transition: opacity 140ms ease, transform 140ms ease;
+    pointer-events: none;
+}
+
+.editBtn > * {
+    position: relative;
+    z-index: 1;
+}
+
+.editBtn:active {
+    transform: scale(0.99);
+}
+
+.editBtn:active::after {
+    opacity: 1;
+}
+
+.editBtn:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .editBtn:hover::after {
+        opacity: 1;
+    }
 }
 
 .btns {

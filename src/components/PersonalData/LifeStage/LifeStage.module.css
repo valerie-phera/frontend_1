@@ -38,6 +38,27 @@
     cursor: pointer;
 }
 
+.item:active,
+.itemSelected:active {
+    transform: scale(0.99);
+}
+
+.item:focus-visible,
+.itemSelected:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .item:hover {
+        background-color: #00343D0D;
+    }
+
+    .itemSelected:hover {
+        background-color: #00343D26;
+    }
+}
+
 .itemDisabled {
     padding: 8px 10px 9px;
     border: 1px solid #C9D3D6;

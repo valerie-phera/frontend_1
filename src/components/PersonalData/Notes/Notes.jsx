@@ -19,26 +19,6 @@ const getScrollParent = (el) => {
   return null;
 };
 
-const scrollRootToBottom = (behavior = "auto") => {
-  const docEl = document.documentElement;
-  const body = document.body;
-  const rootScroller = document.scrollingElement || docEl;
-  if (!docEl || !body || !rootScroller) return;
-
-  const maxScrollHeight = Math.max(
-    body.scrollHeight,
-    docEl.scrollHeight,
-    rootScroller.scrollHeight
-  );
-
-  // Try multiple scroll targets (mobile Safari/Chrome differ).
-  const top = Math.max(0, maxScrollHeight);
-  window.scrollTo({ top, behavior });
-  body.scrollTop = top;
-  docEl.scrollTop = top;
-  rootScroller.scrollTo({ top, behavior });
-};
-
 const Notes = ({ notes, setNotes }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
@@ -48,48 +28,37 @@ const Notes = ({ notes, setNotes }) => {
     if (!isEditing) return;
 
     let cancelled = false;
-    const scrollAllToBottom = () => {
+
+    const scrollNotesIntoView = () => {
       const anchor = containerRef.current;
-      const textarea = textareaRef.current;
-      if (!anchor || !textarea) return;
+      if (!anchor) return;
 
-      const scrollContainer = getScrollParent(anchor);
-      const scrollToBottom = (el) => {
-        const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-        // Direct assignment is more reliable on mobile than smooth scrolling.
-        el.scrollTop = maxTop;
-      };
-
-      // 1) Desktop: scroll inside DeviceFrame ".screen"
-      if (scrollContainer) scrollToBottom(scrollContainer);
-
-      // 2) Mobile: scroll root document scroller
-      scrollRootToBottom("auto");
+      // Scroll the nearest scroll container so the Notes block is visible.
+      // This is much more stable on real mobile browsers than trying to force "page bottom".
+      try {
+        anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
+      } catch {
+        // older browsers
+        const scroller = getScrollParent(anchor);
+        if (scroller) scroller.scrollTop = scroller.scrollHeight;
+      }
     };
 
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+      if (cancelled) return;
+      scrollNotesIntoView();
+
+      // Focus after scroll to avoid mobile browsers jumping unexpectedly.
+      window.setTimeout(() => {
         if (cancelled) return;
-
-        scrollAllToBottom();
-
-        // On mobile, focusing too early can cancel the scroll.
-        window.setTimeout(() => {
-          if (cancelled) return;
-          scrollAllToBottom();
-          window.setTimeout(() => {
-            if (cancelled) return;
-            const el = textareaRef.current;
-            if (!el) return;
-            // Avoid browser auto-scrolling on focus (mobile)
-            try {
-              el.focus({ preventScroll: true });
-            } catch {
-              el.focus();
-            }
-          }, 120);
-        }, 80);
-      });
+        const el = textareaRef.current;
+        if (!el) return;
+        try {
+          el.focus({ preventScroll: true });
+        } catch {
+          el.focus();
+        }
+      }, 120);
     });
 
     return () => {
@@ -148,10 +117,6 @@ const Notes = ({ notes, setNotes }) => {
           onClick={() => {
             setIsEditing((prev) => {
               const next = !prev;
-              if (next) {
-                // Run immediately in the click handler (works reliably on mobile)
-                scrollRootToBottom("auto");
-              }
               return next;
             });
           }}
@@ -169,7 +134,6 @@ const Notes = ({ notes, setNotes }) => {
           value={notes}
           maxLength={500}
           onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
-          autoFocus
         />
       ) : (
         <p className={styles.text}>

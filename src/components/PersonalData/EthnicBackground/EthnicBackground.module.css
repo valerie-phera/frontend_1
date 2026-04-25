@@ -25,6 +25,27 @@
     color: var(--main-color);
 }
 
+.item:active,
+.isemSelected:active {
+    transform: scale(0.99);
+}
+
+.item:focus-visible,
+.isemSelected:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .item:hover {
+        background-color: #00343D0D;
+    }
+
+    .isemSelected:hover {
+        background-color: #00343D26;
+    }
+}
+
 .isemSelected {
     display: flex;
     align-items: center;

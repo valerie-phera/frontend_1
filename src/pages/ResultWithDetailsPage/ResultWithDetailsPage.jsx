@@ -372,28 +372,28 @@ const ResultWithDetailsPage = () => {
                             {citations.length > 0 && (
                                 <div
                                     ref={citationsBlockRef}
-                                    className={styles.recommendations}
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-expanded={citationsOpen}
-                                    onClick={toggleCitations}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            toggleCitations();
-                                        }
-                                    }}
+                                    className={styles.sources}
                                 >
-                                    <div className={styles.wrapHeadingButton}>
+                                    <button
+                                        type="button"
+                                        className={styles.wrapHeadingButton}
+                                        aria-expanded={citationsOpen}
+                                        aria-controls="result-with-details-citations"
+                                        onClick={toggleCitations}
+                                    >
                                         <h3 className={styles.heading}>
                                             <CitationsIcon className={styles.recommendationsIcon} /> Research sources
                                         </h3>
-                                        <span className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}>
+                                        <span
+                                            className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}
+                                            aria-hidden
+                                        >
                                             <ArrowDownGrey />
                                         </span>
-                                    </div>
+                                    </button>
                                     <div
                                         ref={citationsContentRef}
+                                        id="result-with-details-citations"
                                         className={`${styles.wrapText} ${styles.citationsContent}`}
                                         style={{
                                             maxHeight: citationsOpen ? 5000 : 0,

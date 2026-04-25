@@ -15,6 +15,7 @@ const InfoTooltip = ({
 }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
+    const titleInteractive = typeof onToggle === "function";
 
     // Close tooltip when clicking outside the component
     useEffect(() => {
@@ -63,13 +64,17 @@ const InfoTooltip = ({
     return (
         <div className={styles.wrap} ref={ref}>
             <div
-                className={styles.wrapTitle}
-                role="button"
-                tabIndex={0}
-                onClick={onToggle}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") onToggle?.(e);
-                }}
+                className={`${styles.wrapTitle} ${titleInteractive ? styles.wrapTitleInteractive : ""}`}
+                {...(titleInteractive
+                    ? {
+                        role: "button",
+                        tabIndex: 0,
+                        onClick: onToggle,
+                        onKeyDown: (e) => {
+                            if (e.key === "Enter" || e.key === " ") onToggle?.(e);
+                        },
+                    }
+                    : {})}
             >
                 <h4 className={styles.title}>{title}</h4>
 

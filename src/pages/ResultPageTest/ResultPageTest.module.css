@@ -85,6 +85,10 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.actionsInner:active {
+    transform: scale(1.12);
+}
+
 .actionsInner:focus-visible {
     outline: 2px solid var(--main-color, #263e3a);
     outline-offset: 2px;
@@ -143,6 +147,18 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.plus:active,
+.minus:active {
+    opacity: 0.72;
+    transform: scale(0.95);
+}
+
+.plus:disabled:active,
+.minus:disabled:active {
+    opacity: 0.35;
+    transform: none;
+}
+
 .plus:disabled,
 .minus:disabled {
     opacity: 0.35;
@@ -150,6 +166,7 @@
 }
 
 @media (hover: none) and (pointer: coarse) {
+
     .actionsInner,
     .plus,
     .minus {
@@ -157,17 +174,8 @@
         touch-action: manipulation;
     }
 
-    .actionsInner:active,
-    .plus:active,
-    .minus:active {
-        opacity: 0.72;
-        transform: scale(0.99);
-    }
-
-    .plus:disabled:active,
-    .minus:disabled:active {
-        opacity: 0.35;
-        transform: none;
+    .actionsInner:active {
+        transform: scale(1.25);
     }
 }
 
