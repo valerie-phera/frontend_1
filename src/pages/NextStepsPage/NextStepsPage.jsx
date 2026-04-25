@@ -7,6 +7,7 @@ import Container from "../../components/Container/Container";
 import ImageWrapper from "../../components/ImageWrapper/ImageWrapper";
 
 import nextStepImg from "../../assets/images/nextStepImg.png";
+import nextStepPageImg from "../../assets/images/nextStepPageImg.webp";
 import CheckIcon_16 from "../../assets/icons/CheckIcon_16";
 import Lock_16 from "../../assets/icons/Lock_16";
 
@@ -54,16 +55,11 @@ const NextStepsPage = ({ lockedItems: lockedItemsProp, totalSteps: totalStepsPro
                             <div key={idx} className={basicStyles.item}></div>
                         ))}
                     </div>
-                    <div className={basicStyles.step}>Step 3 of {totalSteps}</div>
+                    <div className={styles.step}>Step 3 of {totalSteps}</div>
 
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper
-                                src={nextStepImg}
-                                alt="Next steps illustration"
-                                width={243}
-                                height={278}
-                            />
+                            <img src={nextStepPageImg} alt="Next steps illustration" />
                         </div>
                     </div>
 

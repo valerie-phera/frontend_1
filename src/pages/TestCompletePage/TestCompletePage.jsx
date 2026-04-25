@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import testCompleate from "../../assets/images/testCompleate.png"
+import completePageImg from "../../assets/images/completePageImg.webp"
 
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
@@ -17,7 +17,7 @@ const TestCompletePage = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={testCompleate} alt="Home page img" width={243} height={280} />
+                            <ImageWrapper src={completePageImg} alt="Home page img" width={243} height={280} />
                         </div>
                     </div>
                     <div className={styles.textBlock}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import analyzingDataImg from "../../assets/images/analyzingDataImg.png"
+import analyzingDataPageImg from "../../assets/images/analyzingDataPageImg.webp"
 
 import Container from "../../components/Container/Container";
 import ImageWrapper from "../../components/ImageWrapper/ImageWrapper";
@@ -285,7 +285,7 @@ const AnalyzingData = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={analyzingDataImg} alt="Analyzing Data Img" width={243} height={235} />
+                            <ImageWrapper src={analyzingDataPageImg} alt="Analyzing Data Img" width={243} height={235} />
                         </div>
                     </div>
                     <div className={styles.textBlock}>
