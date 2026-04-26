@@ -73,6 +73,23 @@ const HormonalHealthPage = () => {
         return lifeStage.some((x) => block.has(x));
     }, [lifeStage]);
 
+    const medicationHiddenItems = useMemo(
+        () => (isBirthControlDisabled ? ["Birth control"] : []),
+        [isBirthControlDisabled]
+    );
+
+    const medicationDisabledItems = useMemo(() => {
+        const selected = Array.isArray(currentMedications) ? currentMedications : [];
+        const hasBirthControl = selected.includes("Birth control");
+        const hasFertilityTreatment = selected.includes("Fertility treatment");
+
+        const disabled = new Set();
+        if (hasBirthControl) disabled.add("Fertility treatment");
+        if (hasFertilityTreatment) disabled.add("Birth control");
+
+        return Array.from(disabled);
+    }, [currentMedications, isBirthControlDisabled]);
+
     useEffect(() => {
         if (!isBirthControlDisabled) return;
         setCurrentMedications((prev) =>
@@ -144,12 +161,36 @@ const HormonalHealthPage = () => {
     const handleMedicationsChange = (value) => {
         setCurrentMedications((prev) => {
             const NONE = "None";
+            const BIRTH_CONTROL = "Birth control";
+            const FERTILITY_TREATMENT = "Fertility treatment";
 
             if (value === NONE) {
                 return prev.includes(NONE) ? [] : [NONE];
             }
 
             const withoutNone = prev.filter((x) => x !== NONE);
+
+            // Make these two options mutually exclusive.
+            if (value === BIRTH_CONTROL) {
+                if (withoutNone.includes(BIRTH_CONTROL)) {
+                    return withoutNone.filter((x) => x !== BIRTH_CONTROL);
+                }
+                return [
+                    ...withoutNone.filter((x) => x !== FERTILITY_TREATMENT),
+                    BIRTH_CONTROL,
+                ];
+            }
+
+            if (value === FERTILITY_TREATMENT) {
+                if (withoutNone.includes(FERTILITY_TREATMENT)) {
+                    return withoutNone.filter((x) => x !== FERTILITY_TREATMENT);
+                }
+                return [
+                    ...withoutNone.filter((x) => x !== BIRTH_CONTROL),
+                    FERTILITY_TREATMENT,
+                ];
+            }
+
             return withoutNone.includes(value)
                 ? withoutNone.filter((x) => x !== value)
                 : [...withoutNone, value];
@@ -241,9 +282,8 @@ const HormonalHealthPage = () => {
                                     validationVisible &&
                                     sectionIssues.medicationsMissing
                                 }
-                                disabledItems={
-                                    isBirthControlDisabled ? ["Birth control"] : []
-                                }
+                                disabledItems={medicationDisabledItems}
+                                hiddenItems={medicationHiddenItems}
                             />
                                    <HormoneDiagnoses
                                 hormoneDiagnoses={hormoneDiagnoses}

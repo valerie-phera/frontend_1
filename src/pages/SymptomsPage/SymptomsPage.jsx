@@ -178,20 +178,27 @@ const SymptomsPage = () => {
         const hasPeri = has(lifeStage, "Perimenopause");
         const hasMeno =
             has(lifeStage, "Menopause") || has(lifeStage, "Postmenopause");
-        const hasTrying = has(lifeStage, "Trying to conceive");
         const hasBirthControl = has(currentMedications, "Birth control");
+        const hasFertilityTreatment = has(currentMedications, "Fertility treatment");
 
         const nextPath = (() => {
+            // New rule:
+            // If neither Birth control nor Fertility treatment is selected on HormonalHealthPage,
+            // submit straight to analysis from Symptoms.
+            if (!hasBirthControl && !hasFertilityTreatment) {
+                return "/analyzing-data";
+            }
+
             // 5
             if (hasPeri && hasBirthControl) {
                 return "/add-details/next-steps/birth-control-hormone-therapy";
             }
             // 6
-            if (hasPeri && hasTrying) {
+            if (hasPeri && hasFertilityTreatment) {
                 return "/add-details/next-steps/birth-control-fertility-treatment";
             }
             // 3
-            if (hasTrying) {
+            if (hasFertilityTreatment) {
                 return "/add-details/next-steps/fertility-treatment";
             }
             // 2
@@ -234,16 +241,12 @@ const SymptomsPage = () => {
         navigate(-1);
     };
 
-    const submitFromSymptoms =
-        !Array.isArray(state?.lifeStage) ||
-        !state.lifeStage.some((x) =>
-            ["Perimenopause", "Menopause", "Postmenopause", "Trying to conceive"].includes(
-                x
-            )
-        )
-            ? !Array.isArray(state?.currentMedications) ||
-              !state.currentMedications.includes("Birth control")
-            : false;
+    const submitFromSymptoms = (() => {
+        const meds = Array.isArray(state?.currentMedications) ? state.currentMedications : [];
+        const hasBirthControl = meds.includes("Birth control");
+        const hasFertilityTreatment = meds.includes("Fertility treatment");
+        return !hasBirthControl && !hasFertilityTreatment;
+    })();
 
     return (
         <>

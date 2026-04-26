@@ -7,12 +7,15 @@ import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "None",
-    "Birth control",
-    "Testosterone",
-    "Estrogen blocker",
-    "Puberty blocker",
     "Antibiotics",
     "Antifungals",
+    "Birth control",
+    "Fertility treatment",
+    "Estrogen only",
+    "Estrogen + progestin",
+    "Estrogen blocker",
+    "Puberty blocker",
+    "Testosterone",
 ];
 
 const CurrentMedications = ({
@@ -20,9 +23,14 @@ const CurrentMedications = ({
     onChange,
     showHeadingError = false,
     disabledItems = [],
+    hiddenItems = [],
 }) => {
     const disabledSet = new Set(Array.isArray(disabledItems) ? disabledItems : []);
-    const list = options.map((item) => {
+    const hiddenSet = new Set(Array.isArray(hiddenItems) ? hiddenItems : []);
+
+    const list = options
+        .filter((item) => !hiddenSet.has(item))
+        .map((item) => {
         const isActive = currentMedications.includes(item);
         const isDisabled = disabledSet.has(item);
 
@@ -45,7 +53,7 @@ const CurrentMedications = ({
                 <span>{item}</span>
             </div>
         );
-    });
+        });
 
     return (
         <div className={styles.wrap}>
