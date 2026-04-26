@@ -49,6 +49,16 @@
     transform: rotate(180deg);
 }
 
+.titleWithIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.titleWithIcon svg {
+    flex-shrink: 0;
+}
+
 .dropdown {
     position: absolute;
     background-color: #FFFFFF;

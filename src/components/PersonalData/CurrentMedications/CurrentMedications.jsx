@@ -1,6 +1,7 @@
 import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import PillIcon from "../../../assets/AddDetailsIcons/PillIcon";
 import styles from "./CurrentMedications.module.css";
 
 const options = [
@@ -48,7 +49,12 @@ const CurrentMedications = ({
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Current medications or hormone replacement therapy"
+                title={
+                    <span className={styles.titleWithIcon}>
+                        <PillIcon aria-hidden />
+                        <span>Medications or hormone treatment</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             />

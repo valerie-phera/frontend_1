@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import AgeIcon from "../../../assets/AddDetailsIcons/AgeIcon";
 import styles from "./AgeInput.module.css";
 
 const MAX_AGE = 120;
@@ -48,7 +49,12 @@ const AgeInput = ({
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Age"
+                title={
+                    <span className={styles.titleWithIcon}>
+                        <AgeIcon aria-hidden />
+                        <span>Age</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             >

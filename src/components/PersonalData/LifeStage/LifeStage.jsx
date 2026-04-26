@@ -1,6 +1,7 @@
 import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import LifeStageIcon from "../../../assets/AddDetailsIcons/LifeStageIcon";
 import styles from "./LifeStage.module.css";
 
 const options = [
@@ -48,7 +49,12 @@ const LifeStage = ({
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Life stage"
+                title={
+                    <span className={styles.titleWithIcon}>
+                        <LifeStageIcon aria-hidden />
+                        <span>Life stage</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             />

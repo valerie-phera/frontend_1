@@ -1,6 +1,7 @@
 import { memo, useRef, useEffect, useState, useCallback } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import EthnicIcon from "../../../assets/AddDetailsIcons/EthnicIcon";
 import styles from "./EthnicBackground.module.css";
 
 export const ETHNIC_OTHER_OPTION = "+ Other";
@@ -126,7 +127,12 @@ const EthnicBackground = ({
     <>
       <div className={styles.wrap}>
         <InfoTooltip
-          title="Ethnic background(s)"
+          title={
+            <span className={styles.titleWithIcon}>
+              <EthnicIcon aria-hidden />
+              <span>Ethnic background(s)</span>
+            </span>
+          }
           showArrow={false}
           showErrorCircle={showHeadingError}
         >

@@ -70,3 +70,13 @@
     opacity: 0.85;
     pointer-events: none;
 }
+
+.titleWithIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.titleWithIcon svg {
+    flex-shrink: 0;
+}
