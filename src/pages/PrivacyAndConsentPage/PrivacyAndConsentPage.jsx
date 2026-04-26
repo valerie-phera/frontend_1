@@ -81,7 +81,7 @@ const PrivacyAndConsentPage = () => {
                                 </label>
                             </div>
                         </div>
-                        <div className={styles.privPolicy}> <a href="#">Read our full <span>privacy policy</span></a></div>
+                        <div className={styles.privPolicy}> Read our full <a href="#"> privacy policy</a></div>
                     </div>
                 </Container>
                 <BottomBlock>

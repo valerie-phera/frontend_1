@@ -49,13 +49,12 @@
     display: flex;
     gap: 12px;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .headerText {
-    font-size: 18px;
-    font-weight: 600;
-    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
     color: var(--main-color-secondary);
 }
 
@@ -66,16 +65,15 @@
 
 .text {
     font-size: 14px;
-    font-weight: 600;
     color: #414651;
     line-height: 1.3;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
     max-width: 269px;
     margin-left: 36px;
 }
 
 .line {
-    border: 1px solid #D5D7DA;
+    border: 1px solid #E9EAEB;
 }
 
 .bottomText {

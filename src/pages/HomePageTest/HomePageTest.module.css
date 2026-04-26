@@ -36,7 +36,6 @@
     text-align: center;
     padding-bottom: 50px;
     margin: 0 auto;
-    max-width: 347px;
 }
 
 .greeting {
@@ -131,7 +130,6 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 339px;
 }
 
 .infoItem {
