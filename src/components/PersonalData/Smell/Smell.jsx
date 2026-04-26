@@ -1,7 +1,9 @@
 import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import WavesIcon from "../../../assets/AddDetailsIcons/WavesIcon";
 import styles from "./Smell.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "None",
@@ -29,7 +31,12 @@ const Smell = ({ smell, onChange, showHeadingError = false }) => {
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Smell"
+                title={
+                    <span className={titleStyles.titleWithIcon}>
+                        <WavesIcon aria-hidden />
+                        <span>Smell</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             >

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import AgeIcon from "../../../assets/AddDetailsIcons/AgeIcon";
 import styles from "./AgeInput.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const MAX_AGE = 120;
 const MIN_AGE = 18;
@@ -50,7 +51,7 @@ const AgeInput = ({
         <div className={styles.wrap}>
             <InfoTooltip
                 title={
-                    <span className={styles.titleWithIcon}>
+                    <span className={titleStyles.titleWithIcon}>
                         <AgeIcon aria-hidden />
                         <span>Age</span>
                     </span>

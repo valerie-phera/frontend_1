@@ -1,7 +1,9 @@
 import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import ToiletIcon from "../../../assets/AddDetailsIcons/ToiletIcon";
 import styles from "./Urination.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "None",
@@ -31,7 +33,12 @@ const Urination = ({
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Urine"
+                title={
+                    <span className={titleStyles.titleWithIcon}>
+                        <ToiletIcon aria-hidden />
+                        <span>Urine</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             >

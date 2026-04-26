@@ -3,6 +3,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import LifeStageIcon from "../../../assets/AddDetailsIcons/LifeStageIcon";
 import styles from "./LifeStage.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "None",
@@ -50,7 +51,7 @@ const LifeStage = ({
         <div className={styles.wrap}>
             <InfoTooltip
                 title={
-                    <span className={styles.titleWithIcon}>
+                    <span className={titleStyles.titleWithIcon}>
                         <LifeStageIcon aria-hidden />
                         <span>Life stage</span>
                     </span>

@@ -2,6 +2,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import StethoscopeIcon from "../../../assets/AddDetailsIcons/StethoscopeIcon";
 import styles from "./HormoneDiagnoses.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "None",
@@ -39,7 +40,7 @@ const HormoneDiagnoses = ({
         <div className={styles.wrap}>
             <InfoTooltip
                 title={
-                    <span className={styles.titleWithIcon}>
+                    <span className={titleStyles.titleWithIcon}>
                         <StethoscopeIcon aria-hidden />
                         <span>Diagnoses related to hormones</span>
                     </span>

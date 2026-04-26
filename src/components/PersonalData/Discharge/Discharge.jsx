@@ -1,7 +1,9 @@
 import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
+import GroupIcon from "../../../assets/AddDetailsIcons/GroupIcon";
 import styles from "./Discharge.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "No discharge",
@@ -32,7 +34,12 @@ const Discharge = ({ discharge, onChange, showHeadingError = false }) => {
     return (
         <div className={styles.wrap}>
             <InfoTooltip
-                title="Discharge"
+                title={
+                    <span className={titleStyles.titleWithIcon}>
+                        <GroupIcon aria-hidden />
+                        <span>Discharge</span>
+                    </span>
+                }
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             >

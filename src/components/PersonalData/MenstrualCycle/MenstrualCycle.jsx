@@ -3,6 +3,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import DropIcon from "../../../assets/AddDetailsIcons/DropIcon";
 import styles from "./MenstrualCycle.module.css";
+import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
     "No period for 12+ months",
@@ -36,7 +37,7 @@ const MenstrualCycle = ({
         <div className={styles.wrap}>
             <InfoTooltip
                 title={
-                    <span className={styles.titleWithIcon}>
+                    <span className={titleStyles.titleWithIcon}>
                         <DropIcon aria-hidden />
                         <span>Menstrual cycle</span>
                     </span>
