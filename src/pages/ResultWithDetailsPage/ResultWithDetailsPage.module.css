@@ -207,20 +207,23 @@
     line-height: 1.3;
 }
 
-.recommendations {
-    padding: 20px 16px;
+.data {
     background-color: #FFFFFF;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
 }
 
-.sources {
-    padding: 20px 16px;
+.sources,
+.source {
     background-color: #FFFFFF;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
+}
+
+.sourceNoGapFromRecommendations {
+    margin-top: -30px;
 }
 
 .recommendations[role="button"] {
@@ -228,7 +231,8 @@
     user-select: none;
 }
 
-.sources[role="button"] {
+.sources[role="button"],
+.source[role="button"] {
     cursor: pointer;
     user-select: none;
 }
@@ -237,7 +241,8 @@
     background-color: #00343D0D;
 }
 
-.sources[role="button"]:active {
+.sources[role="button"]:active,
+.source[role="button"]:active {
     background-color: #00343D0D;
 }
 
@@ -246,7 +251,8 @@
     outline-offset: 3px;
 }
 
-.sources[role="button"]:focus-visible {
+.sources[role="button"]:focus-visible,
+.source[role="button"]:focus-visible {
     outline: 2px solid rgba(47, 142, 150, 0.35);
     outline-offset: 3px;
 }
@@ -272,10 +278,31 @@
     font-weight: 600;
 }
 
+.overviewTitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.overviewBracketRef {
+    color: #6F988F;
+    font-weight: 600;
+}
+
+.overviewNote {
+    margin-top: 7px;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #1F1F1F;
+    margin-left: 22px;
+}
+
 .wrapText {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding: 20px 16px;
 }
 
 .citationsContent {
@@ -288,12 +315,14 @@
     scroll-margin-top: 112px;
 }
 
-.sources[role="button"] {
+.sources[role="button"],
+.source[role="button"] {
     scroll-margin-top: 112px;
 }
 
 /* `Sources` scroll target (header shouldn't hide under sticky bars) */
-.sources {
+.sources,
+.source {
     scroll-margin-top: 112px;
 }
 
@@ -307,11 +336,13 @@
         scroll-margin-top: 64px;
     }
 
-    .sources[role="button"] {
+    .sources[role="button"],
+    .source[role="button"] {
         scroll-margin-top: 64px;
     }
 
-    .sources {
+    .sources,
+    .source {
         scroll-margin-top: 64px;
     }
 }
@@ -319,8 +350,7 @@
 .quotesBlock {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 14px;
+    gap: 18px;
 }
 
 .citationItem {
@@ -398,7 +428,7 @@
 .text {
     display: flex;
     gap: 15px;
-    margin-top: 10px;
+    max-width: 297px;
 }
 
 .point {
@@ -414,6 +444,21 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
+    background: #fff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.insightsHeadingScrollTarget {
+    /* Desktop: status bar (51) + header (53) + gap */
+    scroll-margin-top: 112px;
+}
+
+@media (max-width: 767px) {
+    .insightsHeadingScrollTarget {
+        /* Mobile: fixed header is ~56px */
+        scroll-margin-top: 64px;
+    }
 }
 
 .wrapHeadingButton {
@@ -449,8 +494,55 @@
     align-items: center;
 }
 
+.SectionTabs {
+    background: #fff;
+    margin-bottom: 10px;
+}
+
+.tabList {
+    display: flex;
+}
+
+.tab {
+    padding: 4px 24px 8px;
+    color: #A4A7AE;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.active {
+    color: var(--main-color-secondary);
+    border-bottom: 2px solid #2F8E96;
+}
+
+.tab:active {
+    transform: scale(0.98);
+}
+
+.tabPanels {
+    position: relative;
+    overflow: hidden;
+    transition: height 260ms ease;
+}
+
+.tabPanel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 220ms ease, transform 220ms ease;
+    pointer-events: none;
+}
+
+.tabPanelActive {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
 .recommendationsIcon {
-    margin-right: 8px;
+    margin-right: 5px;
 }
 
 .arrow {
@@ -523,7 +615,7 @@
     pointer-events: none;
 }
 
-.editBtn > * {
+.editBtn>* {
     position: relative;
     z-index: 1;
 }

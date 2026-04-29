@@ -5,7 +5,6 @@ import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 
-import ArrowDownGrey from "../../assets/icons/ArrowDownGrey";
 import EditNotesGrey from "../../assets/icons/EditNotesGrey";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
 import ShareIcon from "../../assets/icons/ShareIcon";
@@ -105,8 +104,8 @@ const renderWithItalicJournal = (text) => {
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
-    const [citationsOpen, setCitationsOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
     const { state } = useLocation();
     const phValue = state?.phValue;
     const phLevel = state?.phLevel;
@@ -125,9 +124,51 @@ const ResultWithDetailsPage = () => {
     const scaleRef = useRef(null);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
     const pageRef = useRef(null);
+    const insightsHeadingRef = useRef(null);
     const citationsContentRef = useRef(null);
-    const citationsScrollPendingRef = useRef(false);
-    const citationsBlockRef = useRef(null);
+    const overviewPanelRef = useRef(null);
+    const deepDivePanelRef = useRef(null);
+    const sourcesPanelRef = useRef(null);
+    const [activePanelHeight, setActivePanelHeight] = useState(0);
+
+    const scrollToInsightsIfNeeded = () => {
+        const el = insightsHeadingRef.current;
+        if (!el) return;
+
+        const container = pageRef.current;
+        const offset = window.matchMedia("(max-width: 767px)").matches ? 80 : 140;
+
+        // If we have a dedicated scroll container, scroll it.
+        if (container && container instanceof HTMLElement) {
+            const containerRect = container.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+
+            const topVisibleY = containerRect.top + offset;
+            const bottomVisibleY = containerRect.bottom;
+            const isFullyVisible = elRect.top >= topVisibleY && elRect.bottom <= bottomVisibleY;
+            if (isFullyVisible) return;
+
+            const targetTop = (elRect.top - containerRect.top) + container.scrollTop - offset;
+            container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+            return;
+        }
+
+        // Fallback to window scroll (if page isn't using a scroll container).
+        const elRect = el.getBoundingClientRect();
+        const topVisibleY = offset;
+        const bottomVisibleY = window.innerHeight;
+        const isFullyVisible = elRect.top >= topVisibleY && elRect.bottom <= bottomVisibleY;
+        if (isFullyVisible) return;
+
+        const y = elRect.top + window.scrollY - offset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    };
+
+    const activateTab = (nextTab) => {
+        setActiveTab(nextTab);
+        // 2 RAFs: let React paint the new panel before measuring/scrolling
+        requestAnimationFrame(() => requestAnimationFrame(scrollToInsightsIfNeeded));
+    };
 
     const handleImportedData = (data) => {
         console.log("📥 Импортировано:", data);
@@ -150,14 +191,6 @@ const ResultWithDetailsPage = () => {
             navigate("/result-without-details");
         }
     }, [state, navigate]);
-
-    const toggleCitations = () => {
-        setCitationsOpen((v) => {
-            const next = !v;
-            if (next) citationsScrollPendingRef.current = true;
-            return next;
-        });
-    };
 
     useEffect(() => {
         // Данные на эту страницу приходят через navigate(..., { state })
@@ -206,6 +239,24 @@ const ResultWithDetailsPage = () => {
             })
             .filter(Boolean)
         : [];
+
+    useLayoutEffect(() => {
+        const panelEl =
+            activeTab === "overview"
+                ? overviewPanelRef.current
+                : activeTab === "deepDive"
+                    ? deepDivePanelRef.current
+                    : sourcesPanelRef.current;
+
+        if (!panelEl) return;
+
+        const measure = () => setActivePanelHeight(panelEl.scrollHeight);
+        measure();
+
+        const ro = new ResizeObserver(() => measure());
+        ro.observe(panelEl);
+        return () => ro.disconnect();
+    }, [activeTab, paragraphs.length, citations.length]);
 
     const onExportClick = () => {
         handleExport({
@@ -353,97 +404,141 @@ const ResultWithDetailsPage = () => {
                                     {detailsList}
                                 </div>
                             </div>
-                            <div className={styles.recommendations}>
-                                <div className={styles.wrapHeading}>
-                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon}/> Personalised tailored insights</h3>
-                                </div>
-                                <div className={styles.wrapText}>
-                                    {paragraphs.map((rec, index) => (
-                                        <div key={index} className={styles.text}>
-                                            <div className={styles.point}></div>
-                                            <p
-                                                className={styles.innerText}
-                                                dangerouslySetInnerHTML={{ __html: rec }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            {citations.length > 0 && (
+                            <div className={styles.data}>
                                 <div
-                                    ref={citationsBlockRef}
-                                    className={styles.sources}
+                                    ref={insightsHeadingRef}
+                                    className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
                                 >
-                                    <button
-                                        type="button"
-                                        className={styles.wrapHeadingButton}
-                                        aria-expanded={citationsOpen}
-                                        aria-controls="result-with-details-citations"
-                                        onClick={toggleCitations}
-                                    >
-                                        <h3 className={styles.heading}>
-                                            <CitationsIcon className={styles.recommendationsIcon} /> Research sources
-                                        </h3>
-                                        <span
-                                            className={`${styles.arrow} ${!citationsOpen ? styles.arrowOpen : ""}`}
-                                            aria-hidden
+                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon} />Your tailored insights</h3>
+                                </div>
+                                <div className={styles.SectionTabs}>
+                                    <div className={styles.tabList}>
+                                        <div
+                                            className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => activateTab("overview")}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") activateTab("overview");
+                                            }}
                                         >
-                                            <ArrowDownGrey />
-                                        </span>
-                                    </button>
-                                    <div
-                                        ref={citationsContentRef}
-                                        id="result-with-details-citations"
-                                        className={`${styles.wrapText} ${styles.citationsContent}`}
-                                        style={{
-                                            maxHeight: citationsOpen ? 5000 : 0,
-                                            opacity: citationsOpen ? 1 : 0,
-                                            overflow: "hidden",
-                                            transition: "max-height 0.35s ease, opacity 0.35s ease"
-                                        }}
-                                        onTransitionEnd={(e) => {
-                                            if (e.propertyName !== "max-height") return;
-                                            if (!citationsOpen) return;
-                                            if (!citationsScrollPendingRef.current) return;
-                                            citationsScrollPendingRef.current = false;
-                                            (citationsBlockRef.current || citationsContentRef.current)?.scrollIntoView({
-                                                behavior: "smooth",
-                                                block: "start",
-                                                inline: "nearest",
-                                            });
-                                        }}
-                                    >
-                                        <div className={styles.quotesBlock}>
-                                            {citations.map((q, index) => {
-                                                const { title, body, links } = splitCitationTitleAndBody(q.text);
-                                                return (
-                                                    <div key={index} className={styles.citationItem}>
-                                                        <div className={styles.citationNumber}>{index + 1}.</div>
-                                                        <div className={styles.citationContent}>
-                                                            <div className={styles.citationTitle}>{title}</div>
-                                                            {body ? (
-                                                                <div className={styles.citationText}>
-                                                                    {renderWithItalicJournal(body)}
-                                                                </div>
-                                                            ) : null}
-                                                            {links.length > 0 ? (
-                                                                <div className={styles.citationLinks}>
-                                                                    {links.map((l) => (
-                                                                        <span key={l} className={styles.citationLink}>
-                                                                            <span>{l}</span>
-                                                                            <ArrowUpLink className={styles.citationLinkIcon} />
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            ) : null}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                            Overview
+                                        </div>
+                                        <div
+                                            className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => activateTab("deepDive")}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") activateTab("deepDive");
+                                            }}
+                                        >
+                                            Deep Dive
+                                        </div>
+                                        <div
+                                            className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => activateTab("sources")}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") activateTab("sources");
+                                            }}
+                                        >
+                                            Sources
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                                <div
+                                    className={styles.tabPanels}
+                                    style={{ height: activePanelHeight ? `${activePanelHeight}px` : undefined }}
+                                >
+                                    <div
+                                        ref={overviewPanelRef}
+                                        className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
+                                    >
+                                        <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
+                                        <div className={styles.wrapText}>
+                                            {[
+                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                            ].map((t, index) => (
+                                                <div key={index} className={styles.text}>
+                                                    <div className={styles.point}></div>
+                                                    <p className={styles.innerText}>
+                                                        {t} <span className={styles.overviewBracketRef}>[2]</span>.
+                                                    </p>
+                                                </div>
+                                            ))}
+                                            <p className={styles.overviewNote}>
+                                                Consult your healthcare provider can help ensure everything is as it should be.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        ref={deepDivePanelRef}
+                                        className={`${styles.tabPanel} ${activeTab === "deepDive" ? styles.tabPanelActive : ""}`}
+                                    >
+                                        <div className={styles.wrapText}>
+                                            {paragraphs.map((rec, index) => (
+                                                <div key={index} className={styles.text}>
+                                                    <div className={styles.point}></div>
+                                                    <p
+                                                        className={styles.innerText}
+                                                        dangerouslySetInnerHTML={{ __html: rec }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        ref={sourcesPanelRef}
+                                        className={`${styles.tabPanel} ${activeTab === "sources" ? styles.tabPanelActive : ""}`}
+                                    >
+                                        {citations.length > 0 ? (
+                                            <div className={`${styles.source} ${styles.sourceNoGapFromRecommendations}`}>
+                                                <div
+                                                    ref={citationsContentRef}
+                                                    id="result-with-details-citations"
+                                                    className={`${styles.wrapText} ${styles.citationsContent}`}
+                                                >
+                                                    <div className={styles.quotesBlock}>
+                                                        {citations.map((q, index) => {
+                                                            const { title, body, links } = splitCitationTitleAndBody(q.text);
+                                                            return (
+                                                                <div key={index} className={styles.citationItem}>
+                                                                    <div className={styles.citationNumber}>{index + 1}.</div>
+                                                                    <div className={styles.citationContent}>
+                                                                        <div className={styles.citationTitle}>{title}</div>
+                                                                        {body ? (
+                                                                            <div className={styles.citationText}>
+                                                                                {renderWithItalicJournal(body)}
+                                                                            </div>
+                                                                        ) : null}
+                                                                        {links.length > 0 ? (
+                                                                            <div className={styles.citationLinks}>
+                                                                                {links.map((l) => (
+                                                                                    <span key={l} className={styles.citationLink}>
+                                                                                        <span>{l}</span>
+                                                                                        <ArrowUpLink className={styles.citationLinkIcon} />
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </Container>
