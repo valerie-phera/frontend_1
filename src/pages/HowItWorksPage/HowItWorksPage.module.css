@@ -41,10 +41,6 @@
     gap: 14px;
 }
 
-.item {
-    padding: 0 24px;
-}
-
 .headerWrap {
     display: flex;
     gap: 12px;

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "./Header/Header";
 import BurgerMenu from "./BurgerMenu/BurgerMenu";
 import styles from "./AppLayout.module.css";
@@ -10,6 +11,15 @@ const AppLayout = ({
     onBack
 }) => {
     const [isMenuOpen, setMenuOpen] = useState(false);
+    const location = useLocation();
+
+    // Avoid remount flicker when switching between result ↔ completion on desktop.
+    // These routes render the same "phone" content (ResultWithDetailsPage) and only change layout chrome.
+    const pageKey = useMemo(() => {
+        const p = location.pathname;
+        if (p === "/result-with-details" || p === "/test-complete") return "result-flow";
+        return p;
+    }, [location.pathname]);
 
     return (
         <>
@@ -29,7 +39,7 @@ const AppLayout = ({
             )}
 
             {/* wrapper for animation */}
-            <main key={location.pathname} className={styles.page}>
+            <main key={pageKey} className={styles.page}>
                 {children}
             </main>
         </>

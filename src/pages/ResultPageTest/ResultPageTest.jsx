@@ -10,7 +10,8 @@ import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
 
 import Minus from "../../assets/icons/Minus";
 import Plus from "../../assets/icons/Plus";
-import Lock from "../../assets/icons/Lock";
+import LockFill from "../../assets/icons/LockFill";
+import ClockFill from "../../assets/icons/ClockFill";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
 import {
@@ -307,12 +308,19 @@ const ResultPageTest = () => {
                         </div>
                         <div className={styles.unlockBlock}>
                             <div className={styles.unlockTilte}>
-                                <div className={styles.unlockIcon}><Lock /></div>
+                                <div className={styles.unlockIcon}><LockFill /></div>
                                 <h3>Unlock tailored insights</h3>
                             </div>
                             <div className={styles.unlockText}>
-                                <p>Want to understand why your pH looks like this?</p>
-                                <p>Add a few details about you to get a fully tailored health report. It takes ~2 mins.</p>
+                                <p>The same pH means something different depending on your biology.</p>
+                                <p>Tell us about you to find your personal baseline.</p>
+                                <p className={styles.unlockItem}><ClockFill className={styles.unlockIcon} /> Takes about<span> 2 minutes.</span></p>
+                            </div>
+                            <div className={styles.elements}>
+                                <div className={styles.item}>Age</div>
+                                <div className={styles.item}>Ethnicity</div>
+                                <div className={styles.item}>Hormones</div>
+                                <div className={styles.item}>Symptoms</div>
                             </div>
                         </div>
                     </div>

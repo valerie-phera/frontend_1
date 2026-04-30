@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../components/Button/Button";
@@ -11,10 +11,28 @@ import ChartIcon from "../../assets/icons/ChartIcon";
 
 import styles from "./PrivacyAndConsentPage.module.css";
 
+const CONSENT_STORAGE_KEY = "phera_privacy_and_consent";
+
 const PrivacyAndConsentPage = () => {
     const navigate = useNavigate();
-    const [isCoreConsent, setIsCoreConsent] = useState(false);
-    const [isAnalyticsConsent, setIsAnalyticsConsent] = useState(false);
+    const [isCoreConsent, setIsCoreConsent] = useState(() => {
+        try {
+            const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
+            const parsed = raw ? JSON.parse(raw) : null;
+            return Boolean(parsed?.isCoreConsent);
+        } catch {
+            return false;
+        }
+    });
+    const [isAnalyticsConsent, setIsAnalyticsConsent] = useState(() => {
+        try {
+            const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
+            const parsed = raw ? JSON.parse(raw) : null;
+            return Boolean(parsed?.isAnalyticsConsent);
+        } catch {
+            return false;
+        }
+    });
 
     const coreConsentId = useMemo(() => "privacy-core-consent", []);
     const analyticsConsentId = useMemo(() => "privacy-analytics-consent", []);
@@ -23,6 +41,17 @@ const PrivacyAndConsentPage = () => {
         if (!isCoreConsent) return;
         navigate("/how-it-works");
     };
+
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(
+                CONSENT_STORAGE_KEY,
+                JSON.stringify({ isCoreConsent, isAnalyticsConsent })
+            );
+        } catch {
+            // ignore
+        }
+    }, [isCoreConsent, isAnalyticsConsent]);
 
     return (
         <>
@@ -81,7 +110,14 @@ const PrivacyAndConsentPage = () => {
                                 </label>
                             </div>
                         </div>
-                        <div className={styles.privPolicy}> Read our full <a href="https://phera.digital/privacy-policy/"> privacy policy</a></div>
+                        <div className={styles.privPolicy}>
+                            Read our full{" "}
+                            <a
+                                href="https://phera.digital/privacy-policy/"
+                            >
+                                privacy policy
+                            </a>
+                        </div>
                     </div>
                 </Container>
                 <BottomBlock>
