@@ -68,7 +68,7 @@
   }
 
   .extensionHeaderInner {
-    width: 1440px; 
+    width: 1440px;
     max-width: 100%;
     margin: 0 auto;
     display: flex;
@@ -97,7 +97,7 @@
     align-items: flex-start;
     font-family: 'Cooper Hewitt', sans-serif;
     font-size: 16px;
-    font-weight: 700; 
+    font-weight: 700;
     color: #000000;
     white-space: nowrap;
   }
@@ -112,13 +112,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 49px; 
-    border-radius: 32px; 
-    background: #ADBC9F; 
+    padding: 16px 49px;
+    border-radius: 32px;
+    background: #ADBC9F;
     font-family: 'Cooper Hewitt', sans-serif;
     font-size: 16px;
-    font-weight: 700; 
-    color: var(--main-color-secondary); 
+    font-weight: 700;
+    color: var(--main-color-secondary);
     text-decoration: none;
     white-space: nowrap;
     line-height: 1;
@@ -167,8 +167,7 @@
     top: 0;
     width: 1440px;
     height: 1024px;
-    transform: translateX(-50%)
-      scale(min(1, min(100cqw / 1440px, 100cqh / 1024px)));
+    transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 1024px)));
     transform-origin: top center;
   }
 
@@ -178,7 +177,7 @@
     position: absolute;
     z-index: 0;
     pointer-events: none;
-    transition: left 420ms ease; 
+    transition: left 560ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* Figma: Ellipse 3 (filled); top -= 122 with phone so layout stays aligned */
@@ -204,9 +203,11 @@
     position: absolute;
     height: 852px;
     width: 410px;
-    left: 515px; /* Figma: mockup x */
+    left: 515px;
+    /* Figma: mockup x */
     top: 0;
-    transition: left 420ms ease; /* was: transform — but position is via left */
+    transition: left 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* smoother ease-out */
     will-change: left;
     z-index: 2;
   }
@@ -215,14 +216,17 @@
   .rightPanel {
     display: block;
     position: absolute;
-    left: 913px; /* Figma: text_block x */
-    top: 327px; /* Figma 449 − phone offset 122 (phone top aligned to scene top) */
-    transform: translateX(120px);
+    left: 913px;
+    /* Figma: text_block x */
+    top: 327px;
+    /* Figma 449 − phone offset 122 (phone top aligned to scene top) */
     opacity: 0;
+    filter: blur(10px);
     pointer-events: none;
-    width: 420px; /* Figma: text_block width */
-    transition: transform 200ms ease, opacity 160ms ease;
-    will-change: transform, opacity;
+    width: 420px;
+    /* Figma: text_block width */
+    transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, filter;
     z-index: 3;
   }
 
@@ -233,7 +237,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px; /* Figma: text_block gap */
+    gap: 32px;
+    /* Figma: text_block gap */
   }
 
   .rightTextBlock {
@@ -241,50 +246,60 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 16px; /* Figma: title frame gap */
+    gap: 16px;
+    /* Figma: title frame gap */
   }
 
   .rightHeading {
     font-size: 40px;
     line-height: 48px;
     font-weight: 700;
-    margin: 0; /* gap in parent handles spacing */
-    color: #000000; /* Figma: fill_NLL1S6 */
+    margin: 0;
+    /* gap in parent handles spacing */
+    color: #000000;
+    /* Figma: fill_NLL1S6 */
     /* font-family: 'Cooper Hewitt', sans-serif;; */
     width: 434px;
   }
 
   .rightHeadingP {
-    color: #60866E; /* Figma: ts1 */
+    color: #60866E;
+    /* Figma: ts1 */
   }
 
   .rightHeadingH {
-    color: #526338; /* Figma: ts2 */
+    color: #526338;
+    /* Figma: ts2 */
   }
 
   .rightText {
-    font-size: 18px; /* Figma: body */
+    font-size: 18px;
+    /* Figma: body */
     line-height: 28px;
     font-weight: 700;
     margin: 0;
     opacity: 0.9;
-    color: #000000; /* Figma */
+    color: #000000;
+    /* Figma */
   }
 
   .rightTryAgainBtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 12px; /* Figma button gap */
+    gap: 12px;
+    /* Figma button gap */
     /* width: 213px;  */
-    padding: 16px 58px; 
-    border-radius: 32px; /* Figma: radius */
+    padding: 16px 58px;
+    border-radius: 32px;
+    /* Figma: radius */
     border: none;
     background: #ADBC9F;
     color: #1F1F1F;
     font-family: 'Cooper Hewitt', sans-serif;
     font-size: 16px;
-    font-weight: 709; /* semibold */
+    font-weight: 709;
+    /* semibold */
     cursor: pointer;
   }
 
@@ -322,11 +337,21 @@
   }
 
   /* Delayed entrance: phone moves first (420ms), text slides in after ~280ms */
+  /* .viewportCompletion .rightPanel {
+    opacity: 1;
+    filter: blur(0px);
+    pointer-events: auto;
+    transition: opacity 1020ms cubic-bezier(0.22, 1, 0.36, 1) 480ms,
+      filter 1020ms cubic-bezier(0.22, 1, 0.36, 1) 580ms;
+  } */
+
   .viewportCompletion .rightPanel {
     opacity: 1;
-    transform: translateX(0);
+    filter: blur(0px);
     pointer-events: auto;
-    transition: transform 400ms ease 280ms, opacity 340ms ease 280ms;
+    transition:
+      filter 570ms cubic-bezier(0.22, 1, 0.36, 1) 280ms,
+      opacity 770ms cubic-bezier(0.22, 1, 0.36, 1) 340ms;
   }
 
   .shell {
@@ -355,20 +380,26 @@
 
   .screen {
     position: absolute;
-    width: 382.25px;  /* Figma: Screen width */
-    height: 828.67px; /* Figma: Screen height */
+    width: 382.25px;
+    /* Figma: Screen width */
+    height: 828.67px;
+    /* Figma: Screen height */
     border-radius: 44px;
     /* `overflow-x: hidden` + `overflow-y: auto` breaks `position: sticky` for children in Chromium; `clip` keeps rounding + sticky */
     overflow-x: hidden;
     overflow-x: clip;
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge legacy */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge legacy */
     background: var(--main-background-color);
     z-index: 1;
-    top: 11.67px;   /* Figma: Screen y */
-    left: 13.77px;  /* Figma: Screen x */
+    top: 11.67px;
+    /* Figma: Screen y */
+    left: 13.77px;
+    /* Figma: Screen x */
     transform: none;
     /* Match mobile content width: Container inner = 393 − 2×20 = 353px */
     --container-padding-x: max(0px, calc((100% - 353px) / 2));
@@ -444,4 +475,3 @@
     width: 100%;
   }
 }
-
