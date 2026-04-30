@@ -113,7 +113,7 @@ const renderWithItalicJournal = (text) => {
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
-    const { isDesktop, isDesktopCompletionLayout, triggerDesktopCompletion } = useDeviceFrame();
+    const { isDesktopCompletionLayout, triggerDesktopCompletion } = useDeviceFrame();
     const [infoOpen, setInfoOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const { state } = useLocation();
@@ -557,11 +557,9 @@ const ResultWithDetailsPage = () => {
                     {/* Mobile: button navigates to test-complete page */}
                     {!isDesktopCompletionLayout && (
                         <Button onClick={() => {
-                            if (isDesktop) {
-                                triggerDesktopCompletion();
-                            } else {
-                                navigate("/test-complete");
-                            }
+                            // On both mobile + desktop, completion is the `/test-complete` route.
+                            // DeviceFrame handles the desktop completion layout styling.
+                            triggerDesktopCompletion();
                         }}>Finish test</Button>
                     )}
                     <div

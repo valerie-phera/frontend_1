@@ -28,15 +28,17 @@ const DeviceFrame = ({ children }) => {
   // This way the browser back button automatically deactivates it:
   //   history: [..., /result-with-details, /result-with-details(_completion)]
   //   Back → pops to /result-with-details without _completion → animation reverses.
+  // New: completion is a real route on both mobile + desktop: `/test-complete`.
+  // Keep legacy `_desktopCompletion` support so older navigation paths still work.
   const isDesktopCompletionLayout =
-    isDesktop && location?.state?._desktopCompletion === true;
+    isDesktop && (location.pathname === "/test-complete" || location?.state?._desktopCompletion === true);
 
   // Push a new history entry with the completion flag so Back works.
   const triggerDesktopCompletion = useCallback(() => {
     const { _desktopCompletion: _removed, ...rest } = location.state ?? {};
-    navigate("/result-with-details", {
-      state: { ...rest, _desktopCompletion: true },
-    });
+    // Persist latest results so `/test-complete` can be refreshed / resized safely.
+    try { sessionStorage.setItem(RESULT_STATE_KEY, JSON.stringify(rest ?? null)); } catch { /* ignore */ }
+    navigate("/test-complete", { state: rest });
   }, [navigate, location.state]);
 
   // Keep refs for fresh values inside resize effects (avoid stale closures).
@@ -66,40 +68,15 @@ const DeviceFrame = ({ children }) => {
 
     if (prev === isDesktop) return; // no change (includes first-render call)
 
-    const { pathname, state } = locationRef.current;
-
     if (!isDesktop) {
-      // desktop → mobile: only redirect if completion was active
-      if (pathname === "/result-with-details" && state?._desktopCompletion) {
-        const { _desktopCompletion: _removed, ...cleanState } = state ?? {};
-        try { sessionStorage.setItem(RESULT_STATE_KEY, JSON.stringify(cleanState ?? null)); } catch {}
-        navigate("/test-complete", { replace: true });
-      }
-      // If completion was NOT active, stay on /result-with-details (mobile renders it fine).
+      // desktop → mobile: no special routing needed (both use `/test-complete` now)
       return;
     }
 
-    // mobile → desktop: if came from test-complete, restore results with completion active
-    if (pathname === "/test-complete") {
-      let saved = null;
-      try { saved = JSON.parse(sessionStorage.getItem(RESULT_STATE_KEY) ?? "null"); } catch {}
-      navigate("/result-with-details", {
-        replace: true,
-        state: { ...(saved ?? {}), _desktopCompletion: true },
-      });
-    }
-  }, [isDesktop]); // eslint-disable-line react-hooks/exhaustive-deps
+    // mobile → desktop: no special routing needed (desktop can stay on `/test-complete`)
+  }, [isDesktop]);
 
-  // Guard: desktop should never be on /test-complete — redirect to results with completion
-  useEffect(() => {
-    if (!isDesktop || location.pathname !== "/test-complete") return;
-    let saved = null;
-    try { saved = JSON.parse(sessionStorage.getItem(RESULT_STATE_KEY) ?? "null"); } catch {}
-    navigate("/result-with-details", {
-      replace: true,
-      state: { ...(saved ?? {}), _desktopCompletion: true },
-    });
-  }, [location.pathname, isDesktop, navigate]);
+  // No guard redirect anymore: `/test-complete` is valid on desktop too.
 
   const ctx = useMemo(
     () => ({ isDesktop, isDesktopCompletionLayout, triggerDesktopCompletion }),
@@ -111,7 +88,7 @@ const DeviceFrame = ({ children }) => {
       <div
         className={`${styles.viewport} ${isDesktopCompletionLayout ? styles.viewportCompletion : ""}`}
       >
-        <header className={styles.extensionHeader} aria-hidden={!isDesktop}>
+        {/* <header className={styles.extensionHeader} aria-hidden={!isDesktop}>
           <div className={styles.extensionHeaderInner}>
             <Link to="/" className={styles.extensionHeaderLogoLink} aria-label="pHera Home">
               <img className={styles.extensionHeaderLogo} src={logo} alt="pHera" draggable={false} />
@@ -133,7 +110,7 @@ const DeviceFrame = ({ children }) => {
               Try Demo
             </a>
           </div>
-        </header>
+        </header> */}
 
         <div className={styles.desktopStage}>
           <div className={styles.desktopStageFit}>
