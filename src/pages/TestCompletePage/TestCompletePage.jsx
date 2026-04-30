@@ -5,11 +5,20 @@ import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import ImageWrapper from "../../components/ImageWrapper/ImageWrapper";
 import TryAgainIcon from "../../assets/icons/TryAgainIcon";
+import { useDeviceFrame } from "../../components/Layout/DeviceFrame/DeviceFrame";
+import ResultWithDetailsPage from "../ResultWithDetailsPage/ResultWithDetailsPage";
 
 import styles from "./TestCompletePage.module.css";
 
 const TestCompletePage = () => {
     const navigate = useNavigate();
+    const { isDesktop } = useDeviceFrame();
+
+    // Desktop: keep the phone content as the results page (as before),
+    // while the URL is `/test-complete` and DeviceFrame shows the right panel.
+    if (isDesktop) {
+        return <ResultWithDetailsPage />;
+    }
 
     return (
         <>
