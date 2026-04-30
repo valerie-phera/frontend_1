@@ -8,6 +8,7 @@
     left: 0;
     right: 0;
     z-index: 1000;
+    height: 55px;
 }
 
 .inner {
@@ -21,11 +22,12 @@
 @media (min-width: 768px) {
     .header {
         position: sticky;
-        top: 0;
+        /* Inside DeviceFrame `.screen`, var is 51px so header sits under sticky StatusBar */
+        top: var(--sticky-header-top, 0);
         left: auto;
         right: auto;
         width: 100%;
-        min-height: 62px;
+        height: 53px;
         padding: 14px 118px;
         display: grid;
         grid-template-columns: 1fr auto 1fr;
@@ -47,6 +49,12 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
+}
+
+/* common.css :active uses transform: scale(0.99) on all <a> — that would replace translateX(-50%) and jerk the logo */
+.logo:active {
+    transform: translateX(-50%) scale(0.99);
+    opacity: 0.72;
 }
 
 .logoImg {

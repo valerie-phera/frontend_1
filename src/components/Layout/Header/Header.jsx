@@ -8,7 +8,7 @@ import styles from "./Header.module.css";
 const Header = ({ variant = "guest", onBurgerClick, isMenuOpen, showBack = false, onBack }) => {
     return (
         <header className={styles.header}>
-            <div className={styles.wrapLogo}>
+            {/* <div className={styles.wrapLogo}> */}
                 {variant === "auth" && (
                     <BurgerButton
                         isOpen={isMenuOpen}
@@ -27,10 +27,10 @@ const Header = ({ variant = "guest", onBurgerClick, isMenuOpen, showBack = false
                 )}
 
                 <Link to="/" className={styles.logo}>
-                 <img src={logo} alt="pHera logo" width={61} height={24} />
+                    <img src={logo} alt="pHera logo" width={61} height={24} draggable={false} />
                     {/* <Logo /> */}
                 </Link>
-            </div>
+            {/* </div> */}
         </header>
     );
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useDeviceFrame } from "../../components/Layout/DeviceFrame/DeviceFrame";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
@@ -68,6 +69,13 @@ const extractCitationLinks = (rawText) => {
     return { mainText: main, links };
 };
 
+/** Short label for citation link chips (full value kept in `key` / data). */
+const citationLinkLabel = (link) => {
+    const s = String(link ?? "").trim();
+    if (/^doi:/i.test(s)) return "DOI";
+    return s;
+};
+
 const splitCitationTitleAndBody = (rawText) => {
     const { mainText, links } = extractCitationLinks(rawText);
     const parts = mainText.split(". ").map((p) => p.trim()).filter(Boolean);
@@ -104,6 +112,7 @@ const renderWithItalicJournal = (text) => {
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
+    const { isDesktop, isDesktopCompletionLayout, triggerDesktopCompletion } = useDeviceFrame();
     const [infoOpen, setInfoOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const { state } = useLocation();
@@ -522,7 +531,7 @@ const ResultWithDetailsPage = () => {
                                                                             <div className={styles.citationLinks}>
                                                                                 {links.map((l) => (
                                                                                     <span key={l} className={styles.citationLink}>
-                                                                                        <span>{l}</span>
+                                                                                        <span>{citationLinkLabel(l)}</span>
                                                                                         <ArrowUpLink className={styles.citationLinkIcon} />
                                                                                     </span>
                                                                                 ))}
@@ -543,8 +552,20 @@ const ResultWithDetailsPage = () => {
                     </div>
                 </Container>
                 <BottomBlock>
-                    <Button onClick={() => navigate("/test-complete")}>Finish test</Button>
-                    <div className={styles.btns}>
+                    {/* Desktop: button triggers completion animation; hidden once completion is active */}
+                    {/* Mobile: button navigates to test-complete page */}
+                    {!isDesktopCompletionLayout && (
+                        <Button onClick={() => {
+                            if (isDesktop) {
+                                triggerDesktopCompletion();
+                            } else {
+                                navigate("/test-complete");
+                            }
+                        }}>Finish test</Button>
+                    )}
+                    <div
+                        className={`${styles.btns} ${isDesktopCompletionLayout ? styles.btnsDesktopCompletion : ""}`}
+                    >
                         <Button onClick={onExportClick} >Export results</Button>
                         <Button onClick={handleImportClick}>Import results</Button>
                     </div>

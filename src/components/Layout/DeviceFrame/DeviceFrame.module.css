@@ -11,6 +11,27 @@
   width: 100%;
 }
 
+.desktopStage {
+  width: 100%;
+}
+
+.phoneWrap {
+  width: 100%;
+}
+
+.bgCircleFill,
+.bgCircleOutline {
+  display: none;
+}
+
+.rightPanel {
+  display: none;
+}
+
+.extensionHeader {
+  display: none;
+}
+
 .statusBar {
   display: none;
 }
@@ -22,11 +43,290 @@
 /* Desktop/tablet: center "phone" on the page */
 @media (min-width: 768px) {
   .viewport {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     position: relative;
+    overflow: hidden;
+    background: #FFFFFF;
+  }
+
+  .extensionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--main-background-color-border);
+    flex-shrink: 0;
+    z-index: 10;
+    width: 100%;
+    padding: 14px 118px;
+    box-sizing: border-box;
+  }
+
+  .extensionHeaderInner {
+    width: 1440px; 
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .extensionHeaderLogoLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+
+  .extensionHeaderLogo {
+    width: 90px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .extensionHeaderNav {
+    display: flex;
+    gap: 72px;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 16px;
+    font-weight: 700; 
+    color: #000000;
+    white-space: nowrap;
+  }
+
+  .extensionHeaderNavLink {
+    color: #000000;
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  .extensionHeaderCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 49px; 
+    border-radius: 32px; 
+    background: #ADBC9F; 
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 16px;
+    font-weight: 700; 
+    color: var(--main-color-secondary); 
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+    box-sizing: border-box;
+  }
+
+  .extensionHeaderCta:hover {
+    filter: brightness(0.98);
+  }
+
+  .extensionHeaderCta:active {
+    transform: scale(0.99);
+  }
+
+  .desktopStage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    overflow: hidden;
+    z-index: 1;
+    /* 41px under extension header, 50px above viewport bottom; middle row holds the scene */
+    display: grid;
+    grid-template-rows: 41px minmax(0, 1fr) 50px;
+    grid-template-columns: 1fr;
+  }
+
+  /* Middle row: fills space between the 41px / 50px margins; size container for scale(...) */
+  .desktopStageFit {
+    container-type: size;
+    grid-row: 2;
+    grid-column: 1;
+    position: relative;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Figma artboard 1440×1024; phone top was 122px — shifted to 0 so (grid 41px + phone) = 41px below header */
+  .desktopStageSceneInner {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1440px;
+    height: 1024px;
+    transform: translateX(-50%)
+      scale(min(1, min(100cqw / 1440px, 100cqh / 1024px)));
+    transform-origin: top center;
+  }
+
+  .bgCircleFill,
+  .bgCircleOutline {
+    display: block;
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    transition: left 420ms ease; 
+  }
+
+  /* Figma: Ellipse 3 (filled); top -= 122 with phone so layout stays aligned */
+  .bgCircleFill {
+    width: 745px;
+    height: 745px;
+    left: 348px;
+    top: 55px;
+    background: #ADBC9F;
+    border-radius: 50%;
+  }
+
+  /* Figma: eclipse_not filled — SVG with long dashed arcs, light green */
+  .bgCircleOutline {
+    width: 829px;
+    height: 829px;
+    left: 305.5px;
+    top: 12.5px;
+    background: transparent;
+  }
+
+  .phoneWrap {
+    position: absolute;
+    height: 852px;
+    width: 410px;
+    left: 515px; /* Figma: mockup x */
+    top: 0;
+    transition: left 420ms ease; /* was: transform — but position is via left */
+    will-change: left;
+    z-index: 2;
+  }
+
+  /* Default: quick exit (text disappears before phone moves back) */
+  .rightPanel {
+    display: block;
+    position: absolute;
+    left: 913px; /* Figma: text_block x */
+    top: 327px; /* Figma 449 − phone offset 122 (phone top aligned to scene top) */
+    transform: translateX(120px);
+    opacity: 0;
+    pointer-events: none;
+    width: 420px; /* Figma: text_block width */
+    transition: transform 200ms ease, opacity 160ms ease;
+    will-change: transform, opacity;
+    z-index: 3;
+  }
+
+  .rightPanelInner {
+    font-family: 'Cooper Hewitt', sans-serif;
+    color: #1F1F1F;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px; /* Figma: text_block gap */
+  }
+
+  .rightTextBlock {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px; /* Figma: title frame gap */
+  }
+
+  .rightHeading {
+    font-size: 40px;
+    line-height: 48px;
+    font-weight: 700;
+    margin: 0; /* gap in parent handles spacing */
+    color: #000000; /* Figma: fill_NLL1S6 */
+    /* font-family: 'Cooper Hewitt', sans-serif;; */
+    width: 434px;
+  }
+
+  .rightHeadingP {
+    color: #60866E; /* Figma: ts1 */
+  }
+
+  .rightHeadingH {
+    color: #526338; /* Figma: ts2 */
+  }
+
+  .rightText {
+    font-size: 18px; /* Figma: body */
+    line-height: 28px;
+    font-weight: 700;
+    margin: 0;
+    opacity: 0.9;
+    color: #000000; /* Figma */
+  }
+
+  .rightTryAgainBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* Figma button gap */
+    /* width: 213px;  */
+    padding: 16px 58px; 
+    border-radius: 32px; /* Figma: radius */
+    border: none;
+    background: #ADBC9F;
+    color: #1F1F1F;
+    font-family: 'Cooper Hewitt', sans-serif;
+    font-size: 16px;
+    font-weight: 709; /* semibold */
+    cursor: pointer;
+  }
+
+  .rightTryAgainBtn:hover {
+    filter: brightness(0.98);
+  }
+
+  .rightTryAgainBtn:active {
+    transform: scale(0.99);
+  }
+
+  .rightTryAgainIcon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+  }
+
+  .rightTryAgainIcon svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+
+  /* Completion state uses different absolute x for circle+mockup in Figma */
+  .viewportCompletion .bgCircleFill {
+    left: 162px;
+  }
+
+  .viewportCompletion .bgCircleOutline {
+    left: 119.5px;
+  }
+
+  .viewportCompletion .phoneWrap {
+    left: 329px;
+  }
+
+  /* Delayed entrance: phone moves first (420ms), text slides in after ~280ms */
+  .viewportCompletion .rightPanel {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+    transition: transform 400ms ease 280ms, opacity 340ms ease 280ms;
   }
 
   .shell {
@@ -37,9 +337,9 @@
     filter: drop-shadow(0 22px 60px rgba(0, 0, 0, 0.22));
     pointer-events: none;
     z-index: 2;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    transform: none;
   }
 
   /* Ensure the decorative SVG frame never blocks clicks */
@@ -55,33 +355,32 @@
 
   .screen {
     position: absolute;
-    width: 393px;
-    height: 824px;
+    width: 382.25px;  /* Figma: Screen width */
+    height: 828.67px; /* Figma: Screen height */
     border-radius: 44px;
-    overflow: hidden;
+    /* `overflow-x: hidden` + `overflow-y: auto` breaks `position: sticky` for children in Chromium; `clip` keeps rounding + sticky */
+    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
     background: var(--main-background-color);
     z-index: 1;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 11.67px;   /* Figma: Screen y */
+    left: 13.77px;  /* Figma: Screen x */
+    transform: none;
+    /* Match mobile content width: Container inner = 393 − 2×20 = 353px */
+    --container-padding-x: max(0px, calc((100% - 353px) / 2));
+    --status-bar-height: 51px;
+    /* App Header.module.css reads this so .header sticks under StatusBar */
+    --sticky-header-top: var(--status-bar-height);
   }
 
   /* Defensive: keep the app inside the screen clickable */
   .screen,
   .screenContent {
     pointer-events: auto;
-  }
-
-  /* Make app scroll inside the "screen" */
-  .screen {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  /* Hide scrollbar visuals inside the frame (keep scrolling) */
-  .screen {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge legacy */
   }
 
   .screen::-webkit-scrollbar {
@@ -92,7 +391,7 @@
   .statusBar {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 11;
     display: flex;
     align-items: center;
     height: 51px;
