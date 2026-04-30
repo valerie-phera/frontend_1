@@ -179,7 +179,7 @@
     position: absolute;
     z-index: 0;
     pointer-events: none;
-    transition: left 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: left 760ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Figma: Ellipse 3 (filled); top -= 122 with phone so layout stays aligned */
@@ -208,7 +208,7 @@
     left: 515px;
     /* Figma: mockup x */
     top: 0;
-    transition: left 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: left 760ms cubic-bezier(0.16, 1, 0.3, 1);
     /* smoother ease-out */
     will-change: left;
     z-index: 2;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
@@ -14,43 +14,71 @@ import styles from "./PrivacyAndConsentPage.module.css";
 const CONSENT_STORAGE_KEY = "phera_privacy_and_consent";
 
 const PrivacyAndConsentPage = () => {
+    const location = useLocation();
     const navigate = useNavigate();
-    const [isCoreConsent, setIsCoreConsent] = useState(() => {
+    const persistConsent = (nextCore, nextAnalytics) => {
         try {
+            sessionStorage.setItem(
+                CONSENT_STORAGE_KEY,
+                JSON.stringify({ isCoreConsent: Boolean(nextCore), isAnalyticsConsent: Boolean(nextAnalytics) })
+            );
+        } catch {
+            // ignore
+        }
+    };
+
+    const readStoredConsent = () => {
+        try {
+            // 1) Prefer history state (works reliably for in-app navigation + Back/Forward)
+            const st = location?.state;
+            if (st && typeof st === "object" && typeof st.isCoreConsent !== "undefined") {
+                return {
+                    isCoreConsent: Boolean(st.isCoreConsent),
+                    isAnalyticsConsent: Boolean(st.isAnalyticsConsent),
+                };
+            }
+
+            // 2) Fallback to sessionStorage (helps when returning from external privacy policy site)
             const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
             const parsed = raw ? JSON.parse(raw) : null;
-            return Boolean(parsed?.isCoreConsent);
+            if (!parsed || typeof parsed !== "object") {
+                return { isCoreConsent: false, isAnalyticsConsent: false };
+            }
+            return {
+                isCoreConsent: Boolean(parsed.isCoreConsent),
+                isAnalyticsConsent: Boolean(parsed.isAnalyticsConsent),
+            };
         } catch {
-            return false;
+            return { isCoreConsent: false, isAnalyticsConsent: false };
         }
-    });
-    const [isAnalyticsConsent, setIsAnalyticsConsent] = useState(() => {
-        try {
-            const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
-            const parsed = raw ? JSON.parse(raw) : null;
-            return Boolean(parsed?.isAnalyticsConsent);
-        } catch {
-            return false;
-        }
-    });
+    };
+
+    const initial = useMemo(() => readStoredConsent(), []); // only on mount
+    const [isCoreConsent, setIsCoreConsent] = useState(initial.isCoreConsent);
+    const [isAnalyticsConsent, setIsAnalyticsConsent] = useState(initial.isAnalyticsConsent);
 
     const coreConsentId = useMemo(() => "privacy-core-consent", []);
     const analyticsConsentId = useMemo(() => "privacy-analytics-consent", []);
 
     const handleContinue = () => {
         if (!isCoreConsent) return;
-        navigate("/how-it-works");
+        // Ensure the latest consent is persisted before navigation.
+        persistConsent(isCoreConsent, isAnalyticsConsent);
+        navigate("/how-it-works", { state: { isCoreConsent, isAnalyticsConsent } });
     };
 
+    // Keep the current /privacy-and-consent history entry updated so Back restores instantly.
     useEffect(() => {
-        try {
-            sessionStorage.setItem(
-                CONSENT_STORAGE_KEY,
-                JSON.stringify({ isCoreConsent, isAnalyticsConsent })
-            );
-        } catch {
-            // ignore
-        }
+        navigate(".", {
+            replace: true,
+            state: { ...(location.state ?? {}), isCoreConsent, isAnalyticsConsent },
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCoreConsent, isAnalyticsConsent]);
+
+    // Still persist on change (safety net), but primary persistence happens synchronously in handlers.
+    useEffect(() => {
+        persistConsent(isCoreConsent, isAnalyticsConsent);
     }, [isCoreConsent, isAnalyticsConsent]);
 
     return (
@@ -72,7 +100,11 @@ const PrivacyAndConsentPage = () => {
                                             id={coreConsentId}
                                             type="checkbox"
                                             checked={isCoreConsent}
-                                            onChange={(e) => setIsCoreConsent(e.target.checked)}
+                                            onChange={(e) => {
+                                                const next = e.target.checked;
+                                                setIsCoreConsent(next);
+                                                persistConsent(next, isAnalyticsConsent);
+                                            }}
                                         />
                                     </div>
                                     <p className={styles.text}>I agree to the processing of my health-related data (such as pH value and any information I choose to provide) to generate personalised, evidence-based health insights.</p>
@@ -103,7 +135,11 @@ const PrivacyAndConsentPage = () => {
                                             id={analyticsConsentId}
                                             type="checkbox"
                                             checked={isAnalyticsConsent}
-                                            onChange={(e) => setIsAnalyticsConsent(e.target.checked)}
+                                            onChange={(e) => {
+                                                const next = e.target.checked;
+                                                setIsAnalyticsConsent(next);
+                                                persistConsent(isCoreConsent, next);
+                                            }}
                                         />
                                     </div>
                                     <p className={styles.text}>I agree to the use of my anonymised data to improve the service</p>
