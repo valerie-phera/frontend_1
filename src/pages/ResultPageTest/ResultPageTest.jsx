@@ -5,7 +5,6 @@ import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import PhBadge from "../../components/PhBadge/PhBadge";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
-import ShareIcon from "../../assets/icons/ShareIcon";
 import InfoCircle_24 from "../../assets/icons/InfoCircle_24";
 import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
 
@@ -19,7 +18,6 @@ import {
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
 import useExportResults from "../../hooks/useExportResults";
-import useImportJson from "../../hooks/useImportJson";
 
 import styles from "./ResultPageTest.module.css";
 
@@ -68,12 +66,6 @@ const ResultPageTest = () => {
             },
         });
     }, [navigate]);
-
-    const handleImportedData = (data) => {
-        console.log("📥 Импортировано:", data);
-    };
-
-    const { fileInputRef, handleImportClick, handleFileUpload } = useImportJson(handleImportedData);
 
     const getPhLevel = (ph) => {
         if (ph < 4.5) return "Normal";
@@ -204,25 +196,10 @@ const ResultPageTest = () => {
                                     <button
                                         type="button"
                                         className={styles.actionsInner}
-                                        onClick={handleImportClick}
-                                        aria-label="Import results"
+                                        onClick={onExportClick}
+                                        aria-label="Download results"
                                     >
                                         <DownloadIcon />
-                                    </button>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="application/json"
-                                        style={{ display: "none" }}
-                                        onChange={handleFileUpload}
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.actionsInner}
-                                        onClick={onExportClick}
-                                        aria-label="Share results"
-                                    >
-                                        <ShareIcon />
                                     </button>
                                 </div>
                             </div>

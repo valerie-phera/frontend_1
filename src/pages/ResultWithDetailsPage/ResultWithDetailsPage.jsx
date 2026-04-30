@@ -8,7 +8,6 @@ import Container from "../../components/Container/Container";
 
 import EditNotesGrey from "../../assets/icons/EditNotesGrey";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
-import ShareIcon from "../../assets/icons/ShareIcon";
 import InfoCircle_24 from "../../assets/icons/InfoCircle_24";
 import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
 import RecomendationsIcon from "../../assets/icons/RecomendationsIcon";
@@ -305,8 +304,8 @@ const ResultWithDetailsPage = () => {
                                     <button
                                         type="button"
                                         className={styles.actionsInner}
-                                        onClick={handleImportClick}
-                                        aria-label="Import results"
+                                        onClick={onExportClick}
+                                        aria-label="Download results"
                                     >
                                         <DownloadIcon />
                                     </button>
@@ -317,14 +316,6 @@ const ResultWithDetailsPage = () => {
                                         style={{ display: "none" }}
                                         onChange={handleFileUpload}
                                     />
-                                    <button
-                                        type="button"
-                                        className={styles.actionsInner}
-                                        onClick={onExportClick}
-                                        aria-label="Share results"
-                                    >
-                                        <ShareIcon />
-                                    </button>
                                 </div>
                             </div>
                             <div className={styles.num}>{Number(phValue).toFixed(2)}</div>
