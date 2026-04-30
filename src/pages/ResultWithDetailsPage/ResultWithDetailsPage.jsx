@@ -73,6 +73,7 @@ const extractCitationLinks = (rawText) => {
 const citationLinkLabel = (link) => {
     const s = String(link ?? "").trim();
     if (/^doi:/i.test(s)) return "DOI";
+    if (/^PMCID:/i.test(s)) return "PMC";
     return s;
 };
 
