@@ -160,14 +160,16 @@
     overflow: hidden;
   }
 
-  /* Figma artboard 1440×1024; phone top was 122px — shifted to 0 so (grid 41px + phone) = 41px below header */
+  /* Figma artboard 1440×1024.
+     We move the phone from y=122px to y=0 and take the 50px bottom margin out of the artboard
+     (it's already reserved by .desktopStage grid rows). So the "content scene" height is 1024−122−50 = 852px. */
   .desktopStageSceneInner {
     position: absolute;
     left: 50%;
     top: 0;
     width: 1440px;
-    height: 1024px;
-    transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 1024px)));
+    height: 852px;
+    transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 852px)));
     transform-origin: top center;
   }
 
