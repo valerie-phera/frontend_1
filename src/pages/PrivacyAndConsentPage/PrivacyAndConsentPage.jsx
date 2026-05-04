@@ -150,6 +150,8 @@ const PrivacyAndConsentPage = () => {
                             Read our full{" "}
                             <a
                                 href="https://phera.digital/privacy-policy/"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 privacy policy
                             </a>

@@ -19,7 +19,7 @@ export const ETHNIC_OPTIONS = [
   "Latin American / Latina / Latinx / Hispanic",
   "Sinti / Roma",
   "White / Caucasian / European",
-  "Mixed / Multiple ancestrie",
+  "Mixed / Multiple ancestry",
   ETHNIC_OTHER_OPTION,
 ];
 
