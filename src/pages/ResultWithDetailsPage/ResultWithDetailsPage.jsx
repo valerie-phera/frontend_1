@@ -85,13 +85,47 @@ const citationLinkLabel = (link) => {
 
 const citationLinkHref = (link) => {
     if (!link) return null;
-    if (typeof link === "object" && link.url) return String(link.url);
+    const canonicalize = (href) => {
+        const s = String(href ?? "").trim();
+        if (!s) return null;
+        // DOI canonical
+        const doiMatch =
+            s.match(/https?:\/\/doi\.org\/(.+)$/i) ||
+            s.match(/^doi:(.+)$/i);
+        if (doiMatch?.[1]) {
+            const doi = doiMatch[1].trim().replace(/^doi:\s*/i, "");
+            return doi ? `https://doi.org/${doi}` : null;
+        }
+
+        // PubMed canonical
+        const pmidMatch =
+            s.match(/https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/?/i) ||
+            s.match(/^PMID:(\d+)$/i);
+        if (pmidMatch?.[1]) {
+            return `https://pubmed.ncbi.nlm.nih.gov/${pmidMatch[1]}/`;
+        }
+
+        // PMC canonical (backend might use digits-only; text may include "PMC123")
+        const pmcMatch =
+            s.match(/https?:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/(PMC)?(\d+)\/?/i) ||
+            s.match(/^PMCID:\s*(PMC)?(\d+)$/i);
+        if (pmcMatch?.[2]) {
+            return `https://pmc.ncbi.nlm.nih.gov/articles/${pmcMatch[2]}/`;
+        }
+
+        return s;
+    };
+
+    if (typeof link === "object" && link.url) return canonicalize(link.url);
     if (typeof link === "object" && link.kind && link.value) {
         const v = String(link.value).trim();
         if (!v) return null;
         if (link.kind === "doi") return `https://doi.org/${v.replace(/^doi:\s*/i, "")}`;
         if (link.kind === "pmid") return `https://pubmed.ncbi.nlm.nih.gov/${v.replace(/^PMID:\s*/i, "")}/`;
-        if (link.kind === "pmcid") return `https://pmc.ncbi.nlm.nih.gov/articles/${v.replace(/^PMCID:\s*/i, "")}/`;
+        if (link.kind === "pmcid") {
+            const id = v.replace(/^PMCID:\s*/i, "").replace(/^PMC/i, "").trim();
+            return `https://pmc.ncbi.nlm.nih.gov/articles/${id}/`;
+        }
     }
     const s = String(link).trim();
     const doi = s.match(/^doi:(.+)$/i)?.[1]?.trim();
@@ -99,7 +133,7 @@ const citationLinkHref = (link) => {
     const pmcid = s.match(/^PMCID:(.+)$/i)?.[1]?.trim();
     if (doi) return `https://doi.org/${doi}`;
     if (pmid) return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
-    if (pmcid) return `https://pmc.ncbi.nlm.nih.gov/articles/${pmcid}/`;
+    if (pmcid) return `https://pmc.ncbi.nlm.nih.gov/articles/${pmcid.replace(/^PMC/i, "")}/`;
     return null;
 };
 
