@@ -161,6 +161,9 @@ const AnalyzingData = () => {
                 ]);
                 if (cancelled) return;
 
+                // Debug: log full backend response (before we map it into route state)
+                console.log("[AnalyzingData] backendResponse:", backendResponse);
+
                 const nextPhValue = Number(
                     backendResponse?.phValue ?? backendResponse?.ph_value ?? phValue
                 );
@@ -184,6 +187,7 @@ const AnalyzingData = () => {
                         phLevel: nextPhLevel,
                         timestamp,
                         interpretation: nextInterpretation,
+                        overview: backendResponse?.overview ?? state?.overview,
                         recommendations: backendResponse?.agent_reply ?? state?.recommendations,
                         citations: backendResponse?.citations ?? state?.citations ?? [],
                         age: draft?.age ?? state?.age,

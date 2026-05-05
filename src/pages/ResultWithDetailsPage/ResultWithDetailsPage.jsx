@@ -137,6 +137,18 @@ const renderWithItalicJournal = (text) => {
     );
 };
 
+const splitIntoSentences = (rawText) => {
+    const text = String(rawText ?? "").replace(/\s+/g, " ").trim();
+    if (!text) return [];
+
+    // Basic sentence splitting for UI bullets.
+    // Keeps punctuation, splits on space after . ! ? when the next chunk looks like a new sentence.
+    return text
+        .split(/(?<=[.!?])\s+(?=[A-Z0-9(])/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+};
+
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
     const { isDesktopCompletionLayout, triggerDesktopCompletion } = useDeviceFrame();
@@ -154,6 +166,7 @@ const ResultWithDetailsPage = () => {
     const interpretationLead = backendInterpretation ? String(backendInterpretation) : computedLead;
     const interpretationSuffix = backendInterpretation ? "" : computedSuffix;
     const interpretation = backendInterpretation ? String(backendInterpretation) : `${computedLead}${computedSuffix}`;
+    const backendOverview = state?.overview;
     const currentRecommendations = state?.recommendations;
     const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
@@ -258,6 +271,8 @@ const ResultWithDetailsPage = () => {
         .map(p => p.trim())
         .filter(Boolean);
 
+    const overviewParagraphs = splitIntoSentences(backendOverview);
+
     const citations = Array.isArray(rawCitations)
         ? rawCitations
             .map((c) => {
@@ -305,7 +320,7 @@ const ResultWithDetailsPage = () => {
         const ro = new ResizeObserver(() => measure());
         ro.observe(panelEl);
         return () => ro.disconnect();
-    }, [activeTab, paragraphs.length, citations.length]);
+    }, [activeTab, overviewParagraphs.length, paragraphs.length, citations.length]);
 
     const onExportClick = () => {
         handleExport({
@@ -499,25 +514,38 @@ const ResultWithDetailsPage = () => {
                                         ref={overviewPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
-                                        <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
-                                        <div className={styles.wrapText}>
-                                            {[
-                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                            ].map((t, index) => (
-                                                <div key={index} className={styles.text}>
-                                                    <div className={styles.point}></div>
-                                                    <p className={styles.innerText}>
-                                                        {t} <span className={styles.overviewBracketRef}>[2]</span>.
+                                        {overviewParagraphs.length > 0 ? (
+                                            <div className={styles.wrapText}>
+                                                {overviewParagraphs.map((t, index) => (
+                                                    <div key={index} className={styles.text}>
+                                                        <div className={styles.point}></div>
+                                                        <p className={styles.innerText}>{t}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
+                                                <div className={styles.wrapText}>
+                                                    {[
+                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                    ].map((t, index) => (
+                                                        <div key={index} className={styles.text}>
+                                                            <div className={styles.point}></div>
+                                                            <p className={styles.innerText}>
+                                                                {t} <span className={styles.overviewBracketRef}>[2]</span>.
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                    <p className={styles.overviewNote}>
+                                                        Consult your healthcare provider can help ensure everything is as it should be.
                                                     </p>
                                                 </div>
-                                            ))}
-                                            <p className={styles.overviewNote}>
-                                                Consult your healthcare provider can help ensure everything is as it should be.
-                                            </p>
-                                        </div>
+                                            </>
+                                        )}
                                     </div>
 
                                     <div
