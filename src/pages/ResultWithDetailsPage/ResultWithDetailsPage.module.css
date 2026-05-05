@@ -347,6 +347,26 @@
     }
 }
 
+.sourcesSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 16px 10px;
+    box-sizing: border-box;
+}
+
+.sourcesCard {
+    background-color: #FFFFFF;
+    box-sizing: border-box;
+}
+
+.sourcesEmpty {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #717680;
+}
+
 .quotesBlock {
     display: flex;
     flex-direction: column;

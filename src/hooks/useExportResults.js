@@ -37,9 +37,29 @@ const useExportResults = () => {
     };
     // -------------------------------------------
 
-    const handleExport = async ({ phValue, phLevel, timestamp, interpretation, detailOptions = [], recommendations = [] }) => {
+    const handleExport = async ({
+        phValue,
+        phLevel,
+        timestamp,
+        interpretation,
+        detailOptions = [],
+        recommendations = [],
+        citations = [],
+        state = null,
+        reportId = null,
+    }) => {
         // PDF
-        const pdfBytes = await exportPdf({ phValue, phLevel, timestamp, interpretation, detailOptions, recommendations });
+        const pdfBytes = await exportPdf({
+            phValue,
+            phLevel,
+            timestamp,
+            interpretation,
+            detailOptions,
+            recommendations,
+            citations,
+            state,
+            reportId,
+        });
 
         // JSON
         const jsonText = exportJson(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
@@ -49,7 +69,7 @@ const useExportResults = () => {
 
         // ZIP
         const zip = new JSZip();
-        zip.file("ph-report.pdf", pdfBytes);
+        // zip.file("ph-report.pdf", pdfBytes);   //temporary !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         zip.file("ph-report.json", jsonText);
         zip.file("ph-report.csv", csvText);
 

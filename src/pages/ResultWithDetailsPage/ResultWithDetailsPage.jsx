@@ -52,9 +52,9 @@ const extractCitationLinks = (rawText) => {
         text.match(/PubMed Central PMCID:\s*([A-Za-z0-9]+)/i);
 
     const links = [];
-    if (doiMatch?.[1]) links.push(`doi:${doiMatch[1]}`);
-    if (pmidMatch?.[1]) links.push(`PMID:${pmidMatch[1]}`);
-    if (pmcidMatch?.[1]) links.push(`PMCID:${pmcidMatch[1]}`);
+    if (doiMatch?.[1]) links.push({ kind: "doi", value: doiMatch[1] });
+    if (pmidMatch?.[1]) links.push({ kind: "pmid", value: pmidMatch[1] });
+    if (pmcidMatch?.[1]) links.push({ kind: "pmcid", value: pmcidMatch[1] });
 
     let main = text;
     main = main.replace(/doi:\s*[^\s,;]+/gi, "");
@@ -70,10 +70,37 @@ const extractCitationLinks = (rawText) => {
 
 /** Short label for citation link chips (full value kept in `key` / data). */
 const citationLinkLabel = (link) => {
+    if (!link) return "";
+    if (typeof link === "object" && link.kind) {
+        if (link.kind === "doi") return "DOI";
+        if (link.kind === "pmid") return "PubMed";
+        if (link.kind === "pmcid") return "PMC";
+    }
     const s = String(link ?? "").trim();
     if (/^doi:/i.test(s)) return "DOI";
     if (/^PMCID:/i.test(s)) return "PMC";
+    if (/^PMID:/i.test(s)) return "PubMed";
     return s;
+};
+
+const citationLinkHref = (link) => {
+    if (!link) return null;
+    if (typeof link === "object" && link.url) return String(link.url);
+    if (typeof link === "object" && link.kind && link.value) {
+        const v = String(link.value).trim();
+        if (!v) return null;
+        if (link.kind === "doi") return `https://doi.org/${v.replace(/^doi:\s*/i, "")}`;
+        if (link.kind === "pmid") return `https://pubmed.ncbi.nlm.nih.gov/${v.replace(/^PMID:\s*/i, "")}/`;
+        if (link.kind === "pmcid") return `https://pmc.ncbi.nlm.nih.gov/articles/${v.replace(/^PMCID:\s*/i, "")}/`;
+    }
+    const s = String(link).trim();
+    const doi = s.match(/^doi:(.+)$/i)?.[1]?.trim();
+    const pmid = s.match(/^PMID:(.+)$/i)?.[1]?.trim();
+    const pmcid = s.match(/^PMCID:(.+)$/i)?.[1]?.trim();
+    if (doi) return `https://doi.org/${doi}`;
+    if (pmid) return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+    if (pmcid) return `https://pmc.ncbi.nlm.nih.gov/articles/${pmcid}/`;
+    return null;
 };
 
 const splitCitationTitleAndBody = (rawText) => {
@@ -238,12 +265,25 @@ const ResultWithDetailsPage = () => {
                 // Backend can send either:
                 // - { title, relevant_section } (old)
                 // - { id, reference_citation } (current)
+                // - { title, nlm_reference, pmid_url, doi_url, ... } (new)
                 const title = c.title;
-                const text = c.relevant_section ?? c.reference_citation;
+                const text =
+                    c.relevant_section ??
+                    c.reference_citation ??
+                    c.nlm_reference ??
+                    c.nlmReference ??
+                    c.reference ??
+                    c.citation;
                 if (!title && !text) return null;
+                const urlLinks = [
+                    c.doi_url ? { kind: "doi", url: String(c.doi_url) } : null,
+                    c.pmid_url ? { kind: "pmid", url: String(c.pmid_url) } : null,
+                    c.pmcid_url ? { kind: "pmcid", url: String(c.pmcid_url) } : null,
+                ].filter(Boolean);
                 return {
                     title: title == null ? "" : String(title),
                     text: text == null ? "" : String(text),
+                    links: urlLinks,
                 };
             })
             .filter(Boolean)
@@ -274,7 +314,9 @@ const ResultWithDetailsPage = () => {
             timestamp,
             interpretation,
             detailOptions,
-            recommendations: paragraphs
+            recommendations: paragraphs,
+            citations,
+            state,
         });
     };
 
@@ -499,44 +541,74 @@ const ResultWithDetailsPage = () => {
                                         ref={sourcesPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "sources" ? styles.tabPanelActive : ""}`}
                                     >
-                                        {citations.length > 0 ? (
-                                            <div className={`${styles.source} ${styles.sourceNoGapFromRecommendations}`}>
-                                                <div
-                                                    ref={citationsContentRef}
-                                                    id="result-with-details-citations"
-                                                    className={`${styles.wrapText} ${styles.citationsContent}`}
-                                                >
-                                                    <div className={styles.quotesBlock}>
-                                                        {citations.map((q, index) => {
-                                                            const { title, body, links } = splitCitationTitleAndBody(q.text);
-                                                            return (
-                                                                <div key={index} className={styles.citationItem}>
-                                                                    <div className={styles.citationNumber}>{index + 1}.</div>
-                                                                    <div className={styles.citationContent}>
-                                                                        <div className={styles.citationTitle}>{title}</div>
-                                                                        {body ? (
-                                                                            <div className={styles.citationText}>
-                                                                                {renderWithItalicJournal(body)}
-                                                                            </div>
-                                                                        ) : null}
-                                                                        {links.length > 0 ? (
-                                                                            <div className={styles.citationLinks}>
-                                                                                {links.map((l) => (
-                                                                                    <span key={l} className={styles.citationLink}>
-                                                                                        <span>{citationLinkLabel(l)}</span>
-                                                                                        <ArrowUpLink className={styles.citationLinkIcon} />
-                                                                                    </span>
-                                                                                ))}
-                                                                            </div>
-                                                                        ) : null}
+                                        <div className={`${styles.source} ${styles.sourceNoGapFromRecommendations}`}>
+                                            <div
+                                                ref={citationsContentRef}
+                                                id="result-with-details-citations"
+                                                className={`${styles.sourcesSection} ${styles.citationsContent}`}
+                                            >
+                                                {/* <h4 className={styles.sourcesSectionTitle}>Sources</h4> */}
+                                                <div className={styles.sourcesCard}>
+                                                    {citations.length > 0 ? (
+                                                        <div className={styles.quotesBlock}>
+                                                            {citations.map((q, index) => {
+                                                                const parsed = splitCitationTitleAndBody(q.text);
+                                                                const title = (q.title && String(q.title).trim()) ? String(q.title).trim() : parsed.title;
+                                                                const body = parsed.body;
+                                                                const links = [
+                                                                    ...(Array.isArray(q.links) ? q.links : []),
+                                                                    ...(Array.isArray(parsed.links) ? parsed.links : []),
+                                                                ];
+                                                                const seenHrefs = new Set();
+                                                                const uniqueLinks = links.filter((l) => {
+                                                                    const href = citationLinkHref(l);
+                                                                    if (!href) return false;
+                                                                    if (seenHrefs.has(href)) return false;
+                                                                    seenHrefs.add(href);
+                                                                    return true;
+                                                                });
+                                                                return (
+                                                                    <div key={index} className={styles.citationItem}>
+                                                                        <div className={styles.citationNumber}>{index + 1}.</div>
+                                                                        <div className={styles.citationContent}>
+                                                                            <div className={styles.citationTitle}>{title}</div>
+                                                                            {body ? (
+                                                                                <div className={styles.citationText}>
+                                                                                    {renderWithItalicJournal(body)}
+                                                                                </div>
+                                                                            ) : null}
+                                                                            {uniqueLinks.length > 0 ? (
+                                                                                <div className={styles.citationLinks}>
+                                                                                    {uniqueLinks.map((l) => {
+                                                                                        const href = citationLinkHref(l);
+                                                                                        return (
+                                                                                            <a
+                                                                                                key={href}
+                                                                                                className={styles.citationLink}
+                                                                                                href={href}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                            >
+                                                                                                <span>{citationLinkLabel(l)}</span>
+                                                                                                <ArrowUpLink className={styles.citationLinkIcon} />
+                                                                                            </a>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            ) : null}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <p className={styles.sourcesEmpty}>
+                                                            No references listed for this report.
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

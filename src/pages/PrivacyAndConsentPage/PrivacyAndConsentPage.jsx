@@ -29,6 +29,17 @@ const PrivacyAndConsentPage = () => {
 
     const readStoredConsent = () => {
         try {
+            // Fresh navigation from start page should always reset consents.
+            const st0 = location?.state;
+            if (st0 && typeof st0 === "object" && st0.resetConsent) {
+                try {
+                    sessionStorage.removeItem(CONSENT_STORAGE_KEY);
+                } catch {
+                    // ignore
+                }
+                return { isCoreConsent: false, isAnalyticsConsent: false };
+            }
+
             // 1) Prefer history state (works reliably for in-app navigation + Back/Forward)
             const st = location?.state;
             if (st && typeof st === "object" && typeof st.isCoreConsent !== "undefined") {
@@ -60,6 +71,16 @@ const PrivacyAndConsentPage = () => {
     const coreConsentId = useMemo(() => "privacy-core-consent", []);
     const analyticsConsentId = useMemo(() => "privacy-analytics-consent", []);
 
+    // Make resetConsent one-shot: remove it from history state after initial mount.
+    useEffect(() => {
+        const st = location?.state;
+        if (st && typeof st === "object" && st.resetConsent) {
+            const { resetConsent, ...rest } = st;
+            navigate(".", { replace: true, state: rest });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handleContinue = () => {
         if (!isCoreConsent) return;
         // Ensure the latest consent is persisted before navigation.
@@ -71,9 +92,9 @@ const PrivacyAndConsentPage = () => {
     useEffect(() => {
         navigate(".", {
             replace: true,
-            state: { ...(location.state ?? {}), isCoreConsent, isAnalyticsConsent },
+            // Overwrite to avoid re-introducing one-shot flags like `resetConsent`.
+            state: { isCoreConsent, isAnalyticsConsent },
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isCoreConsent, isAnalyticsConsent]);
 
     // Still persist on change (safety net), but primary persistence happens synchronously in handlers.

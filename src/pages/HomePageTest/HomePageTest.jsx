@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import homePageImg from "../../assets/images/homePageImg.webp"
 
@@ -9,15 +9,26 @@ import BottomBlock from "../../components/BottomBlock/BottomBlock";
 
 import styles from "./HomePageTest.module.css";
 
+const CONSENT_STORAGE_KEY = "phera_privacy_and_consent";
+
 const HomePageTest = () => {
     const navigate = useNavigate();
     const [isConfirmed, setIsConfirmed] = useState(false);
 
     const checkboxId = useMemo(() => "home-age-confirm", []);
 
+    useEffect(() => {
+        // Coming back to the start means a new flow — reset any previously stored consents.
+        try {
+            sessionStorage.removeItem(CONSENT_STORAGE_KEY);
+        } catch {
+            // ignore
+        }
+    }, []);
+
     const handleContinue = () => {
         if (!isConfirmed) return;
-        navigate("/privacy-and-consent");
+        navigate("/privacy-and-consent", { state: { resetConsent: true } });
     };
 
     return (
