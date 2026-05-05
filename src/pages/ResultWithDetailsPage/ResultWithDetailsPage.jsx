@@ -554,7 +554,8 @@ const ResultWithDetailsPage = () => {
                                                             {citations.map((q, index) => {
                                                                 const parsed = splitCitationTitleAndBody(q.text);
                                                                 const title = (q.title && String(q.title).trim()) ? String(q.title).trim() : parsed.title;
-                                                                const body = parsed.body;
+                                                                const fullText = q.text == null ? "" : String(q.text);
+                                                                const cleanedText = extractCitationLinks(fullText).mainText;
                                                                 const links = [
                                                                     ...(Array.isArray(q.links) ? q.links : []),
                                                                     ...(Array.isArray(parsed.links) ? parsed.links : []),
@@ -572,9 +573,9 @@ const ResultWithDetailsPage = () => {
                                                                         <div className={styles.citationNumber}>{index + 1}.</div>
                                                                         <div className={styles.citationContent}>
                                                                             <div className={styles.citationTitle}>{title}</div>
-                                                                            {body ? (
+                                                                            {cleanedText ? (
                                                                                 <div className={styles.citationText}>
-                                                                                    {renderWithItalicJournal(body)}
+                                                                                    {cleanedText}
                                                                                 </div>
                                                                             ) : null}
                                                                             {uniqueLinks.length > 0 ? (
