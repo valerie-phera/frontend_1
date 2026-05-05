@@ -73,13 +73,13 @@ const citationLinkLabel = (link) => {
     if (!link) return "";
     if (typeof link === "object" && link.kind) {
         if (link.kind === "doi") return "DOI";
-        if (link.kind === "pmid") return "PubMed";
-        if (link.kind === "pmcid") return "PMC";
+        if (link.kind === "pmid") return "PMID";
+        if (link.kind === "pmcid") return "PMCID";
     }
     const s = String(link ?? "").trim();
     if (/^doi:/i.test(s)) return "DOI";
-    if (/^PMCID:/i.test(s)) return "PMC";
-    if (/^PMID:/i.test(s)) return "PubMed";
+    if (/^PMCID:/i.test(s)) return "PMCID";
+    if (/^PMID:/i.test(s)) return "PMID";
     return s;
 };
 
