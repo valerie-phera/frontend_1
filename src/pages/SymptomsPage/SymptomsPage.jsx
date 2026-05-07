@@ -175,41 +175,23 @@ const SymptomsPage = () => {
         const currentMedications = stripNone(state?.currentMedications);
 
         const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
-        const hasPeri = has(lifeStage, "Perimenopause");
-        const hasMeno =
-            has(lifeStage, "Menopause") || has(lifeStage, "Postmenopause");
         const hasBirthControl = has(currentMedications, "Birth control");
-        const hasFertilityTreatment = has(currentMedications, "Fertility treatment");
+        const hasFertilityTreatment = has(
+            currentMedications,
+            "Fertility treatment"
+        );
 
+        // After `/add-details/symptoms` there are only 3 valid branches:
+        // - Fertility treatment next steps
+        // - Birth control next steps
+        // - Direct submit to analysis
         const nextPath = (() => {
-            // New rule:
-            // If neither Birth control nor Fertility treatment is selected on HormonalHealthPage,
-            // submit straight to analysis from Symptoms.
-            if (!hasBirthControl && !hasFertilityTreatment) {
-                return "/analyzing-data";
-            }
-
-            // 5
-            if (hasPeri && hasBirthControl) {
-                return "/add-details/next-steps/birth-control-hormone-therapy";
-            }
-            // 6
-            if (hasPeri && hasFertilityTreatment) {
-                return "/add-details/next-steps/birth-control-fertility-treatment";
-            }
-            // 3
             if (hasFertilityTreatment) {
                 return "/add-details/next-steps/fertility-treatment";
             }
-            // 2
-            if (hasPeri || hasMeno) {
-                return "/add-details/next-steps/hormone-therapy";
-            }
-            // 4
             if (hasBirthControl) {
                 return "/add-details/next-steps/birth-control";
             }
-            // 1
             return "/analyzing-data";
         })();
 
