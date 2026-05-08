@@ -4,7 +4,6 @@
     background-color: #FFFFFF;
     border-radius: 10px;
     width: 100%;
-    /* Keep the Notes block visible above sticky BottomBlock */
     scroll-margin-bottom: 150px;
 }
 
@@ -38,11 +37,11 @@
 }
 
 .textarea {
-  width: 100%;
-  min-height: 70px;
-  font-size: 16px;
-  resize: vertical; 
-  padding: 8px;
-  scroll-margin-bottom: 150px;
+    width: 100%;
+    min-height: 70px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 16px;
+    resize: vertical;
+    padding: 8px;
+    scroll-margin-bottom: 150px;
 }
-

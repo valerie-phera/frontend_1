@@ -364,6 +364,7 @@ const ResultWithDetailsPage = () => {
             interpretation,
             detailOptions,
             recommendations: paragraphs,
+            overviewInsights: overviewParagraphs,
             citations,
             state,
         });

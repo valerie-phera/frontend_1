@@ -90,15 +90,20 @@ const Notes = ({ notes, setNotes }) => {
     }
   }, [notes]);
 
-  // click out
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (isEditing && containerRef.current && !containerRef.current.contains(e.target)) {
         setIsEditing(false);
       }
     };
+
     document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
   }, [isEditing]);
 
   // click Escape
@@ -109,16 +114,20 @@ const Notes = ({ notes, setNotes }) => {
   }, []);
 
   return (
-    <div className={styles.wrap} ref={containerRef}>
+    <div
+      className={styles.wrap}
+      ref={containerRef}
+      onClick={() => !isEditing && setIsEditing(true)}
+      style={{ cursor: isEditing ? "auto" : "pointer" }}
+    >
       <div className={styles.heading}>
         <h4 className={styles.title}>Notes</h4>
+
         <button
           type="button"
-          onClick={() => {
-            setIsEditing((prev) => {
-              const next = !prev;
-              return next;
-            });
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
           }}
           className={styles.edit}
           aria-label="Edit notes"
@@ -133,6 +142,7 @@ const Notes = ({ notes, setNotes }) => {
           className={styles.textarea}
           value={notes}
           maxLength={500}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
         />
       ) : (
