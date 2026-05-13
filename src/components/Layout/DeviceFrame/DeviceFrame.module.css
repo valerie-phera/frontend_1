@@ -43,15 +43,22 @@
 /* Desktop/tablet: center "phone" on the page */
 @media (min-width: 768px) {
   .viewport {
-    height: 100dvh;
-    max-height: 100dvh;
-    min-height: 100dvh;
+    /* Prefer dynamic viewport units when available; fall back cleanly */
+    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     padding: 0;
     position: relative;
     overflow: hidden;
     background: #FFFFFF;
+  }
+
+  @supports (height: 100dvh) {
+    .viewport {
+      min-height: 100dvh;
+      height: 100dvh;
+    }
   }
 
   .extensionHeader {
@@ -150,6 +157,7 @@
 
   /* Middle row: fills space between the 41px / 50px margins; size container for scale(...) */
   .desktopStageFit {
+    /* Used for container-query units (cqw/cqh). Browsers without support will ignore it. */
     container-type: size;
     grid-row: 2;
     grid-column: 1;
@@ -169,8 +177,22 @@
     top: 0;
     width: 1440px;
     height: 852px;
-    transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 852px)));
+    transform: translateX(-50%);
     transform-origin: top center;
+  }
+
+  /* Primary: container-query units scale to available stage space */
+  @supports (width: 1cqw) and (height: 1cqh) {
+    .desktopStageSceneInner {
+      transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 852px)));
+    }
+  }
+
+  /* Fallback: older Firefox/Chromium without cqw/cqh */
+  @supports not (width: 1cqw) {
+    .desktopStageSceneInner {
+      transform: translateX(-50%) scale(min(1, min(100vw / 1440px, 100vh / 852px)));
+    }
   }
 
   .bgCircleFill,
