@@ -74,6 +74,25 @@ const ResultPageTest = () => {
         return "Elevated";
     };
 
+    const getUnlockParagraphs = (level) => {
+        if (level === "Slightly Elevated") {
+            return [
+                "Slight elevation is common during your period, after sex, or with hormonal shifts.",
+                "Adding your details reveals what's likely going on.",
+            ];
+        }
+        if (level === "Elevated") {
+            return [
+                "Elevated pH can mean different things depending on your age, ethnicity, cycle, and hormones.",
+                "Tell us about you to find your personal baseline.",
+            ];
+        }
+        return [
+            "The same pH means something different depending on your biology.",
+            "Tell us about you to find your personal baseline.",
+        ];
+    };
+
     const formatDate = () => {
         const now = new Date();
 
@@ -146,6 +165,7 @@ const ResultPageTest = () => {
     };
 
     const phLevel = getPhLevel(phValue);
+    const unlockParagraphs = getUnlockParagraphs(phLevel);
     const timestamp = formatDate();
     const markerPos = phToPercent(phValue);
     const markerBgPosX =
@@ -302,8 +322,6 @@ const ResultPageTest = () => {
                                     <span className={styles.bold}>{interpretationLead}</span>
                                     {interpretationSuffix}
                                 </p>
-                                <div className={styles.btnTop}>
-                                </div>
                             </div>
                         </div>
                         <div className={styles.unlockBlock}>
@@ -312,8 +330,9 @@ const ResultPageTest = () => {
                                 <h3>Unlock personalized insights</h3>
                             </div>
                             <div className={styles.unlockText}>
-                                <p>The same pH means something different depending on your biology.</p>
-                                <p>Tell us about you to find your personal baseline.</p>
+                                {unlockParagraphs.map((text) => (
+                                    <p key={text}>{text}</p>
+                                ))}
                                 <p className={styles.unlockItem}><ClockFill className={styles.unlockIcon} /> Takes about<span> 2 minutes.</span></p>
                             </div>
                             <div className={styles.elements}>

@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import EditNotes from "../../../assets/icons/EditNotes";
 
+import { NOTES_INPUT_MAX_LENGTH } from "../../../shared/utils/notesDisplay";
 import styles from "./Notes.module.css";
+
+/** Clears sticky page footer so textarea + counter stay visible while typing */
+const SCROLL_BOTTOM_PADDING_PX = 150;
 
 const getScrollParent = (el) => {
   let node = el;
@@ -22,31 +26,39 @@ const getScrollParent = (el) => {
 const Notes = ({ notes, setNotes }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
+  const editAreaRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const scrollNotesContentIntoView = (behavior = "auto") => {
+    const anchor = editAreaRef.current ?? containerRef.current;
+    if (!anchor) return;
+
+    const scroller = getScrollParent(anchor);
+    if (scroller) {
+      const anchorRect = anchor.getBoundingClientRect();
+      const scrollerRect = scroller.getBoundingClientRect();
+      const overflow = anchorRect.bottom - scrollerRect.bottom + SCROLL_BOTTOM_PADDING_PX;
+      if (overflow > 0) {
+        scroller.scrollTo({ top: scroller.scrollTop + overflow, behavior });
+      }
+      return;
+    }
+
+    try {
+      anchor.scrollIntoView({ block: "end", inline: "nearest", behavior });
+    } catch {
+      // older browsers
+    }
+  };
 
   useEffect(() => {
     if (!isEditing) return;
 
     let cancelled = false;
 
-    const scrollNotesIntoView = () => {
-      const anchor = containerRef.current;
-      if (!anchor) return;
-
-      // Scroll the nearest scroll container so the Notes block is visible.
-      // This is much more stable on real mobile browsers than trying to force "page bottom".
-      try {
-        anchor.scrollIntoView({ block: "nearest", inline: "nearest" });
-      } catch {
-        // older browsers
-        const scroller = getScrollParent(anchor);
-        if (scroller) scroller.scrollTop = scroller.scrollHeight;
-      }
-    };
-
     requestAnimationFrame(() => {
       if (cancelled) return;
-      scrollNotesIntoView();
+      scrollNotesContentIntoView("auto");
 
       // Focus after scroll to avoid mobile browsers jumping unexpectedly.
       window.setTimeout(() => {
@@ -80,15 +92,20 @@ const Notes = ({ notes, setNotes }) => {
       // Limit multiple blank lines
       .replace(/\n{3,}/g, "\n\n");
 
-    return normalized.slice(0, 500);
+    return normalized.slice(0, NOTES_INPUT_MAX_LENGTH);
   };
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
-    }
-  }, [notes]);
+    if (!isEditing || !textareaRef.current) return;
+
+    const el = textareaRef.current;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+
+    requestAnimationFrame(() => {
+      scrollNotesContentIntoView("auto");
+    });
+  }, [notes, isEditing]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -137,14 +154,19 @@ const Notes = ({ notes, setNotes }) => {
       </div>
 
       {isEditing ? (
-        <textarea
-          ref={textareaRef}
-          className={styles.textarea}
-          value={notes}
-          maxLength={500}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
-        />
+        <div ref={editAreaRef} className={styles.editArea}>
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            value={notes}
+            maxLength={NOTES_INPUT_MAX_LENGTH}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
+          />
+          <p className={styles.charCount} aria-live="polite">
+            {String(notes ?? "").length}/{NOTES_INPUT_MAX_LENGTH}
+          </p>
+        </div>
       ) : (
         <p className={styles.text}>
           {notes || "Add notes, any extra symptoms, or how you’ve been feeling"}

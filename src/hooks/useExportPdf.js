@@ -468,19 +468,110 @@ const useExportPdf = (logoSrc) => {
         y = yFromTop(167);
       };
 
+      const TABLE_LABEL_COL_W = 118;
+      const TABLE_COL_GAP = 10;
+
+      const splitOversizedToken = (token, maxWidth, size) => {
+        const f = token.bold ? fontBold : font;
+        if (f.widthOfTextAtSize(token.text, size) <= maxWidth) return [token];
+
+        const parts = [];
+        let chunk = "";
+        for (const ch of token.text) {
+          const next = chunk + ch;
+          if (f.widthOfTextAtSize(next, size) > maxWidth && chunk) {
+            parts.push({ ...token, text: chunk });
+            chunk = ch;
+          } else {
+            chunk = next;
+          }
+        }
+        if (chunk) parts.push({ ...token, text: chunk });
+        return parts.length ? parts : [token];
+      };
+
+      const buildWrappedLineTokenGroups = (text, maxWidth, size) => {
+        const runs = parseStrongRuns(text);
+        const rawTokens = tokenizeRuns(runs);
+        const tokens = rawTokens.flatMap((t) => splitOversizedToken(t, maxWidth, size));
+
+        const lines = [];
+        let lineTokens = [];
+        let lineWidth = 0;
+
+        const flush = () => {
+          if (lineTokens.length) {
+            lines.push(lineTokens);
+            lineTokens = [];
+            lineWidth = 0;
+          }
+        };
+
+        for (const token of tokens) {
+          if (token.text.includes("\n")) {
+            const split = token.text.split("\n");
+            split.forEach((part, idx) => {
+              if (part) {
+                const parts = splitOversizedToken({ ...token, text: part }, maxWidth, size);
+                for (const t of parts) {
+                  const w = widthOfToken(t, size);
+                  if (lineWidth + w > maxWidth && lineTokens.length > 0) flush();
+                  lineTokens.push(t);
+                  lineWidth += w;
+                }
+              }
+              if (idx < split.length - 1) flush();
+            });
+            continue;
+          }
+
+          const tokenWidth = widthOfToken(token, size);
+          if (lineWidth + tokenWidth > maxWidth && lineTokens.length > 0) flush();
+          lineTokens.push(token);
+          lineWidth += tokenWidth;
+        }
+        flush();
+        return lines.length ? lines : [[]];
+      };
+
+      const measureTableRowHeight = (value, valueMaxW, rowSize) => {
+        const lineCount = buildWrappedLineTokenGroups(value, valueMaxW, rowSize).length;
+        const lineH = rowSize + 2;
+        return lineCount * lineH + 8;
+      };
+
+      const drawTokenLineAtY = (tokens, x, ty, size, color) => {
+        let cursorX = x;
+        for (const t of tokens) {
+          if (!t.text) continue;
+          const f = t.bold ? fontBold : font;
+          page.drawText(t.text, {
+            x: cursorX,
+            y: ty,
+            size,
+            font: f,
+            color: t.color || color,
+          });
+          cursorX += f.widthOfTextAtSize(t.text, size);
+        }
+      };
+
       const drawTableBox = (title, rows) => {
         if (!rows.length) return;
 
-        ensureSpace(50);
         const pad = 8;
         const titleSize = 16;
         const rowSize = 12;
         const innerW = CONTENT_W - 2 * pad;
-        let est =
-          6 +
-          18 +
-          rows.length * (rowSize + 6) +
-          12;
+        const valueMaxW = innerW - TABLE_LABEL_COL_W - TABLE_COL_GAP;
+        const valueX = M + pad + TABLE_LABEL_COL_W + TABLE_COL_GAP;
+        const lineH = rowSize + 2;
+
+        const rowHeights = rows.map((row) =>
+          measureTableRowHeight(safe(row.value), valueMaxW, rowSize)
+        );
+        const rowsTotalH = rowHeights.reduce((sum, h) => sum + h, 0);
+        const est = 6 + 18 + rowsTotalH + 12;
 
         ensureSpace(est);
 
@@ -513,6 +604,10 @@ const useExportPdf = (logoSrc) => {
           const isLast = i === rows.length - 1;
           const label = safe(row.label);
           const value = safe(row.value);
+          const valueLines = buildWrappedLineTokenGroups(value, valueMaxW, rowSize);
+          const rowH = rowHeights[i];
+          const contentH = valueLines.length * lineH;
+
           page.drawText(label, {
             x: M + pad,
             y: ty,
@@ -520,23 +615,22 @@ const useExportPdf = (logoSrc) => {
             font: fontBold,
             color: col.muted,
           });
-          const vw = font.widthOfTextAtSize(value, rowSize);
-          page.drawText(value, {
-            x: M + CONTENT_W - pad - vw,
-            y: ty,
-            size: rowSize,
-            font: fontBold,
-            color: col.black,
+
+          let lineY = ty;
+          valueLines.forEach((lineTokens) => {
+            drawTokenLineAtY(lineTokens, valueX, lineY, rowSize, col.black);
+            lineY -= lineH;
           });
+
           if (!isLast) {
             page.drawLine({
-              start: { x: M + pad, y: ty - 8 },
-              end: { x: M + CONTENT_W - pad, y: ty - 8 },
+              start: { x: M + pad, y: ty - contentH - 4 },
+              end: { x: M + CONTENT_W - pad, y: ty - contentH - 4 },
               thickness: 1,
               color: col.rowBorder,
             });
           }
-          ty -= rowSize + 8;
+          ty -= rowH;
         });
 
         y = boxY - 12;

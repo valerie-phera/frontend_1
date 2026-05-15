@@ -404,17 +404,13 @@
 }
 
 .advice {
-    padding: 15px 16px 20px;
+    padding: 15px 16px;
     background-color: #FFFFFF;
     display: flex;
     flex-direction: column;
     gap: 10px;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
-}
-
-.btnTop {
-    margin-top: 8px;
 }
 
 .unlockBlock {
@@ -439,7 +435,8 @@
     margin-top: 10px;
     font-size: 14px;
     line-height: 1.4;
-    max-width: 274px;
+    /* max-width: 274px; */
+    max-width: 313px;
     color: var(--main-color-secondary);
 }
 
