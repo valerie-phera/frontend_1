@@ -4,6 +4,8 @@ const strip = (arr, tokens) => {
   return list.filter((x) => x && !set.has(x));
 };
 
+import { formatNotesForPdf } from "./notesDisplay";
+
 const joinList = (v) => {
   if (v == null || v === "") return "";
   if (Array.isArray(v)) return v.filter(Boolean).join(", ");
@@ -78,6 +80,9 @@ export function getPdfDetailSections(state) {
 
   const urine = joinList(strip(state.urination, ["None"]));
   if (urine) reportedSymptoms.push({ label: "Urine", value: urine });
+
+  const notes = formatNotesForPdf(state.notes);
+  if (notes) reportedSymptoms.push({ label: "Notes", value: notes });
 
   return { yourDetails, reportedSymptoms };
 }

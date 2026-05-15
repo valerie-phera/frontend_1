@@ -91,7 +91,9 @@ const useExportPdf = (logoSrc) => {
         citeMuted: rgb(65 / 255, 70 / 255, 81 / 255),
       };
 
-      const safe = (v) => (v == null ? "" : String(v));
+      let unicodeFontsActive = false;
+      let encodePdfText = (v) => (v == null ? "" : String(v));
+      const safe = (v) => encodePdfText(v);
       const stripTags = (s) => safe(s).replace(/<\/?[^>]+>/g, "");
 
       const reportId =
@@ -134,30 +136,58 @@ const useExportPdf = (logoSrc) => {
         }
       };
 
+      const UNICODE_FONT_URLS = {
+        regular:
+          "https://cdn.jsdelivr.net/gh/notofonts/noto-fonts@main/hinted/ttf/NotoSans/NotoSans-Regular.ttf",
+        semibold:
+          "https://cdn.jsdelivr.net/gh/notofonts/noto-fonts@main/hinted/ttf/NotoSans/NotoSans-SemiBold.ttf",
+      };
+
       const interRegularBytes = await loadFontBytes("/fonts/Inter-Regular.ttf");
       const interSemiBoldBytes = await loadFontBytes("/fonts/Inter-SemiBold.ttf");
       const openSansRegularBytes = await loadFontBytes("/fonts/OpenSans-Regular.ttf");
       const openSansSemiBoldBytes = await loadFontBytes("/fonts/OpenSans-SemiBold.ttf");
+      const notoRegularBytes =
+        (await loadFontBytes("/fonts/NotoSans-Regular.ttf")) ||
+        (await loadFontBytes(UNICODE_FONT_URLS.regular));
+      const notoSemiBoldBytes =
+        (await loadFontBytes("/fonts/NotoSans-SemiBold.ttf")) ||
+        (await loadFontBytes(UNICODE_FONT_URLS.semibold));
 
-      // Fallback to built-in fonts if custom TTFs are missing.
-      const safeEmbed = async (bytes, fallback) => {
+      const embedCustomFont = async (bytes) => {
+        if (!bytes) return null;
         try {
-          if (!bytes) return await pdfDoc.embedFont(fallback);
           return await pdfDoc.embedFont(bytes);
         } catch {
-          return await pdfDoc.embedFont(fallback);
+          return null;
         }
       };
 
-      const font =
-        (interRegularBytes && (await safeEmbed(interRegularBytes, StandardFonts.Helvetica))) ||
-        (openSansRegularBytes && (await safeEmbed(openSansRegularBytes, StandardFonts.Helvetica))) ||
-        (await pdfDoc.embedFont(StandardFonts.Helvetica));
+      const pickFont = async (candidates, builtinFallback) => {
+        for (const bytes of candidates) {
+          const embedded = await embedCustomFont(bytes);
+          if (embedded) return embedded;
+        }
+        return pdfDoc.embedFont(builtinFallback);
+      };
 
-      const fontBold =
-        (interSemiBoldBytes && (await safeEmbed(interSemiBoldBytes, StandardFonts.HelveticaBold))) ||
-        (openSansSemiBoldBytes && (await safeEmbed(openSansSemiBoldBytes, StandardFonts.HelveticaBold))) ||
-        (await pdfDoc.embedFont(StandardFonts.HelveticaBold));
+      const font = await pickFont(
+        [notoRegularBytes, interRegularBytes, openSansRegularBytes],
+        StandardFonts.Helvetica
+      );
+      const fontBold = await pickFont(
+        [notoSemiBoldBytes, interSemiBoldBytes, openSansSemiBoldBytes],
+        StandardFonts.HelveticaBold
+      );
+
+      unicodeFontsActive = Boolean(
+        notoRegularBytes || interRegularBytes || openSansRegularBytes
+      );
+      encodePdfText = (v) => {
+        const s = v == null ? "" : String(v);
+        if (unicodeFontsActive) return s;
+        return s.replace(/[^\u0000-\u00FF]/g, "?");
+      };
 
       const logoBytes = await fetch(logoSrc).then((res) => res.arrayBuffer());
       const logoImage = await pdfDoc.embedPng(logoBytes);
@@ -273,19 +303,46 @@ const useExportPdf = (logoSrc) => {
         flushLine();
       };
 
+      const drawFilledRounded = ({ x, y, width, height, radius, color }) => {
+        const r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+        if (r === 0) {
+          page.drawRectangle({ x, y, width, height, color });
+          return;
+        }
+
+        // center + side bands
+        page.drawRectangle({ x: x + r, y, width: width - 2 * r, height, color });
+        page.drawRectangle({ x, y: y + r, width, height: height - 2 * r, color });
+
+        // corner circles
+        page.drawCircle({ x: x + r, y: y + r, size: r, color });
+        page.drawCircle({ x: x + width - r, y: y + r, size: r, color });
+        page.drawCircle({ x: x + r, y: y + height - r, size: r, color });
+        page.drawCircle({ x: x + width - r, y: y + height - r, size: r, color });
+      };
+
       const drawRoundedRect = ({ x, y, width, height, radius, color, borderColor, borderWidth }) => {
-        // pdf-lib supports rounded rectangles directly via `borderRadius`
-        // (unlike CSS, this is per-rectangle geometry).
-        page.drawRectangle({
-          x,
-          y,
-          width,
-          height,
-          color,
-          borderColor,
-          borderWidth,
-          borderRadius: radius,
-        });
+        const bw = Math.max(0, borderWidth ?? 0);
+        const r = Math.max(0, radius ?? 0);
+
+        if (borderColor && bw > 0) {
+          drawFilledRounded({ x, y, width, height, radius: r, color: borderColor });
+          if (color) {
+            drawFilledRounded({
+              x: x + bw,
+              y: y + bw,
+              width: Math.max(0, width - bw * 2),
+              height: Math.max(0, height - bw * 2),
+              radius: Math.max(0, r - bw),
+              color,
+            });
+          }
+          return;
+        }
+
+        if (color) {
+          drawFilledRounded({ x, y, width, height, radius: r, color });
+        }
       };
 
       const strokeDeepCardBorder = (topY, bottomY) => {
@@ -297,7 +354,7 @@ const useExportPdf = (logoSrc) => {
           radius: 10,
           borderColor: col.divider,
           borderWidth: 1,
-          // IMPORTANT: drawn after content — do not fill (it would cover text)
+          // IMPORTANT: drawn after content — no fill (to avoid covering text)
           color: undefined,
         });
       };
@@ -881,7 +938,7 @@ const useExportPdf = (logoSrc) => {
       }
 
       const drawInsightsHeading = (isDeepDive) => {
-        page.drawText(isDeepDive ? "Deep dive" : "Your personalized insights", {
+        page.drawText(isDeepDive ? "Deep dive" : "Your tailored insights", {
           x: M,
           y,
           size: 16,
@@ -900,7 +957,7 @@ const useExportPdf = (logoSrc) => {
       const isOverviewBullets = overviewBullets.length > 0;
       const bullets = isOverviewBullets ? overviewBullets : deepDiveRecommendations;
 
-      // In the PDF mock, the first section ("Your personalized insights") is a bordered white card.
+      // In the PDF mock, the first section ("Your tailored insights") is a bordered white card.
       const drawInsightsCard = (items) => {
         const cardPadX = 10;
         const cardPadY = 8;
@@ -950,7 +1007,7 @@ const useExportPdf = (logoSrc) => {
 
         if (y - approx < FOOTER_RESERVE) {
           newPage();
-          // For Overview ("Your personalized insights"), do NOT repeat the heading on
+          // For Overview ("Your tailored insights"), do NOT repeat the heading on
           // subsequent pages — just continue bullets. "Deep dive" starts only after Overview ends.
           if (!isOverviewBullets) {
             drawInsightsHeading(!firstBulletsPage);
@@ -978,7 +1035,7 @@ const useExportPdf = (logoSrc) => {
         }
       }
 
-      // If we rendered Overview bullets into "Your personalized insights", also render
+      // If we rendered Overview bullets into "Your tailored insights", also render
       // the full recommendations as the "Deep dive" section next.
       if (overviewBullets.length && deepDiveRecommendations.length) {
         // Small notice card (yellow bullet + extra line) before "Deep dive"

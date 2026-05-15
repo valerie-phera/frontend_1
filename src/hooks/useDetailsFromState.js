@@ -1,3 +1,5 @@
+import { formatNotesForDisplay } from "../shared/utils/notesDisplay";
+
 const useDetailsFromState = (state) => {
   const strip = (arr, tokens) => {
     const list = Array.isArray(arr) ? arr : [];
@@ -23,12 +25,17 @@ const useDetailsFromState = (state) => {
       ].filter(Boolean)
     : [];
 
+  const notesDisplay = formatNotesForDisplay(state?.notes);
+
   const detailOptions = [
     state?.age,
     ...(state?.lifeStage?.length ? strip(state.lifeStage, ["None"]) : []),
     ...(state?.ethnicBackground?.length ? state.ethnicBackground : []),
     ...(state?.menstrualCycle?.length ? state.menstrualCycle : []),
     ...(state?.hormoneDiagnoses?.length ? strip(state.hormoneDiagnoses, ["None"]) : []),
+    ...(state?.currentMedications?.length
+      ? strip(state.currentMedications, ["None"])
+      : []),
     ...birthControlValues,
     ...hormoneTherapyValues,
     ...fertilityJourneyValues,
@@ -38,6 +45,7 @@ const useDetailsFromState = (state) => {
     ...(state?.vulvaCondition?.length ? state.vulvaCondition : []),
     ...(state?.smell?.length ? state.smell : []),
     ...(state?.urination?.length ? state.urination : []),
+    ...(notesDisplay ? [notesDisplay] : []),
   ].filter(Boolean);
 
   return detailOptions;
