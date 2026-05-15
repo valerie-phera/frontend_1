@@ -171,6 +171,11 @@ const renderWithItalicJournal = (text) => {
     );
 };
 
+const formatInsightHtml = (text) =>
+    String(text ?? "")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[[^\]]+\]/g, (m) => `<span class="${styles.bracketRef}">${m}</span>`);
+
 const splitIntoSentences = (rawText) => {
     const text = String(rawText ?? "").replace(/\s+/g, " ").trim();
     if (!text) return [];
@@ -294,18 +299,18 @@ const ResultWithDetailsPage = () => {
             ? -((markerPos / 100) * scaleWidthPx - MARKER_PX / 2)
             : 0;
 
-    const cleaned = Array.isArray(currentRecommendations)
-        ? currentRecommendations.join("\n\n")
-        : (currentRecommendations || "")
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-            .replace(/\[[^\]]+\]/g, (m) => `<span class="${styles.bracketRef}">${m}</span>`);
+    const cleaned = formatInsightHtml(
+        Array.isArray(currentRecommendations)
+            ? currentRecommendations.join("\n\n")
+            : currentRecommendations || ""
+    );
 
     const paragraphs = cleaned      //converts text with paragraphs into an array of individual paragraphs
         .split(/\n\s*\n/)  // by double line break
         .map(p => p.trim())
         .filter(Boolean);
 
-    const overviewParagraphs = splitIntoSentences(backendOverview);
+    const overviewParagraphs = splitIntoSentences(backendOverview).map(formatInsightHtml);
 
     const citations = Array.isArray(rawCitations)
         ? rawCitations
@@ -502,7 +507,7 @@ const ResultWithDetailsPage = () => {
                                     ref={insightsHeadingRef}
                                     className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
                                 >
-                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon} />Your tailored insights</h3>
+                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
                                 </div>
                                 <div className={styles.SectionTabs}>
                                     <div className={styles.tabList}>
@@ -554,7 +559,10 @@ const ResultWithDetailsPage = () => {
                                                 {overviewParagraphs.map((t, index) => (
                                                     <div key={index} className={styles.text}>
                                                         <div className={styles.point}></div>
-                                                        <p className={styles.innerText}>{t}</p>
+                                                        <p
+                                                            className={styles.innerText}
+                                                            dangerouslySetInnerHTML={{ __html: t }}
+                                                        />
                                                     </div>
                                                 ))}
                                             </div>
@@ -571,7 +579,7 @@ const ResultWithDetailsPage = () => {
                                                         <div key={index} className={styles.text}>
                                                             <div className={styles.point}></div>
                                                             <p className={styles.innerText}>
-                                                                {t} <span className={styles.overviewBracketRef}>[2]</span>.
+                                                                {t} <span className={styles.bracketRef}>[2]</span>.
                                                             </p>
                                                         </div>
                                                     ))}

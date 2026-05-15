@@ -326,7 +326,7 @@ const AnalyzingData = () => {
                             </li>
                             <li className={styles.item}>
                                 {renderItemIcon(3)}
-                                <div className={getItemTextClass(3)}>Building your tailored report</div>
+                                <div className={getItemTextClass(3)}>Building your personalized report</div>
                             </li>
                         </ul>
                     </div>

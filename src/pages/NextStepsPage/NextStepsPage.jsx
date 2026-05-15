@@ -69,7 +69,7 @@ const NextStepsPage = ({ lockedItems: lockedItemsProp, totalSteps: totalStepsPro
                         </h1>
                         <p className={styles.text}>
                             You can view your result now, or take {moreStepsText} to
-                            get a fully personalised interpretation.
+                            get a fully personalized interpretation.
                         </p>
                         <div className={styles.infoBlock}>
                             <div className={styles.infoTitle}>

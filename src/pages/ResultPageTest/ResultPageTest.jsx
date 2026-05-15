@@ -309,7 +309,7 @@ const ResultPageTest = () => {
                         <div className={styles.unlockBlock}>
                             <div className={styles.unlockTilte}>
                                 <div className={styles.unlockIcon}><LockFill /></div>
-                                <h3>Unlock tailored insights</h3>
+                                <h3>Unlock personalized insights</h3>
                             </div>
                             <div className={styles.unlockText}>
                                 <p>The same pH means something different depending on your biology.</p>

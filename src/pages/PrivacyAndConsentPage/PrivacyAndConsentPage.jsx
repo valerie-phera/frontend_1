@@ -128,7 +128,7 @@ const PrivacyAndConsentPage = () => {
                                             }}
                                         />
                                     </div>
-                                    <p className={styles.text}>I agree to the processing of my health-related data (such as pH value and any information I choose to provide) to generate personalised, evidence-based health insights.</p>
+                                    <p className={styles.text}>I agree to the processing of my health-related data (such as pH value and any information I choose to provide) to generate personalized, evidence-based health insights.</p>
                                 </label>
                                 <div className={styles.line}></div>
                             </div>

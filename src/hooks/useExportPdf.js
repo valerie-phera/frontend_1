@@ -881,7 +881,7 @@ const useExportPdf = (logoSrc) => {
       }
 
       const drawInsightsHeading = (isDeepDive) => {
-        page.drawText(isDeepDive ? "Deep dive" : "Your tailored insights", {
+        page.drawText(isDeepDive ? "Deep dive" : "Your personalized insights", {
           x: M,
           y,
           size: 16,
@@ -900,7 +900,7 @@ const useExportPdf = (logoSrc) => {
       const isOverviewBullets = overviewBullets.length > 0;
       const bullets = isOverviewBullets ? overviewBullets : deepDiveRecommendations;
 
-      // In the PDF mock, the first section ("Your tailored insights") is a bordered white card.
+      // In the PDF mock, the first section ("Your personalized insights") is a bordered white card.
       const drawInsightsCard = (items) => {
         const cardPadX = 10;
         const cardPadY = 8;
@@ -950,7 +950,7 @@ const useExportPdf = (logoSrc) => {
 
         if (y - approx < FOOTER_RESERVE) {
           newPage();
-          // For Overview ("Your tailored insights"), do NOT repeat the heading on
+          // For Overview ("Your personalized insights"), do NOT repeat the heading on
           // subsequent pages — just continue bullets. "Deep dive" starts only after Overview ends.
           if (!isOverviewBullets) {
             drawInsightsHeading(!firstBulletsPage);
@@ -978,7 +978,7 @@ const useExportPdf = (logoSrc) => {
         }
       }
 
-      // If we rendered Overview bullets into "Your tailored insights", also render
+      // If we rendered Overview bullets into "Your personalized insights", also render
       // the full recommendations as the "Deep dive" section next.
       if (overviewBullets.length && deepDiveRecommendations.length) {
         // Small notice card (yellow bullet + extra line) before "Deep dive"
