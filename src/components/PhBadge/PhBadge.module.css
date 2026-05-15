@@ -13,4 +13,5 @@
 .levelPhText {
     font-size: 12px;
     color: #263E3A;
+    white-space: nowrap;
 }

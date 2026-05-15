@@ -44,6 +44,8 @@
 .visualBlockTop {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    min-height: 44px;
     margin-bottom: 14px;
 }
 
@@ -397,6 +399,8 @@
     font-size: 14px;
     color: #1F1F1F;
     line-height: 1.4;
+    /* Reserve space for the longest interpretation (Slightly Elevated) to avoid footer jump */
+    min-height: 8.4em;
 }
 
 .bold {
@@ -435,9 +439,10 @@
     margin-top: 10px;
     font-size: 14px;
     line-height: 1.4;
-    /* max-width: 274px; */
     max-width: 313px;
     color: var(--main-color-secondary);
+    /* Stable height across pH levels (longest unlock copy + “2 minutes” row) */
+    min-height: 9.8em;
 }
 
 .unlockItem {
