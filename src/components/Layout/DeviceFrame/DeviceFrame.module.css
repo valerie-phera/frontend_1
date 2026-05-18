@@ -174,24 +174,26 @@
   .desktopStageSceneInner {
     position: absolute;
     left: 50%;
-    top: 0;
+    top: 50%;
     width: 1440px;
     height: 852px;
-    transform: translateX(-50%);
-    transform-origin: top center;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
   }
 
   /* Primary: container-query units scale to available stage space */
   @supports (width: 1cqw) and (height: 1cqh) {
     .desktopStageSceneInner {
-      transform: translateX(-50%) scale(min(1, min(100cqw / 1440px, 100cqh / 852px)));
+      transform: translate(-50%, -50%)
+        scale(min(1, min(100cqw / 1440px, 100cqh / 852px)));
     }
   }
 
   /* Fallback: older Firefox/Chromium without cqw/cqh */
   @supports not (width: 1cqw) {
     .desktopStageSceneInner {
-      transform: translateX(-50%) scale(min(1, min(100vw / 1440px, 100vh / 852px)));
+      transform: translate(-50%, -50%)
+        scale(min(1, min(100vw / 1440px, 100vh / 852px)));
     }
   }
 
@@ -400,21 +402,15 @@
 
   .screen {
     position: absolute;
+    display: flex;
+    flex-direction: column;
     width: 382.25px;
     /* Figma: Screen width */
     height: 828.67px;
     /* Figma: Screen height */
     border-radius: 44px;
-    /* `overflow-x: hidden` + `overflow-y: auto` breaks `position: sticky` for children in Chromium; `clip` keeps rounding + sticky */
-    overflow-x: hidden;
-    overflow-x: clip;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE/Edge legacy */
-    background: var(--main-background-color);
+    overflow: hidden;
+    background: #fff;
     z-index: 1;
     top: 11.67px;
     /* Figma: Screen y */
@@ -424,8 +420,7 @@
     /* Match mobile content width: Container inner = 393 − 2×20 = 353px */
     --container-padding-x: max(0px, calc((100% - 353px) / 2));
     --status-bar-height: 51px;
-    /* App Header.module.css reads this so .header sticks under StatusBar */
-    --sticky-header-top: var(--status-bar-height);
+    --app-header-height: 53px;
   }
 
   /* Defensive: keep the app inside the screen clickable */
@@ -434,18 +429,12 @@
     pointer-events: auto;
   }
 
-  .screen::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-  }
-
   .statusBar {
-    position: sticky;
-    top: 0;
+    flex-shrink: 0;
     z-index: 11;
     display: flex;
     align-items: center;
-    height: 51px;
+    height: var(--status-bar-height);
     padding-left: 50px;
     background: #fff;
   }
@@ -492,6 +481,13 @@
   }
 
   .screenContent {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
     width: 100%;
+    overflow: hidden;
+    background: #fff;
   }
 }
