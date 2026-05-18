@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import EditNotes from "../../../assets/icons/EditNotes";
 
 import { NOTES_INPUT_MAX_LENGTH } from "../../../shared/utils/notesDisplay";
 import styles from "./Notes.module.css";
 
-/** Clears sticky page footer so textarea + counter stay visible while typing */
-const SCROLL_BOTTOM_PADDING_PX = 150;
+/** Space below char counter so it clears the sticky footer / mobile keyboard */
+const SCROLL_BOTTOM_PADDING_PX = 180;
 
 const getScrollParent = (el) => {
   let node = el;
@@ -28,28 +28,49 @@ const Notes = ({ notes, setNotes }) => {
   const containerRef = useRef(null);
   const editAreaRef = useRef(null);
   const textareaRef = useRef(null);
+  const charCountRef = useRef(null);
 
-  const scrollNotesContentIntoView = (behavior = "auto") => {
+  const scrollNotesContentIntoView = useCallback((behavior = "auto") => {
+    const textarea = textareaRef.current;
+    const charCount = charCountRef.current;
     const anchor = editAreaRef.current ?? containerRef.current;
     if (!anchor) return;
 
     const scroller = getScrollParent(anchor);
     if (scroller) {
-      const anchorRect = anchor.getBoundingClientRect();
       const scrollerRect = scroller.getBoundingClientRect();
-      const overflow = anchorRect.bottom - scrollerRect.bottom + SCROLL_BOTTOM_PADDING_PX;
-      if (overflow > 0) {
-        scroller.scrollTo({ top: scroller.scrollTop + overflow, behavior });
+      let visibleBottom = scrollerRect.bottom;
+      if (window.visualViewport) {
+        const vvBottom =
+          window.visualViewport.offsetTop + window.visualViewport.height;
+        visibleBottom = Math.min(visibleBottom, vvBottom);
+      }
+
+      const targets = [textarea, charCount, anchor].filter(Boolean);
+      let maxOverflow = 0;
+      for (const el of targets) {
+        const bottom = el.getBoundingClientRect().bottom;
+        const overflow = bottom - visibleBottom;
+        if (overflow > maxOverflow) maxOverflow = overflow;
+      }
+
+      const scrollBy = maxOverflow + SCROLL_BOTTOM_PADDING_PX;
+      if (scrollBy > 0) {
+        scroller.scrollTo({ top: scroller.scrollTop + scrollBy, behavior });
       }
       return;
     }
 
     try {
-      anchor.scrollIntoView({ block: "end", inline: "nearest", behavior });
+      charCount?.scrollIntoView({ block: "end", inline: "nearest", behavior });
     } catch {
-      // older browsers
+      try {
+        anchor.scrollIntoView({ block: "end", inline: "nearest", behavior });
+      } catch {
+        // older browsers
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -95,17 +116,43 @@ const Notes = ({ notes, setNotes }) => {
     return normalized.slice(0, NOTES_INPUT_MAX_LENGTH);
   };
 
-  useEffect(() => {
-    if (!isEditing || !textareaRef.current) return;
-
+  const resizeTextarea = useCallback(() => {
     const el = textareaRef.current;
+    if (!el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isEditing || !textareaRef.current) return;
+
+    resizeTextarea();
 
     requestAnimationFrame(() => {
-      scrollNotesContentIntoView("auto");
+      requestAnimationFrame(() => {
+        scrollNotesContentIntoView("auto");
+      });
     });
-  }, [notes, isEditing]);
+  }, [notes, isEditing, resizeTextarea, scrollNotesContentIntoView]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onViewportChange = () => {
+      resizeTextarea();
+      scrollNotesContentIntoView("auto");
+    };
+
+    vv.addEventListener("resize", onViewportChange);
+    vv.addEventListener("scroll", onViewportChange);
+    return () => {
+      vv.removeEventListener("resize", onViewportChange);
+      vv.removeEventListener("scroll", onViewportChange);
+    };
+  }, [isEditing, notes, resizeTextarea, scrollNotesContentIntoView]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -162,8 +209,9 @@ const Notes = ({ notes, setNotes }) => {
             maxLength={NOTES_INPUT_MAX_LENGTH}
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
+            onKeyUp={() => scrollNotesContentIntoView("auto")}
           />
-          <p className={styles.charCount} aria-live="polite">
+          <p ref={charCountRef} className={styles.charCount} aria-live="polite">
             {String(notes ?? "").length}/{NOTES_INPUT_MAX_LENGTH}
           </p>
         </div>
