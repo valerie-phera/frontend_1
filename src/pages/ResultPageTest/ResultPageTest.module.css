@@ -399,8 +399,6 @@
     font-size: 14px;
     color: #1F1F1F;
     line-height: 1.4;
-    /* Reserve space for the longest interpretation (Slightly Elevated) to avoid footer jump */
-    min-height: 8.4em;
 }
 
 .bold {
@@ -415,6 +413,7 @@
     gap: 10px;
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
+    transition: padding 0.22s ease;
 }
 
 .unlockBlock {
@@ -441,8 +440,43 @@
     line-height: 1.4;
     max-width: 313px;
     color: var(--main-color-secondary);
-    /* Stable height across pH levels (longest unlock copy + “2 minutes” row) */
-    min-height: 9.8em;
+}
+
+.unlockTextBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.unlockTextBody p {
+    margin: 0 0 0.35em;
+}
+
+.unlockTextBody p:last-child {
+    margin-bottom: 0;
+}
+
+/* Fade when interpretation / unlock copy changes with pH */
+.phLevelContent {
+    animation: phLevelContentIn 0.22s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .advice,
+    .phLevelContent {
+        animation: none;
+        transition: none;
+    }
+}
+
+@keyframes phLevelContentIn {
+    from {
+        opacity: 0.55;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .unlockItem {

@@ -318,7 +318,10 @@ const ResultPageTest = () => {
                         </div>
                         <div className={styles.textBlock}>
                             <div className={styles.advice}>
-                                <p className={styles.text}>
+                                <p
+                                    key={phLevel}
+                                    className={`${styles.text} ${styles.phLevelContent}`}
+                                >
                                     <span className={styles.bold}>{interpretationLead}</span>
                                     {interpretationSuffix}
                                 </p>
@@ -330,9 +333,14 @@ const ResultPageTest = () => {
                                 <h3>Unlock personalized insights</h3>
                             </div>
                             <div className={styles.unlockText}>
-                                {unlockParagraphs.map((text) => (
-                                    <p key={text}>{text}</p>
-                                ))}
+                                <div
+                                    key={phLevel}
+                                    className={`${styles.unlockTextBody} ${styles.phLevelContent}`}
+                                >
+                                    {unlockParagraphs.map((text) => (
+                                        <p key={text}>{text}</p>
+                                    ))}
+                                </div>
                                 <p className={styles.unlockItem}><ClockFill className={styles.unlockIcon} /> Takes about<span> 2 minutes.</span></p>
                             </div>
                             <div className={styles.elements}>
