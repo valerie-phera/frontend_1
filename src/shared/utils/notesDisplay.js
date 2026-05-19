@@ -8,7 +8,10 @@ export const NOTES_DISPLAY_MAX_LENGTH = 60;
  * Compact notes for pill UI (single line, ellipsis when long).
  */
 export function formatNotesForDisplay(notes, maxLength = NOTES_DISPLAY_MAX_LENGTH) {
-  const text = String(notes ?? "").trim();
+  const text = String(notes ?? "")
+    .normalize("NFKC")
+    .replace(/\u00A0/g, " ")
+    .trim();
   if (!text) return "";
   const compact = text.replace(/\s+/g, " ");
   if (compact.length <= maxLength) return compact;

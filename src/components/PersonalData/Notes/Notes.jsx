@@ -12,9 +12,6 @@ import styles from "./Notes.module.css";
 const FOOTER_CLEARANCE_PX = 12;
 const MIN_SCROLL_DELTA_PX = 2;
 
-const supportsFieldSizing =
-  typeof CSS !== "undefined" && CSS.supports?.("field-sizing", "content");
-
 const Notes = ({ notes, setNotes }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
@@ -24,8 +21,6 @@ const Notes = ({ notes, setNotes }) => {
   const scrollRafRef = useRef(0);
 
   const resizeTextarea = useCallback(() => {
-    if (supportsFieldSizing) return;
-
     const el = textareaRef.current;
     if (!el) return;
 
@@ -108,10 +103,11 @@ const Notes = ({ notes, setNotes }) => {
     const raw = String(value ?? "");
     const normalized = raw
       .normalize("NFKC")
+      .replace(/\u00A0/g, " ")
       .replace(/\r\n?/g, "\n")
       .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
       .replace(/[<>]/g, "")
-      .replace(/[ \t]+/g, " ")
+      .replace(/[^\S\n]+/g, " ")
       .replace(/\n{3,}/g, "\n\n");
 
     return normalized.slice(0, NOTES_INPUT_MAX_LENGTH);
