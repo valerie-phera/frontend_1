@@ -2,26 +2,18 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import EditNotes from "../../../assets/icons/EditNotes";
 
 import { NOTES_INPUT_MAX_LENGTH } from "../../../shared/utils/notesDisplay";
+import {
+  findScrollableAncestor,
+  getScrollportClipBottom,
+} from "../../../shared/utils/scrollAncestor";
 import styles from "./Notes.module.css";
 
-/** Space below char counter so it clears the sticky footer / mobile keyboard */
-const SCROLL_BOTTOM_PADDING_PX = 180;
+/** Space between char counter and sticky footer / keyboard */
+const FOOTER_CLEARANCE_PX = 12;
+const MIN_SCROLL_DELTA_PX = 2;
 
-const getScrollParent = (el) => {
-  let node = el;
-  while (node && node !== document.body) {
-    if (node instanceof HTMLElement) {
-      const style = window.getComputedStyle(node);
-      const overflowY = style.overflowY;
-      const canScroll =
-        (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
-        node.scrollHeight > node.clientHeight + 1;
-      if (canScroll) return node;
-    }
-    node = node.parentElement;
-  }
-  return null;
-};
+const supportsFieldSizing =
+  typeof CSS !== "undefined" && CSS.supports?.("field-sizing", "content");
 
 const Notes = ({ notes, setNotes }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -29,130 +21,101 @@ const Notes = ({ notes, setNotes }) => {
   const editAreaRef = useRef(null);
   const textareaRef = useRef(null);
   const charCountRef = useRef(null);
+  const scrollRafRef = useRef(0);
 
-  const scrollNotesContentIntoView = useCallback((behavior = "auto") => {
-    const textarea = textareaRef.current;
-    const charCount = charCountRef.current;
-    const anchor = editAreaRef.current ?? containerRef.current;
-    if (!anchor) return;
+  const resizeTextarea = useCallback(() => {
+    if (supportsFieldSizing) return;
 
-    const scroller = getScrollParent(anchor);
-    if (scroller) {
-      const scrollerRect = scroller.getBoundingClientRect();
-      let visibleBottom = scrollerRect.bottom;
-      if (window.visualViewport) {
-        const vvBottom =
-          window.visualViewport.offsetTop + window.visualViewport.height;
-        visibleBottom = Math.min(visibleBottom, vvBottom);
-      }
+    const el = textareaRef.current;
+    if (!el) return;
 
-      const targets = [textarea, charCount, anchor].filter(Boolean);
-      let maxOverflow = 0;
-      for (const el of targets) {
-        const bottom = el.getBoundingClientRect().bottom;
-        const overflow = bottom - visibleBottom;
-        if (overflow > maxOverflow) maxOverflow = overflow;
-      }
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
 
-      const scrollBy = maxOverflow + SCROLL_BOTTOM_PADDING_PX;
-      if (scrollBy > 0) {
-        scroller.scrollTo({ top: scroller.scrollTop + scrollBy, behavior });
-      }
-      return;
-    }
+  const scrollNotesContentIntoView = useCallback(() => {
+    const anchor = editAreaRef.current;
+    const target = charCountRef.current ?? textareaRef.current ?? anchor;
+    if (!target) return;
 
-    try {
-      charCount?.scrollIntoView({ block: "end", inline: "nearest", behavior });
-    } catch {
+    const scroller = findScrollableAncestor(target);
+    if (!scroller) return;
+
+    const clipBottom = getScrollportClipBottom(scroller, target);
+    const rects = [anchor, charCountRef.current, textareaRef.current].filter(Boolean);
+    const targetBottom = Math.max(
+      ...rects.map((el) => el.getBoundingClientRect().bottom)
+    );
+    const gap = clipBottom - targetBottom;
+
+    if (gap >= FOOTER_CLEARANCE_PX) return;
+
+    const scrollBy = FOOTER_CLEARANCE_PX - gap;
+    if (scrollBy < MIN_SCROLL_DELTA_PX) return;
+
+    const prevTop = scroller.scrollTop;
+    scroller.scrollTop = prevTop + scrollBy;
+
+    if (scroller.scrollTop === prevTop) {
       try {
-        anchor.scrollIntoView({ block: "end", inline: "nearest", behavior });
+        target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
       } catch {
-        // older browsers
+        // ignore
       }
     }
   }, []);
 
+  const scheduleNotesScroll = useCallback(() => {
+    window.cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = window.requestAnimationFrame(() => {
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        resizeTextarea();
+        scrollNotesContentIntoView();
+      });
+    });
+  }, [resizeTextarea, scrollNotesContentIntoView]);
+
   useEffect(() => {
     if (!isEditing) return;
 
-    let cancelled = false;
+    const el = textareaRef.current;
+    if (!el) return;
 
-    requestAnimationFrame(() => {
-      if (cancelled) return;
-      scrollNotesContentIntoView("auto");
+    const focusTimer = window.setTimeout(() => {
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        el.focus();
+      }
+    }, 0);
 
-      // Focus after scroll to avoid mobile browsers jumping unexpectedly.
-      window.setTimeout(() => {
-        if (cancelled) return;
-        const el = textareaRef.current;
-        if (!el) return;
-        try {
-          el.focus({ preventScroll: true });
-        } catch {
-          el.focus();
-        }
-      }, 120);
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => window.clearTimeout(focusTimer);
   }, [isEditing]);
+
+  useLayoutEffect(() => {
+    if (!isEditing) return;
+    scheduleNotesScroll();
+  }, [notes, isEditing, scheduleNotesScroll]);
+
+  useEffect(
+    () => () => {
+      window.cancelAnimationFrame(scrollRafRef.current);
+    },
+    []
+  );
 
   const sanitizeNotes = (value) => {
     const raw = String(value ?? "");
     const normalized = raw
       .normalize("NFKC")
       .replace(/\r\n?/g, "\n")
-      // Remove control chars but keep newlines and tabs for readability
       .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-      // Avoid tag-like input; keep the rest of punctuation as-is
       .replace(/[<>]/g, "")
-      // Collapse spaces/tabs, without touching line breaks
       .replace(/[ \t]+/g, " ")
-      // Limit multiple blank lines
       .replace(/\n{3,}/g, "\n\n");
 
     return normalized.slice(0, NOTES_INPUT_MAX_LENGTH);
   };
-
-  const resizeTextarea = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!isEditing || !textareaRef.current) return;
-
-    resizeTextarea();
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollNotesContentIntoView("auto");
-      });
-    });
-  }, [notes, isEditing, resizeTextarea, scrollNotesContentIntoView]);
-
-  useEffect(() => {
-    if (!isEditing) return;
-
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const onViewportChange = () => {
-      resizeTextarea();
-      scrollNotesContentIntoView("auto");
-    };
-
-    vv.addEventListener("resize", onViewportChange);
-    vv.addEventListener("scroll", onViewportChange);
-    return () => {
-      vv.removeEventListener("resize", onViewportChange);
-      vv.removeEventListener("scroll", onViewportChange);
-    };
-  }, [isEditing, notes, resizeTextarea, scrollNotesContentIntoView]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -170,7 +133,6 @@ const Notes = ({ notes, setNotes }) => {
     };
   }, [isEditing]);
 
-  // click Escape
   useEffect(() => {
     const handleEscape = (e) => e.key === "Escape" && setIsEditing(false);
     document.addEventListener("keydown", handleEscape);
@@ -209,7 +171,6 @@ const Notes = ({ notes, setNotes }) => {
             maxLength={NOTES_INPUT_MAX_LENGTH}
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
-            onKeyUp={() => scrollNotesContentIntoView("auto")}
           />
           <p ref={charCountRef} className={styles.charCount} aria-live="polite">
             {String(notes ?? "").length}/{NOTES_INPUT_MAX_LENGTH}
@@ -225,4 +186,3 @@ const Notes = ({ notes, setNotes }) => {
 };
 
 export default Notes;
-
