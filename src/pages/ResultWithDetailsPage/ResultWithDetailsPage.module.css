@@ -610,6 +610,8 @@
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
+    /* Fallback for long unbroken strings in some Chrome builds */
+    word-break: break-all;
 }
 
 .editBtn {
