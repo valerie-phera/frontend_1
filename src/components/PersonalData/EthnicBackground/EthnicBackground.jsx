@@ -96,12 +96,12 @@ const EthnicBackground = ({
 
   const handleOtherInputChange = (e) => {
     const raw = String(e.target.value ?? "");
-    // Keep it short, readable, and safe: normalize, strip control chars and
-    // "noisy" symbols, collapse whitespace, and cap length.
+    // Keep it short, readable, and safe: normalize, strip control chars,
+    // digits, punctuation we do not need, collapse whitespace, and cap length.
     const next = raw
       .normalize("NFKC")
       .replace(/[\u0000-\u001F\u007F]/g, "")
-      .replace(/[<>\[\]{}|`~^$%\\]/g, "")
+      .replace(/[!?@#*()_+=\d"<>[\]{}|`~^$%\\]/g, "")
       .replace(/\s+/g, " ")
       .replace(/^\s+/, "")
       .slice(0, 50);
