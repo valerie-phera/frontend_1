@@ -16,6 +16,10 @@ import ArrowUpLink from "../../assets/icons/ArrowUpLink";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
+import {
+    findScrollableAncestor,
+    getScrollportClipBottom,
+} from "../../shared/utils/scrollAncestor";
 import useDetailsFromState from "../../hooks/useDetailsFromState";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
@@ -245,36 +249,54 @@ const ResultWithDetailsPage = () => {
     const scrollElementIntoView = (el) => {
         if (!el) return;
 
-        const container = pageRef.current;
+        const scroller = findScrollableAncestor(el);
         const offset = getScrollOffset();
 
-        if (container && container instanceof HTMLElement) {
-            const containerRect = container.getBoundingClientRect();
-            const elRect = el.getBoundingClientRect();
-
-            const topVisibleY = containerRect.top + offset;
-            const bottomVisibleY = containerRect.bottom;
-            const isFullyVisible = elRect.top >= topVisibleY && elRect.bottom <= bottomVisibleY;
-            if (isFullyVisible) return;
-
-            const targetTop = (elRect.top - containerRect.top) + container.scrollTop - offset;
-            container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+        if (!scroller) {
+            try {
+                el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+            } catch {
+                // ignore
+            }
             return;
         }
 
+        const scrollerRect = scroller.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        const topVisibleY = offset;
-        const bottomVisibleY = window.innerHeight;
-        const isFullyVisible = elRect.top >= topVisibleY && elRect.bottom <= bottomVisibleY;
+        const topVisibleY = scrollerRect.top + offset;
+        const clipBottom = getScrollportClipBottom(scroller, el);
+        const isFullyVisible =
+            elRect.top >= topVisibleY && elRect.bottom <= clipBottom;
         if (isFullyVisible) return;
 
-        const y = elRect.top + window.scrollY - offset;
-        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        const targetTop = (elRect.top - scrollerRect.top) + scroller.scrollTop - offset;
+        scroller.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
     };
 
     const scrollToCitation = (refNum) => {
         const el = document.getElementById(`citation-${refNum}`);
         scrollElementIntoView(el);
+    };
+
+    const scheduleScrollToCitation = (refNum) => {
+        const run = () => scrollToCitation(refNum);
+        requestAnimationFrame(() => requestAnimationFrame(run));
+
+        const tabPanels = sourcesPanelRef.current?.parentElement;
+        const timeoutId = window.setTimeout(run, 320);
+
+        const onTransitionEnd = (e) => {
+            if (e.target === tabPanels && e.propertyName === "height") {
+                window.clearTimeout(timeoutId);
+                run();
+            }
+        };
+        tabPanels?.addEventListener("transitionend", onTransitionEnd);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            tabPanels?.removeEventListener("transitionend", onTransitionEnd);
+        };
     };
 
     const goToSource = (refNum) => {
@@ -284,7 +306,7 @@ const ResultWithDetailsPage = () => {
             pendingCitationRef.current = refNum;
             setActiveTab("sources");
         } else {
-            requestAnimationFrame(() => requestAnimationFrame(() => scrollToCitation(refNum)));
+            scheduleScrollToCitation(refNum);
         }
     };
 
@@ -416,12 +438,12 @@ const ResultWithDetailsPage = () => {
         if (activeTab !== "sources" || !pendingCitationRef.current) return;
         const refNum = pendingCitationRef.current;
         pendingCitationRef.current = null;
-        requestAnimationFrame(() => requestAnimationFrame(() => scrollToCitation(refNum)));
+        return scheduleScrollToCitation(refNum);
     }, [activeTab, citations.length]);
 
     useEffect(() => {
         if (highlightedCitationRef == null) return;
-        const t = window.setTimeout(() => setHighlightedCitationRef(null), 2500);``
+        const t = window.setTimeout(() => setHighlightedCitationRef(null), 2500);
         return () => window.clearTimeout(t);
     }, [highlightedCitationRef]);
 
