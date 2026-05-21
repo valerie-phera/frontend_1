@@ -174,7 +174,26 @@ const renderWithItalicJournal = (text) => {
 const formatInsightHtml = (text) =>
     String(text ?? "")
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\[[^\]]+\]/g, (m) => `<span class="${styles.bracketRef}">${m}</span>`);
+        .replace(/\[([^\]]+)\]/g, (m, inner) => {
+            const parts = inner.split(/\s*,\s*/).map((s) => s.trim()).filter(Boolean);
+            const nums = parts
+                .map((p) => (/^\d+$/.test(p) ? parseInt(p, 10) : NaN))
+                .filter((n) => Number.isFinite(n) && n > 0);
+            if (nums.length === 0 || nums.length !== parts.length) {
+                return `<span class="${styles.bracketRef}">${m}</span>`;
+            }
+            if (nums.length === 1) {
+                const n = nums[0];
+                return `<button type="button" class="${styles.bracketRefLink}" data-citation-ref="${n}" aria-label="View source ${n}">[${n}]</button>`;
+            }
+            const buttons = nums
+                .map(
+                    (n) =>
+                        `<button type="button" class="${styles.bracketRefLink}" data-citation-ref="${n}" aria-label="View source ${n}">${n}</button>`
+                )
+                .join(", ");
+            return `<span class="${styles.bracketRef}">[${buttons}]</span>`;
+        });
 
 const splitIntoSentences = (rawText) => {
     const text = String(rawText ?? "").replace(/\s+/g, " ").trim();
@@ -217,16 +236,18 @@ const ResultWithDetailsPage = () => {
     const overviewPanelRef = useRef(null);
     const deepDivePanelRef = useRef(null);
     const sourcesPanelRef = useRef(null);
+    const pendingCitationRef = useRef(null);
     const [activePanelHeight, setActivePanelHeight] = useState(0);
+    const [highlightedCitationRef, setHighlightedCitationRef] = useState(null);
 
-    const scrollToInsightsIfNeeded = () => {
-        const el = insightsHeadingRef.current;
+    const getScrollOffset = () => (window.matchMedia("(max-width: 767px)").matches ? 80 : 140);
+
+    const scrollElementIntoView = (el) => {
         if (!el) return;
 
         const container = pageRef.current;
-        const offset = window.matchMedia("(max-width: 767px)").matches ? 80 : 140;
+        const offset = getScrollOffset();
 
-        // If we have a dedicated scroll container, scroll it.
         if (container && container instanceof HTMLElement) {
             const containerRect = container.getBoundingClientRect();
             const elRect = el.getBoundingClientRect();
@@ -241,7 +262,6 @@ const ResultWithDetailsPage = () => {
             return;
         }
 
-        // Fallback to window scroll (if page isn't using a scroll container).
         const elRect = el.getBoundingClientRect();
         const topVisibleY = offset;
         const bottomVisibleY = window.innerHeight;
@@ -250,6 +270,37 @@ const ResultWithDetailsPage = () => {
 
         const y = elRect.top + window.scrollY - offset;
         window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    };
+
+    const scrollToCitation = (refNum) => {
+        const el = document.getElementById(`citation-${refNum}`);
+        scrollElementIntoView(el);
+    };
+
+    const goToSource = (refNum) => {
+        if (!Number.isFinite(refNum) || refNum < 1) return;
+        setHighlightedCitationRef(refNum);
+        if (activeTab !== "sources") {
+            pendingCitationRef.current = refNum;
+            setActiveTab("sources");
+        } else {
+            requestAnimationFrame(() => requestAnimationFrame(() => scrollToCitation(refNum)));
+        }
+    };
+
+    const handleInsightContentClick = (e) => {
+        const btn = e.target.closest("button[data-citation-ref]");
+        if (!btn) return;
+        e.preventDefault();
+        const refNum = parseInt(btn.getAttribute("data-citation-ref"), 10);
+        goToSource(refNum);
+    };
+
+    const scrollToInsightsIfNeeded = () => {
+        const el = insightsHeadingRef.current;
+        if (!el) return;
+
+        scrollElementIntoView(el);
     };
 
     const activateTab = (nextTab) => {
@@ -360,6 +411,19 @@ const ResultWithDetailsPage = () => {
         ro.observe(panelEl);
         return () => ro.disconnect();
     }, [activeTab, overviewParagraphs.length, paragraphs.length, citations.length]);
+
+    useLayoutEffect(() => {
+        if (activeTab !== "sources" || !pendingCitationRef.current) return;
+        const refNum = pendingCitationRef.current;
+        pendingCitationRef.current = null;
+        requestAnimationFrame(() => requestAnimationFrame(() => scrollToCitation(refNum)));
+    }, [activeTab, citations.length]);
+
+    useEffect(() => {
+        if (highlightedCitationRef == null) return;
+        const t = window.setTimeout(() => setHighlightedCitationRef(null), 2500);``
+        return () => window.clearTimeout(t);
+    }, [highlightedCitationRef]);
 
     const onExportClick = () => {
         handleExport({
@@ -555,7 +619,7 @@ const ResultWithDetailsPage = () => {
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
                                         {overviewParagraphs.length > 0 ? (
-                                            <div className={styles.wrapText}>
+                                            <div className={styles.wrapText} onClick={handleInsightContentClick}>
                                                 {overviewParagraphs.map((t, index) => (
                                                     <div key={index} className={styles.text}>
                                                         <div className={styles.point}></div>
@@ -569,7 +633,7 @@ const ResultWithDetailsPage = () => {
                                         ) : (
                                             <>
                                                 <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
-                                                <div className={styles.wrapText}>
+                                                <div className={styles.wrapText} onClick={handleInsightContentClick}>
                                                     {[
                                                         "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
                                                         "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
@@ -579,7 +643,16 @@ const ResultWithDetailsPage = () => {
                                                         <div key={index} className={styles.text}>
                                                             <div className={styles.point}></div>
                                                             <p className={styles.innerText}>
-                                                                {t} <span className={styles.bracketRef}>[2]</span>.
+                                                                {t}{" "}
+                                                                <button
+                                                                    type="button"
+                                                                    className={styles.bracketRefLink}
+                                                                    data-citation-ref="2"
+                                                                    aria-label="View source 2"
+                                                                >
+                                                                    [2]
+                                                                </button>
+                                                                .
                                                             </p>
                                                         </div>
                                                     ))}
@@ -595,7 +668,7 @@ const ResultWithDetailsPage = () => {
                                         ref={deepDivePanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "deepDive" ? styles.tabPanelActive : ""}`}
                                     >
-                                        <div className={styles.wrapText}>
+                                        <div className={styles.wrapText} onClick={handleInsightContentClick}>
                                             {paragraphs.map((rec, index) => (
                                                 <div key={index} className={styles.text}>
                                                     <div className={styles.point}></div>
@@ -639,9 +712,14 @@ const ResultWithDetailsPage = () => {
                                                                     seenHrefs.add(href);
                                                                     return true;
                                                                 });
+                                                                const citationNum = index + 1;
                                                                 return (
-                                                                    <div key={index} className={styles.citationItem}>
-                                                                        <div className={styles.citationNumber}>{index + 1}.</div>
+                                                                    <div
+                                                                        key={index}
+                                                                        id={`citation-${citationNum}`}
+                                                                        className={`${styles.citationItem} ${highlightedCitationRef === citationNum ? styles.citationItemHighlight : ""}`}
+                                                                    >
+                                                                        <div className={styles.citationNumber}>{citationNum}.</div>
                                                                         <div className={styles.citationContent}>
                                                                             <div className={styles.citationTitle}>{title}</div>
                                                                             {cleanedText ? (

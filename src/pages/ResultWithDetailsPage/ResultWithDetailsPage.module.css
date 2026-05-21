@@ -278,6 +278,50 @@
     font-weight: 600;
 }
 
+.bracketRefLink {
+    position: relative;
+    display: inline;
+    padding: 0;
+    margin: 0;
+    margin-inline: 8px;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: #2F8E96;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+/* 44×44 hit area centered on the label; does not affect text layout */
+.bracketRefLink::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+}
+
+.bracketRefLink:hover {
+    color: #24757c;
+    text-decoration: none;
+}
+
+.bracketRefLink:focus-visible {
+    outline: none;
+}
+
+.bracketRefLink:focus-visible::before {
+    outline: 2px solid #2F8E96;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 .overviewTitle {
     font-size: 14px;
     font-weight: 600;
@@ -302,7 +346,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 20px 16px;
+    padding: 15px 16px;
 }
 
 .citationsContent {
@@ -327,6 +371,10 @@
 }
 
 @media (max-width: 767px) {
+    .citationItem {
+        scroll-margin-top: 64px;
+    }
+
     .citationsContent {
         /* Mobile: fixed header is ~56px */
         scroll-margin-top: 64px;
@@ -351,7 +399,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 10px 16px 10px;
+    padding: 15px 16px 20px;
     box-sizing: border-box;
 }
 
@@ -370,7 +418,7 @@
 .quotesBlock {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 8px;
 }
 
 .citationItem {
@@ -378,12 +426,21 @@
     gap: 10px;
     align-items: flex-start;
     padding-bottom: 10px;
+    padding-top: 10px;
     border-bottom: 1px solid #D5D7DA;
+    scroll-margin-top: 112px;
+}
+
+.citationItemHighlight {
+    background-color: rgba(47, 142, 150, 0.1);
+    border-radius: 6px;
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
 
 .citationItem:last-child {
     border-bottom: none;
-    padding-bottom: 0;
 }
 
 .citationNumber {
