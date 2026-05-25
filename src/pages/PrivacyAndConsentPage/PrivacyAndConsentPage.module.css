@@ -43,9 +43,9 @@
 
 .headerWrap {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .headerText {
@@ -96,7 +96,7 @@
     justify-content: center;
     flex: 0 0 44px;
     margin-top: -10px;
-    margin-left: -10px;
+    margin-left: -13px;
 }
 
 .input input[type="checkbox"] {

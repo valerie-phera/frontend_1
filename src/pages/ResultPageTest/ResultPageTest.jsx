@@ -19,11 +19,18 @@ import {
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
 import useExportResults from "../../hooks/useExportResults";
+import {
+    PH_SCALE_MAX,
+    PH_SCALE_MIN,
+    SCALE_GRADIENT,
+    clientXToPhScale,
+    getMarkerLayout,
+} from "../../shared/utils/phScaleMarker";
 
 import styles from "./ResultPageTest.module.css";
 
-const MIN_PH = 3.5;
-const MAX_PH = 7.0;
+const MIN_PH = PH_SCALE_MIN;
+const MAX_PH = PH_SCALE_MAX;
 const DEFAULT_PH = 4.3;
 const PH_STEP = 0.1;
 
@@ -31,19 +38,6 @@ const clampPh = (n) => {
     const r = Math.round(n * 10) / 10;
     return Math.min(MAX_PH, Math.max(MIN_PH, r));
 };
-
-const phToPercent = (ph) => ((ph - MIN_PH) / (MAX_PH - MIN_PH)) * 100;
-
-/** Same segment colors and 20% steps as `.scalePart1`…`.scalePart5` in CSS */
-const SCALE_SEGMENT_COLORS = ["#C6C955", "#60866E", "#526338", "#33372D", "#0C1446"];
-const SCALE_GRADIENT = `linear-gradient(90deg, ${SCALE_SEGMENT_COLORS.map((c, i) => {
-    const a = (i / 5) * 100;
-    const b = ((i + 1) / 5) * 100;
-    return `${c} ${a}% ${b}%`;
-}).join(", ")})`;
-
-/** Must match `.scaleMarker` width/height in `ResultPageTest.module.css` */
-const MARKER_PX = 24;
 
 const ResultPageTest = () => {
     const navigate = useNavigate();
@@ -125,13 +119,10 @@ const ResultPageTest = () => {
         return () => ro.disconnect();
     }, []);
 
-    const clientXToPh = useCallback((clientX) => {
-        const el = scaleRef.current;
-        if (!el) return DEFAULT_PH;
-        const rect = el.getBoundingClientRect();
-        const t = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-        return clampPh(MIN_PH + t * (MAX_PH - MIN_PH));
-    }, []);
+    const clientXToPh = useCallback(
+        (clientX) => clampPh(clientXToPhScale(clientX, scaleRef.current, MIN_PH, MAX_PH)),
+        [],
+    );
 
     useEffect(() => {
         if (!isDragging) return;
@@ -167,11 +158,10 @@ const ResultPageTest = () => {
     const phLevel = getPhLevel(phValue);
     const unlockParagraphs = getUnlockParagraphs(phLevel);
     const timestamp = formatDate();
-    const markerPos = phToPercent(phValue);
-    const markerBgPosX =
-        scaleWidthPx > 0
-            ? -((markerPos / 100) * scaleWidthPx - MARKER_PX / 2)
-            : 0;
+    const { leftPercent: markerLeftPercent, bgPosX: markerBgPosX } = getMarkerLayout(
+        phValue,
+        scaleWidthPx,
+    );
     const atMin = phValue <= MIN_PH;
     const atMax = phValue >= MAX_PH;
 
@@ -251,15 +241,10 @@ const ResultPageTest = () => {
                                 className={styles.scale}
                                 onPointerDown={onScalePointerDown}
                             >
-                                <div className={styles.scalePart1}></div>
-                                <div className={styles.scalePart2}></div>
-                                <div className={styles.scalePart3}></div>
-                                <div className={styles.scalePart4}></div>
-                                <div className={styles.scalePart5}></div>
                                 <div
                                     data-scale-marker
                                     className={`${styles.scaleMarkerHit} ${isDragging ? styles.scaleMarkerDragging : ""}`}
-                                    style={{ left: `${markerPos}%` }}
+                                    style={{ left: `${markerLeftPercent}%` }}
                                     onPointerDown={onMarkerPointerDown}
                                 >
                                     <div
@@ -282,6 +267,7 @@ const ResultPageTest = () => {
                             id="result-ph-info"
                             className={`${styles.infoBlockWrap} ${infoOpen ? styles.infoBlockWrapOpen : ""}`}
                             aria-hidden={!infoOpen}
+                            onClick={() => setInfoOpen((v) => !v)}
                         >
                             <div className={styles.infoBlockInner}>
                                 <div className={styles.infoBlock}>

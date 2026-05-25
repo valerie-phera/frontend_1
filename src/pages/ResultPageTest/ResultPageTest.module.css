@@ -190,12 +190,21 @@
 }
 
 .scale {
-    display: flex;
     margin-top: 14px;
     margin-bottom: 10px;
     position: relative;
     touch-action: none;
     cursor: pointer;
+    height: 17px;
+    border-radius: 100px;
+    background: linear-gradient(
+        90deg,
+        #c6c955,
+        #60866e,
+        #526338,
+        #33372d,
+        #0c1446
+    );
 }
 
 .scaleMarkerHit {
@@ -232,40 +241,6 @@
 
 .scaleMarkerDragging {
     transition: none;
-}
-
-.scalePart1,
-.scalePart2,
-.scalePart3,
-.scalePart4,
-.scalePart5 {
-    flex: 1;
-    /* max-width: 63px; */
-    height: 17px;
-}
-
-.scalePart1 {
-    background: #C6C955;
-    border-top-left-radius: 100px;
-    border-bottom-left-radius: 100px;
-}
-
-.scalePart2 {
-    background: #60866E;
-}
-
-.scalePart3 {
-    background: #526338;
-}
-
-.scalePart4 {
-    background: #33372D;
-}
-
-.scalePart5 {
-    background: #0C1446;
-    border-top-right-radius: 100px;
-    border-bottom-right-radius: 100px;
 }
 
 .meaning {

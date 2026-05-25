@@ -42,7 +42,7 @@
     }
 
     .isemSelected:hover {
-        background-color: #00343D26;
+        background-color: var(--main-color);
     }
 }
 
@@ -53,9 +53,9 @@
     padding: 8px 10px 9px;
     border: 1px solid var(--main-color);
     border-radius: 100px;
-    background-color: #00343D1A;
+    background-color: var(--main-color);
     font-size: 14px;
-    color: var(--main-color);
+    color: #fff;
     cursor: pointer;
 }
 

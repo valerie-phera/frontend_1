@@ -1,4 +1,4 @@
-const RecomendationsIcon = (props) => (
+const StarsIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={22}
@@ -12,4 +12,4 @@ const RecomendationsIcon = (props) => (
     />
   </svg>
 )
-export default RecomendationsIcon
+export default StarsIcon

@@ -16,7 +16,7 @@ const NextStepsFertilityTreatmentPage = () => {
             <NextStepsPage lockedItems={["Fertility treatment"]} totalSteps={4} />
             <BottomBlock>
                 <Button onClick={() => navigate("/add-details/paths/fertility-journey")}>
-                    Add more details
+                    Add fertility treatment
                 </Button>
                 <ButtonReverse
                     onClick={() => navigate("/analyzing-data", { state })}

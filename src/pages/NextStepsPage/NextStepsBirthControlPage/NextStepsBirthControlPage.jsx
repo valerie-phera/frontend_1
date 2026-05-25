@@ -21,7 +21,7 @@ const NextStepsBirthControlPage = () => {
                         })
                     }
                 >
-                    Add more details
+                    Add birth control
                 </Button>
                 <ButtonReverse
                     onClick={() => navigate("/analyzing-data", { state })}

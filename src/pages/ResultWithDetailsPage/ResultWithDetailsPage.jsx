@@ -4,13 +4,14 @@ import { useDeviceFrame } from "../../components/Layout/DeviceFrame/DeviceFrame"
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
+import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
 import Container from "../../components/Container/Container";
 
 import EditNotesGrey from "../../assets/icons/EditNotesGrey";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
 import InfoCircle_24 from "../../assets/icons/InfoCircle_24";
 import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
-import RecomendationsIcon from "../../assets/icons/RecomendationsIcon";
+import StarsIcon from "../../assets/icons/StarsIcon";
 import CitationsIcon from "../../assets/icons/CitationsIcon";
 import ArrowUpLink from "../../assets/icons/ArrowUpLink";
 import PhBadge from "../../components/PhBadge/PhBadge";
@@ -23,28 +24,21 @@ import {
 import useDetailsFromState from "../../hooks/useDetailsFromState";
 import useExportResults from "../../hooks/useExportResults";
 import useImportJson from "../../hooks/useImportJson";
+import {
+    PH_SCALE_MAX,
+    PH_SCALE_MIN,
+    SCALE_GRADIENT,
+    clampPhScale,
+    getMarkerLayout,
+} from "../../shared/utils/phScaleMarker";
 
 import styles from "./ResultWithDetailsPage.module.css";
 import phInfoStyles from "../ResultPageTest/ResultPageTest.module.css";
 
-const MIN_PH = 3.5;
-const MAX_PH = 7.0;
-const MARKER_PX = 24;
+const MIN_PH = PH_SCALE_MIN;
+const MAX_PH = PH_SCALE_MAX;
 
-const clampPhDisplay = (n) => {
-    const x = Number(n);
-    if (Number.isNaN(x)) return MIN_PH;
-    return Math.min(MAX_PH, Math.max(MIN_PH, x));
-};
-
-const phToPercent = (ph) => ((ph - MIN_PH) / (MAX_PH - MIN_PH)) * 100;
-
-const SCALE_SEGMENT_COLORS = ["#C6C955", "#60866E", "#526338", "#33372D", "#0C1446"];
-const SCALE_GRADIENT = `linear-gradient(90deg, ${SCALE_SEGMENT_COLORS.map((c, i) => {
-    const a = (i / 5) * 100;
-    const b = ((i + 1) / 5) * 100;
-    return `${c} ${a}% ${b}%`;
-}).join(", ")})`;
+const clampPhDisplay = (n) => clampPhScale(n, MIN_PH, MAX_PH);
 
 const extractCitationLinks = (rawText) => {
     const text = String(rawText ?? "");
@@ -366,11 +360,12 @@ const ResultWithDetailsPage = () => {
     ));
 
     const phForScale = clampPhDisplay(phValue);
-    const markerPos = phToPercent(phForScale);
-    const markerBgPosX =
-        scaleWidthPx > 0
-            ? -((markerPos / 100) * scaleWidthPx - MARKER_PX / 2)
-            : 0;
+    const { leftPercent: markerLeftPercent, bgPosX: markerBgPosX } = getMarkerLayout(
+        phForScale,
+        scaleWidthPx,
+        MIN_PH,
+        MAX_PH,
+    );
 
     const cleaned = formatInsightHtml(
         Array.isArray(currentRecommendations)
@@ -504,14 +499,9 @@ const ResultWithDetailsPage = () => {
                             <div className={styles.num}>{Number(phValue).toFixed(2)}</div>
                             <div className={styles.date}>{timestamp}</div>
                             <div ref={scaleRef} className={styles.scale} role="presentation">
-                                <div className={styles.scalePart1}></div>
-                                <div className={styles.scalePart2}></div>
-                                <div className={styles.scalePart3}></div>
-                                <div className={styles.scalePart4}></div>
-                                <div className={styles.scalePart5}></div>
                                 <div
                                     className={styles.scaleMarkerWrap}
-                                    style={{ left: `${markerPos}%` }}
+                                    style={{ left: `${markerLeftPercent}%` }}
                                     aria-hidden
                                 >
                                     <div
@@ -534,6 +524,7 @@ const ResultWithDetailsPage = () => {
                             id="result-with-details-ph-info"
                             className={`${phInfoStyles.infoBlockWrap} ${infoOpen ? phInfoStyles.infoBlockWrapOpen : ""}`}
                             aria-hidden={!infoOpen}
+                            onClick={() => setInfoOpen((v) => !v)}
                         >
                             <div className={phInfoStyles.infoBlockInner}>
                                 <div className={phInfoStyles.infoBlock}>
@@ -593,7 +584,7 @@ const ResultWithDetailsPage = () => {
                                     ref={insightsHeadingRef}
                                     className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
                                 >
-                                    <h3 className={styles.heading}><RecomendationsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
+                                    <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
                                 </div>
                                 <div className={styles.SectionTabs}>
                                     <div className={styles.tabList}>
@@ -800,8 +791,8 @@ const ResultWithDetailsPage = () => {
                     <div
                         className={`${styles.btns} ${isDesktopCompletionLayout ? styles.btnsDesktopCompletion : ""}`}
                     >
-                        <Button onClick={onExportClick} >Export results</Button>
-                        <Button onClick={handleImportClick}>Import results</Button>
+                        <ButtonReverse onClick={onExportClick} >Export results</ButtonReverse>
+                        {/* <Button onClick={handleImportClick}>Import results</Button> */}
                     </div>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>

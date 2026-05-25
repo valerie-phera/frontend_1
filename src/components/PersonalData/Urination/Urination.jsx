@@ -42,7 +42,7 @@ const Urination = ({
                 showArrow={false}
                 showErrorCircle={showHeadingError}
             >
-                It is normal to urinate more often after drinking more fluids, coffee, or during periods of stress. A brief burning sensation can happen after using a new product or after sex. If such sensations last a long time or appear with other symptoms, they may signal an infection.
+                It is normal to urinate more often after drinking more fluids, coffee, or during periods of stress. More trips to the bathroom than is normal for you. A brief burning sensation can happen after using a new product or after sex. If such sensations last a long time or appear with other symptoms, they may signal an infection.
             </InfoTooltip>
             <div className={styles.list}>{list}</div>
         </div>

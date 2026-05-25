@@ -5,9 +5,9 @@ import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 
-import UsersIcon from "../../assets/icons/UsersIcon";
+import ShieldIcon from "../../assets/icons/ShieldIcon";
 import ClockIcon from "../../assets/icons/ClockIcon";
-import StackIcon from "../../assets/icons/StackIcon";
+import StarsIcon from "../../assets/icons/StarsIcon";
 import EditIcon from "../../assets/icons/EditIcon";
 
 import styles from "./HowItWorksPage.module.css";
@@ -24,7 +24,7 @@ const HowItWorksPage = () => {
                         <div className={styles.elements}>
                             <div className={styles.item}>
                                 <div className={styles.headerWrap}>
-                                    <div className={styles.headerIcon}><UsersIcon /></div>
+                                    <div className={styles.headerIcon}><ShieldIcon /></div>
                                     <div className={styles.headerText}>Completely anonymous</div>
                                 </div>
                                 <div className={styles.textWrap}>
@@ -44,7 +44,7 @@ const HowItWorksPage = () => {
                             </div>
                             <div className={styles.item}>
                                 <div className={styles.headerWrap}>
-                                    <div className={styles.headerIcon}><StackIcon /></div>
+                                    <div className={styles.headerIcon}><StarsIcon /></div>
                                     <div className={styles.headerText}>Personalized health insights</div>
                                 </div>
                                 <div className={styles.textWrap}>

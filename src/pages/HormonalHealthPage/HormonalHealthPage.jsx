@@ -263,7 +263,7 @@ const HormonalHealthPage = () => {
                             </h1>
                         </div>
                         <p className={basicStyles.subtitle}>
-                            Knowing your hormone status helps us understand the main factors that influence your pH level.
+                            Cycle, meds & diagnoses also shape your pH.
                         </p>
 
                         <div className={basicStyles.personalData}>

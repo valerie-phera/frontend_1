@@ -5,7 +5,7 @@ import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 
-import ShieldIcon from "../../assets/icons/ShieldIcon";
+import SheetIcon from "../../assets/icons/SheetIcon";
 import DesctopIcon from "../../assets/icons/DesctopIcon";
 import ChartIcon from "../../assets/icons/ChartIcon";
 
@@ -112,7 +112,7 @@ const PrivacyAndConsentPage = () => {
                         <div className={styles.elements}>
                             <div className={styles.item}>
                                 <div className={styles.headerWrap}>
-                                    <div className={styles.headerIcon}><ShieldIcon /></div>
+                                    <div><SheetIcon /></div>
                                     <div className={styles.headerText}>1. Core Consent (Required)*</div>
                                 </div>
                                 <label className={`${styles.textWrap} ${styles.checkBlock}`} htmlFor={coreConsentId}>
@@ -134,7 +134,7 @@ const PrivacyAndConsentPage = () => {
                             </div>
                             <div className={styles.item}>
                                 <div className={styles.headerWrap}>
-                                    <div className={styles.headerIcon}><DesctopIcon /></div>
+                                    <div><DesctopIcon /></div>
                                     <div className={styles.headerText}>2. Technical Processing (Required)*</div>
                                 </div>
                                 <div className={styles.textWrap}>
@@ -147,7 +147,7 @@ const PrivacyAndConsentPage = () => {
                             </div>
                             <div className={styles.item}>
                                 <div className={styles.headerWrap}>
-                                    <div className={styles.headerIcon}><ChartIcon /></div>
+                                    <div><ChartIcon /></div>
                                     <div className={styles.headerText}>3. Analytics (Optional)</div>
                                 </div>
                                 <label className={`${styles.textWrap} ${styles.checkBlock} ${styles.checkBlockStill}`} htmlFor={analyticsConsentId}>

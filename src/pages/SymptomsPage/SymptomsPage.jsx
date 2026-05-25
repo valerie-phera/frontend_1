@@ -247,7 +247,7 @@ const SymptomsPage = () => {
                             <h1 className={basicStyles.title}>Last step - your symptoms</h1>
                         </div>
                         <p className={basicStyles.subtitle}>
-                            Select all that you've noticed recently.
+                            Select what you're experiencing right now.
                         </p>
 
                         <div className={basicStyles.personalData}>
