@@ -1,0 +1,724 @@
+/* Result_pdf_A4 — Figma 595×940 */
+
+.screenWrap {
+  min-height: 100vh;
+  background: #e8ecea;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  max-width: 595px;
+  width: 100%;
+  font-size: 14px;
+  color: #263e3a;
+}
+
+.toolbar button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #2f8e96;
+  background: #2f8e96;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.toolbar a {
+  color: #2f8e96;
+}
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 595px;
+  height: 940px;
+  min-height: 940px;
+  max-height: 940px;
+  overflow: hidden;
+  background: #ffffff;
+  box-sizing: border-box;
+  font-family: "Inter", "Open Sans", system-ui, sans-serif;
+  color: #000000;
+}
+
+.pageMain {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pageFooter {
+  flex-shrink: 0;
+  margin-top: auto;
+  width: 100%;
+}
+
+.pageBreak {
+  page-break-after: always;
+  break-after: page;
+}
+
+.screenWrap .page + .page,
+.documentPages .page + .page {
+  margin-top: 24px;
+}
+
+.documentPages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Off-screen host for html2canvas export (same layout as /report-print) */
+.exportRoot {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: 595px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.exportCapture .pageBreak {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* header */
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  width: 595px;
+  height: 62px;
+  box-sizing: border-box;
+  background: #a1c0b6;
+}
+
+.logoHeader {
+  width: 90px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.dateBlock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.dateLine,
+.reportIdLine {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 15px;
+  color: #000000;
+}
+
+/* title block — Figma top: 77px → 15px below header */
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 15px 24px 0;
+  box-sizing: border-box;
+}
+
+.reportTitle {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+  color: #000000;
+}
+
+.subBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.subLine {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 17px;
+  color: #717680;
+}
+
+.divider {
+  margin: 16px 24px 0;
+  border: none;
+  border-top: 1px solid #d5d7da;
+  width: 547px;
+}
+
+/* content — Figma top: 168px (page 1) */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  flex: 1 1 auto;
+  padding: 17px 24px 0;
+  width: 547px;
+  box-sizing: border-box;
+}
+
+
+/* Result / Interpretation card */
+.resultCard {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 14px;
+  gap: 16px;
+  width: 547px;
+  background: #f1f6f4;
+  border: 1px solid #2f8e96;
+  border-radius: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  width: 100%;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
+  color: #000000;
+}
+
+.interpretationRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 33px;
+  width: 100%;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 105px;
+  flex-shrink: 0;
+}
+
+.pill {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 3px 10px 4px;
+  gap: 6px;
+  border: 0.5px solid #263e3a;
+  border-radius: 100px;
+  font-size: 12px;
+  line-height: 15px;
+  color: #263e3a;
+  white-space: nowrap;
+}
+
+.pillIcon {
+  /* width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #263e3a;
+  flex-shrink: 0; */
+}
+
+.pillNormal {
+  background: #f1f6f4;
+}
+
+.pillSlightlyElevated {
+  background: #e6f2f4;
+}
+
+.pillElevated {
+  background: #eff1fa;
+}
+
+.pillSlightlyLow {
+  background: #e9eaeb;
+}
+
+.phValue {
+  width: 87px;
+  margin: 0;
+  font-weight: 700;
+  font-size: 42px;
+  /* line-height: 51px; */
+  text-align: center;
+  letter-spacing: 0.01em;
+  color: #00343d;
+}
+
+.phLabel {
+  width: 77px;
+  margin: 0;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 12px;
+  text-align: center;
+  color: #00343d;
+}
+
+.interpCard {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15px;
+  background: #ffffff;
+  border: 1px solid #d5d7da;
+  border-left: 6px solid #5daab2;
+  border-radius: 10px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 17px;
+  color: #1f1f1f;
+}
+
+/* Table cards — Your details / Reported symptoms */
+.tableCard {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 8px 8px;
+  gap: 18px;
+  width: 547px;
+  border: 1px solid #d5d7da;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.tableTitle {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 19px;
+  color: #3e5d57;
+}
+
+.tableRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.tableRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 2px;
+  gap: 16px;
+  border-bottom: 1px solid #e9eaeb;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.rowLabel {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 15px;
+  color: #717680;
+}
+
+.rowValue {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 15px;
+  color: #000000;
+  text-align: right;
+}
+
+/* Insights */
+.insightsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 547px;
+}
+
+.insightsTitle {
+  margin: 0;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 19px;
+  color: #1f1f1f;
+}
+
+.insightsCardFull {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  gap: 8px;
+  width: 547px;
+  background: #ffffff;
+  border: 1px solid #d5d7da;
+  border-radius: 10px;
+}
+
+/* Overview items — same layout as ResultWithDetailsPage `.text` + `.point` */
+.overviewItem {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 15px;
+  width: 100%;
+}
+
+.preInsightsProbe {
+  width: 100%;
+  height: 0;
+  flex-shrink: 0;
+}
+
+/* Hidden clone for measuring insights height before pagination */
+.page1Host {
+  position: relative;
+}
+
+.measureHost {
+  position: absolute;
+  left: 24px;
+  top: 0;
+  width: 547px;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bulletRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.bullet {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #6f988f;
+}
+
+.bulletText {
+  margin: 0;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19px;
+  color: #1f1f1f;
+}
+
+/* Citation refs in overview / deep dive — same as ResultWithDetailsPage `.bracketRef` */
+.bracketRef {
+  color: #2f8e96;
+  font-weight: 600;
+}
+
+.bulletOrange {
+  background: #e6a733;
+}
+
+.bulletTeal {
+  background: #2f8e96;
+}
+
+.bulletTextSemibold {
+  margin: 0;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 19px;
+  letter-spacing: 0.01em;
+  color: #1f1f1f;
+}
+
+.textStack {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Deep dive */
+.deepDiveSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 547px;
+}
+
+.deepDiveCard {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  gap: 0;
+  width: 547px;
+  background: #ffffff;
+  border: 1px solid #d5d7da;
+  border-radius: 10px;
+}
+
+.deepDiveSubsection {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px 0;
+}
+
+.deepDiveSubsection:first-child {
+  padding-top: 4px;
+}
+
+.deepDiveSubsection:last-child {
+  padding-bottom: 4px;
+}
+
+.deepDiveSubsection:not(:last-child) {
+  border-bottom: 1px solid #e9eaeb;
+}
+
+.deepDiveItemText {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19px;
+  letter-spacing: 0.01em;
+  color: #1f1f1f;
+}
+
+.deepDiveItemText strong {
+  font-weight: 700;
+}
+
+/* Sources */
+.sourcesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 547px;
+}
+
+/* Sources — full card when entire section follows Deep dive */
+.sourcesCardFull {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px;
+  width: 547px;
+  background: #ffffff;
+  border: 1px solid #d5d7da;
+  border-radius: 10px;
+}
+
+/* Legacy split segments (kept for reference) */
+.sourcesCardTop {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px;
+  width: 547px;
+  background: #ffffff;
+  border-width: 1px 1px 0 1px;
+  border-style: solid;
+  border-color: #d5d7da;
+  border-radius: 10px 10px 0 0;
+}
+
+.sourcesCardBottom {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px;
+  width: 547px;
+  background: #ffffff;
+  border-width: 0 1px 1px 1px;
+  border-style: solid;
+  border-color: #d5d7da;
+  border-radius: 0 0 10px 10px;
+}
+
+.citationRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #d5d7da;
+}
+
+.citationRow:last-child {
+  border-bottom: none;
+}
+
+.citationNum {
+  flex-shrink: 0;
+  width: 12px;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19px;
+  color: #2f8e96;
+}
+
+.citationBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.citationTitle {
+  margin: 0;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 19px;
+  color: #1f1f1f;
+}
+
+.citationText {
+  margin: 0;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19px;
+  color: #414651;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.citationLinks {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.citationLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 19px;
+  color: #2f8e96;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.citationLinkIcon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Footer — pinned to bottom via .pageFooter { margin-top: auto } */
+.footerDivider {
+  margin: 0 24px 0;
+  border: none;
+  border-top: 1px solid #d5d7da;
+  width: calc(100% - 48px);
+  max-width: 547px;
+}
+
+.disclaimer {
+  margin: 12px 24px 0;
+  width: calc(100% - 48px);
+  max-width: 547px;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 12px;
+  color: #717680;
+}
+
+.footerRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 11px 24px 24px;
+  width: calc(100% - 48px);
+  max-width: 547px;
+}
+
+.logoFooter {
+  width: 50.71px;
+  height: 19.35px;
+  object-fit: contain;
+}
+
+.pageNum {
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 12px;
+  color: #717680;
+}
+
+@media print {
+  .screenWrap {
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .toolbar {
+    display: none !important;
+  }
+
+  .page {
+    box-shadow: none;
+    height: 940px;
+    min-height: 940px;
+    max-height: 940px;
+  }
+
+  @page {
+    size: 595px 940px;
+    margin: 0;
+  }
+}

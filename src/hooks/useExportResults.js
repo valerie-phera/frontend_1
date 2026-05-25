@@ -1,12 +1,9 @@
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
-import useExportPdf from "./useExportPdf";
-import logo_PDF from "../assets/logo_PDF.png";
+import { exportReportPdf } from "./exportReportPdf";
+import { buildReportPrintState } from "../pages/ReportPrintPage/reportPrintUtils";
 
 const useExportResults = () => {
-    const { exportPdf } = useExportPdf(logo_PDF);
-
-    // ---- Built-in functions for JSON and CSV ----
     const exportJson = (phValue, phLevel, timestamp, interpretation, detailOptions = [], recommendations = []) => {
         return JSON.stringify(
             {
@@ -35,7 +32,6 @@ const useExportResults = () => {
 
         return rows.map(r => r.join(",")).join("\n");
     };
-    // -------------------------------------------
 
     const handleExport = async ({
         phValue,
@@ -45,33 +41,27 @@ const useExportResults = () => {
         detailOptions = [],
         recommendations = [],
         overviewInsights = null,
-        citations = [],
         state = null,
         reportId = null,
     }) => {
-        // PDF
-        const pdfBytes = await exportPdf({
+        const reportData = buildReportPrintState({
             phValue,
             phLevel,
             timestamp,
             interpretation,
-            detailOptions,
-            recommendations,
-            overviewInsights,
-            citations,
             state,
             reportId,
+            recommendations,
+            overview: overviewInsights ?? state?.overview,
         });
 
-        // JSON
-        const jsonText = exportJson(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
+        const pdfBytes = await exportReportPdf(reportData);
 
-        // CSV
+        const jsonText = exportJson(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
         const csvText = exportCsv(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
 
-        // ZIP
         const zip = new JSZip();
-        // zip.file("ph-report.pdf", pdfBytes);   //temporary !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        zip.file("ph-report.pdf", pdfBytes);
         zip.file("ph-report.json", jsonText);
         zip.file("ph-report.csv", csvText);
 

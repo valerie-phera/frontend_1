@@ -26,6 +26,7 @@ import TestCompletePage from "../pages/TestCompletePage/TestCompletePage";
 
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import ResultWithDetailsPage from "../pages/ResultWithDetailsPage/ResultWithDetailsPage";
+import ReportPrintPage from "../pages/ReportPrintPage/ReportPrintPage";
 
 import "../shared/styles/style.css";
 
@@ -58,6 +59,8 @@ function App() {
         <Route path="/test-complete" element={<AppLayout><TestCompletePage /></AppLayout>} />
 
         <Route path="/result-with-details" element={<AppLayout><ResultWithDetailsPage /></AppLayout>} />
+
+        <Route path="/report-print" element={<ReportPrintPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
