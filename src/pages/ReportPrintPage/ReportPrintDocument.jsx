@@ -1,5 +1,9 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import ArrowUp from "../../assets/icons/ArrowUp";
 import ArrowUpLink from "../../assets/icons/ArrowUpLink";
+import CheckIcon from "../../assets/icons/CheckIcon";
+import TrendDown from "../../assets/icons/TrendDown";
+import TrendUp from "../../assets/icons/TrendUp";
 import logoPdf from "../../assets/logo_PDF.png";
 import { getPdfDetailSections } from "../../shared/utils/pdfDetailSections";
 import {
@@ -21,6 +25,19 @@ const pillClassByLevel = {
   "Slightly Elevated": styles.pillSlightlyElevated,
   Elevated: styles.pillElevated,
   "Slightly Low": styles.pillSlightlyLow,
+};
+
+/** Same icons as PhBadge on ResultWithDetailsPage */
+const pillIconByLevel = {
+  Normal: CheckIcon,
+  "Slightly Elevated": TrendUp,
+  Elevated: ArrowUp,
+  "Slightly Low": TrendDown,
+};
+
+const PhPillIcon = ({ level }) => {
+  const Icon = pillIconByLevel[level] ?? CheckIcon;
+  return <Icon className={styles.pillIcon} aria-hidden />;
 };
 
 const TOTAL_PAGES = 3;
@@ -592,7 +609,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
                     <span
                       className={`${styles.pill} ${pillClassByLevel[phLevel] ?? styles.pillNormal}`}
                     >
-                      <span className={styles.pillIcon} aria-hidden />
+                      <PhPillIcon level={phLevel} />
                       {phLevel}
                     </span>
                     <p className={styles.phValue}>{phValue.toFixed(1)}</p>
@@ -673,6 +690,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
                   citations={page3Citations}
                   cardClassName={styles.sourcesCardFull}
                   startIndex={page2CitationCount}
+                  showHeading={page2CitationCount === 0}
                 />
               ) : null}
             </main>

@@ -241,11 +241,12 @@
 }
 
 .pillIcon {
-  /* width: 12px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
   height: 12px;
-  border-radius: 50%;
-  background: #263e3a;
-  flex-shrink: 0; */
 }
 
 .pillNormal {
