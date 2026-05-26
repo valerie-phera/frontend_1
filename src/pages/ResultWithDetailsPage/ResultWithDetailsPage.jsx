@@ -14,6 +14,7 @@ import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
 import StarsIcon from "../../assets/icons/StarsIcon";
 import CitationsIcon from "../../assets/icons/CitationsIcon";
 import ArrowUpLink from "../../assets/icons/ArrowUpLink";
+import CheckBold from "../../assets/icons/CheckBold";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
@@ -204,6 +205,69 @@ const splitIntoSentences = (rawText) => {
         .map((s) => s.trim())
         .filter(Boolean);
 };
+
+/** pH result card (Figma) — static until backend provides card copy. */
+const PH_RESULT_CARD_MOCK = {
+    cardTitle: "Your pH is in the healthy range.",
+    cardBody: "4.5 is balanced for your profile - your vaginal environment looks healthy.",
+};
+
+/** Deep Dive tab copy (Figma node 2443:40562) — backend wiring later. */
+const DEEP_DIVE_SECTIONS = [
+    {
+        title: "Your ph",
+        items: [
+            {
+                text: "**A vaginal pH of 4.5 is within the normal range for premenopausal women.** This pH level is typically maintained by the presence of Lactobacillus bacteria, which produce lactic acid and help protect against infections [2], [4].",
+            },
+            {
+                text: "A healthy pH acts as a first line of defense - the acidic environment inhibits the growth of harmful microorganisms, including those associated with bacterial vaginosis and yeast infections [2], [4].",
+            },
+        ],
+    },
+    {
+        title: "Your symptoms",
+        items: [
+            {
+                text: "You reported no discharge abnormalities, odour, itching, or discomfort - consistent with a healthy vaginal environment at this pH.",
+            },
+        ],
+    },
+    {
+        title: "Your personal baseline",
+        items: [
+            {
+                text: "At age 24, estrogen levels are typically high, which actively supports Lactobacillus activity and helps maintain a healthy, acidic vaginal environment. [2], [4].",
+            },
+            {
+                text: "Ethnic background influences vaginal microbiome composition. Research shows that the specific species of Lactobacillus, immune responses, and care habits vary across backgrounds, which can affect pH norms. Your result is consistent with expected values for your profile. [2], [4].",
+            },
+        ],
+    },
+    {
+        title: "Your health context",
+        items: [
+            {
+                text: "A regular menstrual cycle reflects stable hormonal cycling. Mid-cycle estrogen peaks maintain the estrogenised vaginal lining that supports protective flora and keeps pH low. [2], [4].",
+            },
+            {
+                text: "No medications or diagnoses were provided. If you take hormonal treatments or have a relevant diagnosis, adding this can further personalize your result.",
+                muted: true,
+            },
+        ],
+    },
+    {
+        title: "Next steps",
+        items: [
+            {
+                text: "Your result **requires no immediate action**. Retesting periodically helps you track your personal pH baseline over time.",
+            },
+            {
+                text: "If you notice **new symptoms** before your next test, speaking with your **doctor is recommended**.",
+            },
+        ],
+    },
+];
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
@@ -427,7 +491,7 @@ const ResultWithDetailsPage = () => {
         const ro = new ResizeObserver(() => measure());
         ro.observe(panelEl);
         return () => ro.disconnect();
-    }, [activeTab, overviewParagraphs.length, paragraphs.length, citations.length]);
+    }, [activeTab, overviewParagraphs.length, citations.length]);
 
     useLayoutEffect(() => {
         if (activeTab !== "sources" || !pendingCitationRef.current) return;
@@ -560,10 +624,6 @@ const ResultWithDetailsPage = () => {
                             </div>
                         </div>
                         <div className={styles.infoBlock}>
-                            <p className={styles.textResult}>
-                                <strong>{interpretationLead}</strong>
-                                {interpretationSuffix}
-                            </p>
                             <div className={styles.details}>
                                 <div className={styles.wrapHeading}>
                                     <h4 className={styles.heading}>Details for this result</h4>
@@ -631,11 +691,24 @@ const ResultWithDetailsPage = () => {
                                         ref={overviewPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
+                                        <div className={styles.phResultCard}>
+                                            <div className={styles.phResultCardSign}>
+                                                <CheckBold />
+                                            </div>
+                                            <div className={styles.phResultCardText}>
+                                                <p className={styles.phResultCardTitle}>
+                                                    {PH_RESULT_CARD_MOCK.cardTitle}
+                                                </p>
+                                                <p className={styles.phResultCardBody}>
+                                                    {PH_RESULT_CARD_MOCK.cardBody}
+                                                </p>
+                                            </div>
+                                        </div>
                                         {overviewParagraphs.length > 0 ? (
                                             <div className={styles.wrapText} onClick={handleInsightContentClick}>
                                                 {overviewParagraphs.map((t, index) => (
                                                     <div key={index} className={styles.text}>
-                                                        <div className={styles.point}></div>
+                                                        <div className={styles.point} />
                                                         <p
                                                             className={styles.innerText}
                                                             dangerouslySetInnerHTML={{ __html: t }}
@@ -654,7 +727,7 @@ const ResultWithDetailsPage = () => {
                                                         "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
                                                     ].map((t, index) => (
                                                         <div key={index} className={styles.text}>
-                                                            <div className={styles.point}></div>
+                                                            <div className={styles.point} />
                                                             <p className={styles.innerText}>
                                                                 {t}{" "}
                                                                 <button
@@ -681,15 +754,42 @@ const ResultWithDetailsPage = () => {
                                         ref={deepDivePanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "deepDive" ? styles.tabPanelActive : ""}`}
                                     >
-                                        <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                            {paragraphs.map((rec, index) => (
-                                                <div key={index} className={styles.text}>
-                                                    <div className={styles.point}></div>
-                                                    <p
-                                                        className={styles.innerText}
-                                                        dangerouslySetInnerHTML={{ __html: rec }}
-                                                    />
-                                                </div>
+                                        <div
+                                            className={styles.deepDiveResearch}
+                                            onClick={handleInsightContentClick}
+                                        >
+                                            {DEEP_DIVE_SECTIONS.map((section) => (
+                                                <section
+                                                    key={section.title}
+                                                    className={styles.deepDiveCard}
+                                                >
+                                                    <div className={styles.deepDiveCardTitleRow}>
+                                                        <h4 className={styles.deepDiveCardTitle}>
+                                                            {section.title}
+                                                        </h4>
+                                                        <hr
+                                                            className={styles.deepDiveCardDivider}
+                                                            aria-hidden
+                                                        />
+                                                    </div>
+                                                    {section.items.map((item, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={styles.deepDiveBulletRow}
+                                                        >
+                                                            <div
+                                                                className={`${styles.deepDiveBullet} ${item.muted ? styles.deepDiveBulletMuted : ""}`}
+                                                                aria-hidden
+                                                            />
+                                                            <p
+                                                                className={`${styles.deepDiveBulletText} ${item.muted ? styles.deepDiveBulletTextMuted : ""}`}
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: formatInsightHtml(item.text),
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </section>
                                             ))}
                                         </div>
                                     </div>
