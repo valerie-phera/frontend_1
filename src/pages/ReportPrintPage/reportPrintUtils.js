@@ -326,6 +326,38 @@ export function generateReportId() {
   return `PH-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
+function formatReportIdForFilename(reportId) {
+  const id = reportId ?? generateReportId();
+  return id.startsWith("ID-") ? id : `ID-${id}`;
+}
+
+function getLocalTimezoneAbbreviation(date = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZoneName: "short" }).formatToParts(date);
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (tz) return tz.replace(/\s+/g, "");
+  } catch {
+    // fall through
+  }
+  return "UTC";
+}
+
+/** Basename for exported report files (no extension). */
+export function buildPheraReportBasename(reportId, date = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const timePart = `${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`;
+  const timezone = getLocalTimezoneAbbreviation(date);
+  const idPart = formatReportIdForFilename(reportId);
+  return `phera-report_${datePart}_${timePart}_${timezone}_${idPart}`;
+}
+
+/** Full filename: phera-report_YYYY-MM-DD_HH-MM-SS_TZ_ID-PH-….ext */
+export function buildPheraReportFilename(reportId, extension, date = new Date()) {
+  const ext = extension.startsWith(".") ? extension.slice(1) : extension;
+  return `${buildPheraReportBasename(reportId, date)}.${ext}`;
+}
+
 /** Payload for /report-print and HTML→PDF export (route state shape). */
 export function buildReportPrintState({
   phValue,

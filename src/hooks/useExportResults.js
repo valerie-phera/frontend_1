@@ -1,7 +1,10 @@
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 import { exportReportPdf } from "./exportReportPdf";
-import { buildReportPrintState } from "../pages/ReportPrintPage/reportPrintUtils";
+import {
+    buildPheraReportBasename,
+    buildReportPrintState,
+} from "../pages/ReportPrintPage/reportPrintUtils";
 
 const useExportResults = () => {
     const exportJson = (phValue, phLevel, timestamp, interpretation, detailOptions = [], recommendations = []) => {
@@ -60,13 +63,15 @@ const useExportResults = () => {
         const jsonText = exportJson(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
         const csvText = exportCsv(phValue, phLevel, timestamp, interpretation, detailOptions, recommendations);
 
+        const baseName = buildPheraReportBasename(reportData.reportId);
+
         const zip = new JSZip();
-        zip.file("ph-report.pdf", pdfBytes);
-        zip.file("ph-report.json", jsonText);
-        zip.file("ph-report.csv", csvText);
+        zip.file(`${baseName}.pdf`, pdfBytes);
+        zip.file(`${baseName}.json`, jsonText);
+        zip.file(`${baseName}.csv`, csvText);
 
         const zipBlob = await zip.generateAsync({ type: "blob" });
-        saveAs(zipBlob, "phera-report.zip");
+        saveAs(zipBlob, `${baseName}.zip`);
     };
 
     return { handleExport };
