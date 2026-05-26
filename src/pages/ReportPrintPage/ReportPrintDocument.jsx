@@ -40,9 +40,7 @@ const PhPillIcon = ({ level }) => {
   return <Icon className={styles.pillIcon} aria-hidden />;
 };
 
-const TOTAL_PAGES = 3;
-
-const ReportPageShell = ({ children, timestamp, reportId, pageNum }) => (
+const ReportPageShell = ({ children, timestamp, reportId, pageNum, totalPages }) => (
   <article className={styles.page} data-report-print>
     <header className={styles.header}>
       <img className={styles.logoHeader} src={logoPdf} alt="pHera" />
@@ -75,7 +73,7 @@ const ReportPageShell = ({ children, timestamp, reportId, pageNum }) => (
       <div className={styles.footerRow}>
         <img className={styles.logoFooter} src={logoPdf} alt="" />
         <span className={styles.pageNum}>
-          {pageNum}/{TOTAL_PAGES}
+          {pageNum}/{totalPages}
         </span>
       </div>
     </footer>
@@ -459,6 +457,16 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   );
   const showSourcesOnPage2 = page2Citations.length > 0;
   const showPage3 = deepDiveContinuesOnPage3 || page3Citations.length > 0;
+  const hasPage2OverflowDetails =
+    (!page1ShowYourDetails && yourDetails.length > 0) ||
+    (!page1ShowSymptoms && reportedSymptoms.length > 0);
+  const showPage2Content =
+    hasPage2OverflowDetails ||
+    page2InsightsParagraphs.length > 0 ||
+    page2DeepDive.length > 0 ||
+    showSourcesOnPage2;
+  const showPage2 = showPage2Content || showPage3;
+  const totalPages = 1 + (showPage2 ? 1 : 0) + (showPage3 ? 1 : 0);
 
   useLayoutEffect(() => {
     const pageEl = page2Ref.current;
@@ -576,7 +584,9 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     deepDiveSections.length,
     citations.length,
     showSourcesOnPage2,
+    showPage2,
     showPage3,
+    totalPages,
     page2CitationCount,
     page3Citations.length,
   ]);
@@ -600,7 +610,12 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
             </section>
           </div>
 
-          <ReportPageShell timestamp={timestamp} reportId={reportId} pageNum={1}>
+          <ReportPageShell
+            timestamp={timestamp}
+            reportId={reportId}
+            pageNum={1}
+            totalPages={totalPages}
+          >
             <main className={styles.content} data-page-content>
               <section className={styles.resultCard} data-flow-block>
                 <h2 className={styles.sectionTitle}>Interpretation</h2>
@@ -640,44 +655,56 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
         </div>
       </div>
 
-      <div className={styles.pageBreak}>
-        <div ref={page2Ref}>
-          <ReportPageShell timestamp={timestamp} reportId={reportId} pageNum={2}>
-            <main className={styles.content} data-page-content>
-              <PatientDetailsSections
-                yourDetails={yourDetails}
-                reportedSymptoms={reportedSymptoms}
-                showYourDetails={!page1ShowYourDetails}
-                showSymptoms={!page1ShowSymptoms}
-              />
-
-              {page2InsightsParagraphs.length > 0 ? (
-                <TailoredInsightsSection
-                  overviewParagraphs={page2InsightsParagraphs}
-                  showTitle={!(insightsOnPage1 && page1Overview.length > 0)}
+      {showPage2 ? (
+        <div className={styles.pageBreak}>
+          <div ref={page2Ref}>
+            <ReportPageShell
+              timestamp={timestamp}
+              reportId={reportId}
+              pageNum={2}
+              totalPages={totalPages}
+            >
+              <main className={styles.content} data-page-content>
+                <PatientDetailsSections
+                  yourDetails={yourDetails}
+                  reportedSymptoms={reportedSymptoms}
+                  showYourDetails={!page1ShowYourDetails}
+                  showSymptoms={!page1ShowSymptoms}
                 />
-              ) : null}
 
-              <DeepDiveSection
-                sections={page2DeepDive}
-                showTitle={page2DeepDive.length > 0}
-              />
+                {page2InsightsParagraphs.length > 0 ? (
+                  <TailoredInsightsSection
+                    overviewParagraphs={page2InsightsParagraphs}
+                    showTitle={!(insightsOnPage1 && page1Overview.length > 0)}
+                  />
+                ) : null}
 
-              {showSourcesOnPage2 ? (
-                <SourcesSection
-                  citations={page2Citations}
-                  cardClassName={styles.sourcesCardFull}
-                  startIndex={0}
+                <DeepDiveSection
+                  sections={page2DeepDive}
+                  showTitle={page2DeepDive.length > 0}
                 />
-              ) : null}
-            </main>
-          </ReportPageShell>
+
+                {showSourcesOnPage2 ? (
+                  <SourcesSection
+                    citations={page2Citations}
+                    cardClassName={styles.sourcesCardFull}
+                    startIndex={0}
+                  />
+                ) : null}
+              </main>
+            </ReportPageShell>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {showPage3 ? (
         <div ref={page3Ref}>
-          <ReportPageShell timestamp={timestamp} reportId={reportId} pageNum={3}>
+          <ReportPageShell
+            timestamp={timestamp}
+            reportId={reportId}
+            pageNum={3}
+            totalPages={totalPages}
+          >
             <main className={styles.content} data-page-content>
               {deepDiveContinuesOnPage3 ? (
                 <DeepDiveSection

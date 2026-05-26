@@ -178,6 +178,7 @@ const ResultPageTest = () => {
             interpretation,
             detailOptions: [],
             recommendations,
+            overviewInsights: [],
         });
     };
 

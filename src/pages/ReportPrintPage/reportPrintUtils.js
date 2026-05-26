@@ -291,6 +291,12 @@ export function getDeepDiveSections(data) {
   }
 
   if (!items.length) {
+    const hasExplicitRecommendations =
+      data != null && Object.prototype.hasOwnProperty.call(data, "recommendations");
+    const hasAgentReply = data?.agent_reply != null;
+    if (hasExplicitRecommendations || hasAgentReply) {
+      return [];
+    }
     return DEFAULT_DEEP_DIVE_RAW.map(parseDeepDiveItem).filter(Boolean);
   }
 
@@ -313,13 +319,19 @@ export function formatOverviewParagraph(text) {
 export function getOverviewParagraphs(data) {
   const raw = data?.overview;
 
-  if (Array.isArray(raw) && raw.length > 0) {
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) return [];
     const items = raw.map(formatOverviewParagraph).filter(Boolean);
     if (items.length > 0) return items;
+    return [];
+  }
+
+  if (raw === undefined || raw === null) {
+    return DEFAULT_OVERVIEW;
   }
 
   const fromState = splitIntoSentences(raw).map(formatOverviewParagraph).filter(Boolean);
-  return fromState.length > 0 ? fromState : DEFAULT_OVERVIEW;
+  return fromState.length > 0 ? fromState : [];
 }
 
 export function generateReportId() {
