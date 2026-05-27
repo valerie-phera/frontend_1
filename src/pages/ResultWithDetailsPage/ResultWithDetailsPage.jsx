@@ -206,68 +206,109 @@ const splitIntoSentences = (rawText) => {
         .filter(Boolean);
 };
 
+/**
+ * Split text into chunks that each start with a bold section label.
+ * Supports `**Label:**` (backend) and `**Label** -` (overview normalization).
+ */
+const splitByBoldLabels = (rawText) => {
+    const s = String(rawText ?? "").trim();
+    if (!s) return [];
+
+    const labelRe = /\*\*[^*]+:\*\*|\*\*[^*]+\*\*\s*-\s*/g;
+    const matches = [...s.matchAll(labelRe)];
+    if (matches.length === 0) return [s];
+
+    const chunks = [];
+    for (let i = 0; i < matches.length; i++) {
+        const start = matches[i].index ?? 0;
+        const end = i + 1 < matches.length ? (matches[i + 1].index ?? s.length) : s.length;
+        const chunk = s.slice(start, end).trim();
+        if (chunk) chunks.push(chunk);
+    }
+    return chunks.length > 0 ? chunks : [s];
+};
+
 /** pH result card (Figma) — static until backend provides card copy. */
 const PH_RESULT_CARD_MOCK = {
     cardTitle: "Your pH is in the healthy range.",
     cardBody: "4.5 is balanced for your profile - your vaginal environment looks healthy.",
 };
 
-/** Deep Dive tab copy (Figma node 2443:40562) — backend wiring later. */
-const DEEP_DIVE_SECTIONS = [
-    {
-        title: "Your ph",
-        items: [
-            {
-                text: "**A vaginal pH of 4.5 is within the normal range for premenopausal women.** This pH level is typically maintained by the presence of Lactobacillus bacteria, which produce lactic acid and help protect against infections [2], [4].",
-            },
-            {
-                text: "A healthy pH acts as a first line of defense - the acidic environment inhibits the growth of harmful microorganisms, including those associated with bacterial vaginosis and yeast infections [2], [4].",
-            },
-        ],
-    },
-    {
-        title: "Your symptoms",
-        items: [
-            {
-                text: "You reported no discharge abnormalities, odour, itching, or discomfort - consistent with a healthy vaginal environment at this pH.",
-            },
-        ],
-    },
-    {
-        title: "Your personal baseline",
-        items: [
-            {
-                text: "At age 24, estrogen levels are typically high, which actively supports Lactobacillus activity and helps maintain a healthy, acidic vaginal environment. [2], [4].",
-            },
-            {
-                text: "Ethnic background influences vaginal microbiome composition. Research shows that the specific species of Lactobacillus, immune responses, and care habits vary across backgrounds, which can affect pH norms. Your result is consistent with expected values for your profile. [2], [4].",
-            },
-        ],
-    },
-    {
-        title: "Your health context",
-        items: [
-            {
-                text: "A regular menstrual cycle reflects stable hormonal cycling. Mid-cycle estrogen peaks maintain the estrogenised vaginal lining that supports protective flora and keeps pH low. [2], [4].",
-            },
-            {
-                text: "No medications or diagnoses were provided. If you take hormonal treatments or have a relevant diagnosis, adding this can further personalize your result.",
-                muted: true,
-            },
-        ],
-    },
-    {
-        title: "Next steps",
-        items: [
-            {
-                text: "Your result **requires no immediate action**. Retesting periodically helps you track your personal pH baseline over time.",
-            },
-            {
-                text: "If you notice **new symptoms** before your next test, speaking with your **doctor is recommended**.",
-            },
-        ],
-    },
-];
+const toDeepDiveBulletItems = (raw) => {
+    if (raw == null) return [];
+
+    // Backend can send either a string or an array of strings.
+    const parts = Array.isArray(raw) ? raw : [raw];
+
+    // Requirements: split into bullets by sentences (not by paragraphs).
+    // Keep `**bold**` + `[n]` patterns intact for `formatInsightHtml`.
+    const sentences = parts
+        .flatMap((p) => splitByBoldLabels(p))
+        .flatMap((p) => splitIntoSentences(p))
+        .map((s) => String(s ?? "").trim())
+        .filter(Boolean);
+
+    return sentences;
+};
+
+const toOverviewBulletItems = (raw) => {
+    if (raw == null) return [];
+    const parts = Array.isArray(raw) ? raw : [raw];
+    return parts
+        .flatMap((p) => splitByBoldLabels(p))
+        .flatMap((p) => splitIntoSentences(p))
+        .map((s) => stripTrailingDash(s))
+        .filter(Boolean);
+};
+
+const withTrailingPeriod = (text) => {
+    const t = String(text ?? "").trim();
+    if (!t) return t;
+    if (/[.!?]$/.test(t)) return t;
+    return `${t}.`;
+};
+
+/** Strip trailing dash from overview bullet text (keeps `**Label** -` mid-line). */
+const stripTrailingDash = (text) =>
+    String(text ?? "")
+        .trim()
+        .replace(/[\s-–—]+$/, "")
+        .trim();
+
+const parseOverviewForUi = (raw) => {
+    const text = Array.isArray(raw) ? raw.join(" ") : String(raw ?? "");
+    const s = text.replace(/\s+/g, " ").trim();
+    if (!s) return null;
+
+    // First bold fragment becomes card title. Next text until next bold becomes body.
+    const firstBold = s.match(/\*\*([^*]+)\*\*/);
+    if (!firstBold?.index && firstBold?.index !== 0) return null;
+
+    const title = (firstBold[1] ?? "").trim();
+    if (!title) return null;
+
+    const afterTitle = s.slice(firstBold.index + firstBold[0].length).trim();
+    // Body ends where the next bold starts (if any).
+    const nextBoldIdx = afterTitle.search(/\*\*[^*]+\*\*/);
+    const bodyRaw =
+        nextBoldIdx >= 0 ? afterTitle.slice(0, nextBoldIdx).trim() : afterTitle;
+
+    // Remove dash between title and body (leading/trailing, e.g. "**Title** - body -")
+    const body = bodyRaw
+        .replace(/^[\s-–—]+/, "")
+        .replace(/[\s-–—]+$/, "")
+        .trim();
+
+    const restRaw = nextBoldIdx >= 0 ? afterTitle.slice(nextBoldIdx).trim() : "";
+
+    // In the remaining text, convert "**Label:**" into "**Label** -"
+    // so UI shows dash after the highlighted label.
+    const restNormalized = restRaw.replace(/\*\*([^*]+):\*\*/g, "**$1** -");
+
+    const bullets = toOverviewBulletItems(restNormalized).map(formatInsightHtml);
+
+    return { title: withTrailingPeriod(title), body, bullets };
+};
 
 const ResultWithDetailsPage = () => {
     const navigate = useNavigate();
@@ -288,21 +329,94 @@ const ResultWithDetailsPage = () => {
     const interpretation = backendInterpretation ? String(backendInterpretation) : `${computedLead}${computedSuffix}`;
     const backendOverview = state?.overview;
     const currentRecommendations = state?.recommendations;
+    const deepDiveRaw = {
+        your_ph: state?.your_ph,
+        your_symptoms: state?.your_symptoms,
+        your_personal_baseline: state?.your_personal_baseline,
+        your_health_context: state?.your_health_context,
+        next_steps: state?.next_steps,
+    };
     const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
     const scaleRef = useRef(null);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
     const pageRef = useRef(null);
     const insightsHeadingRef = useRef(null);
+    const insightsStickyHeaderRef = useRef(null);
+    const tabScrollStabilizerRef = useRef(null);
+    const tabSwitchScrollStateRef = useRef(null);
     const citationsContentRef = useRef(null);
-    const overviewPanelRef = useRef(null);
-    const deepDivePanelRef = useRef(null);
-    const sourcesPanelRef = useRef(null);
     const pendingCitationRef = useRef(null);
-    const [activePanelHeight, setActivePanelHeight] = useState(0);
     const [highlightedCitationRef, setHighlightedCitationRef] = useState(null);
 
     const getScrollOffset = () => (window.matchMedia("(max-width: 767px)").matches ? 80 : 140);
+
+    const getInsightsStickyTop = () => (window.matchMedia("(max-width: 767px)").matches ? 56 : 0);
+
+    const isInsightsHeaderPinned = () => {
+        const header = insightsStickyHeaderRef.current;
+        if (!header) return false;
+        return Math.abs(header.getBoundingClientRect().top - getInsightsStickyTop()) <= 6;
+    };
+
+    const getPageScroller = () => {
+        const host = pageRef.current ?? document.body;
+        return findScrollableAncestor(host) || window;
+    };
+
+    const getScrollTop = (scroller) => {
+        if (!scroller || scroller === window) return window.scrollY || 0;
+        return scroller.scrollTop || 0;
+    };
+
+    const setScrollTop = (scroller, top) => {
+        const t = Math.max(0, top);
+        if (!scroller || scroller === window) {
+            window.scrollTo({ top: t, behavior: "auto" });
+            return;
+        }
+        scroller.scrollTo({ top: t, behavior: "auto" });
+    };
+
+    const setStabilizerHeight = (px) => {
+        const el = tabScrollStabilizerRef.current;
+        if (!el) return;
+        el.style.height = px > 0 ? `${Math.ceil(px)}px` : "0px";
+    };
+
+    const stabilizePinnedHeaderOnTabSwitch = () => {
+        const saved = tabSwitchScrollStateRef.current;
+        tabSwitchScrollStateRef.current = null;
+        if (!saved?.wasPinned) {
+            setStabilizerHeight(0);
+            return;
+        }
+
+        const scroller = getPageScroller();
+        const prevTop = saved.scrollTop ?? 0;
+
+        // If new tab is shorter, the browser clamps scrollTop. Add just enough bottom space
+        // to keep the previous scrollTop stable so the sticky header doesn't "drop".
+        const getMaxScrollTop = () => {
+            if (!scroller || scroller === window) {
+                const root = document.scrollingElement;
+                if (!root) return 0;
+                return Math.max(0, root.scrollHeight - root.clientHeight);
+            }
+            return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        };
+
+        // First clear to measure natural height.
+        setStabilizerHeight(0);
+        const naturalMax = getMaxScrollTop();
+        const deficit = prevTop - naturalMax;
+        if (deficit > 1) {
+            setStabilizerHeight(deficit + 4);
+        }
+
+        // Restore scrollTop (now it shouldn't clamp).
+        setScrollTop(scroller, prevTop);
+    };
 
     const scrollElementIntoView = (el) => {
         if (!el) return;
@@ -339,22 +453,8 @@ const ResultWithDetailsPage = () => {
     const scheduleScrollToCitation = (refNum) => {
         const run = () => scrollToCitation(refNum);
         requestAnimationFrame(() => requestAnimationFrame(run));
-
-        const tabPanels = sourcesPanelRef.current?.parentElement;
-        const timeoutId = window.setTimeout(run, 320);
-
-        const onTransitionEnd = (e) => {
-            if (e.target === tabPanels && e.propertyName === "height") {
-                window.clearTimeout(timeoutId);
-                run();
-            }
-        };
-        tabPanels?.addEventListener("transitionend", onTransitionEnd);
-
-        return () => {
-            window.clearTimeout(timeoutId);
-            tabPanels?.removeEventListener("transitionend", onTransitionEnd);
-        };
+        const timeoutId = window.setTimeout(run, 100);
+        return () => window.clearTimeout(timeoutId);
     };
 
     const goToSource = (refNum) => {
@@ -376,17 +476,14 @@ const ResultWithDetailsPage = () => {
         goToSource(refNum);
     };
 
-    const scrollToInsightsIfNeeded = () => {
-        const el = insightsHeadingRef.current;
-        if (!el) return;
-
-        scrollElementIntoView(el);
-    };
-
-    const activateTab = (nextTab) => {
+    const onTabClick = (nextTab) => {
+        if (nextTab === activeTab) return;
+        const scroller = getPageScroller();
+        tabSwitchScrollStateRef.current = {
+            wasPinned: isInsightsHeaderPinned(),
+            scrollTop: getScrollTop(scroller),
+        };
         setActiveTab(nextTab);
-        // 2 RAFs: let React paint the new panel before measuring/scrolling
-        requestAnimationFrame(() => requestAnimationFrame(scrollToInsightsIfNeeded));
     };
 
     const handleImportedData = (data) => {
@@ -442,8 +539,22 @@ const ResultWithDetailsPage = () => {
         .map(p => p.trim())
         .filter(Boolean);
 
-    const overviewParagraphs = splitIntoSentences(backendOverview).map(formatInsightHtml);
-
+    const parsedOverview = parseOverviewForUi(backendOverview);
+    const overviewParagraphs =
+        parsedOverview?.bullets ??
+        toOverviewBulletItems(backendOverview).map(formatInsightHtml);
+    const deepDiveSections = [
+        { title: "Your ph", raw: deepDiveRaw.your_ph },
+        { title: "Your symptoms", raw: deepDiveRaw.your_symptoms },
+        { title: "Your personal baseline", raw: deepDiveRaw.your_personal_baseline },
+        { title: "Your health context", raw: deepDiveRaw.your_health_context },
+        { title: "Next steps", raw: deepDiveRaw.next_steps },
+    ]
+        .map((s) => ({
+            title: s.title,
+            items: toDeepDiveBulletItems(s.raw).map((text) => ({ text })),
+        }))
+        .filter((s) => s.items.length > 0);
     const citations = Array.isArray(rawCitations)
         ? rawCitations
             .map((c) => {
@@ -476,22 +587,10 @@ const ResultWithDetailsPage = () => {
         : [];
 
     useLayoutEffect(() => {
-        const panelEl =
-            activeTab === "overview"
-                ? overviewPanelRef.current
-                : activeTab === "deepDive"
-                    ? deepDivePanelRef.current
-                    : sourcesPanelRef.current;
-
-        if (!panelEl) return;
-
-        const measure = () => setActivePanelHeight(panelEl.scrollHeight);
-        measure();
-
-        const ro = new ResizeObserver(() => measure());
-        ro.observe(panelEl);
-        return () => ro.disconnect();
-    }, [activeTab, overviewParagraphs.length, citations.length]);
+        stabilizePinnedHeaderOnTabSwitch();
+        // One extra frame helps when layout/DOM heights update late.
+        requestAnimationFrame(() => stabilizePinnedHeaderOnTabSwitch());
+    }, [activeTab, overviewParagraphs.length, deepDiveSections.length, citations.length]);
 
     useLayoutEffect(() => {
         if (activeTab !== "sources" || !pendingCitationRef.current) return;
@@ -640,21 +739,22 @@ const ResultWithDetailsPage = () => {
                                 </div>
                             </div>
                             <div className={styles.data}>
-                                <div
-                                    ref={insightsHeadingRef}
-                                    className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
-                                >
-                                    <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
-                                </div>
+                                <div ref={insightsStickyHeaderRef} className={styles.insightsStickyHeader}>
+                                    <div
+                                        ref={insightsHeadingRef}
+                                        className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
+                                    >
+                                        <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
+                                    </div>
                                 <div className={styles.SectionTabs}>
                                     <div className={styles.tabList}>
                                         <div
                                             className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
                                             role="button"
                                             tabIndex={0}
-                                            onClick={() => activateTab("overview")}
+                                            onClick={() => onTabClick("overview")}
                                             onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("overview");
+                                                if (e.key === "Enter" || e.key === " ") onTabClick("overview");
                                             }}
                                         >
                                             Overview
@@ -663,9 +763,9 @@ const ResultWithDetailsPage = () => {
                                             className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
                                             role="button"
                                             tabIndex={0}
-                                            onClick={() => activateTab("deepDive")}
+                                            onClick={() => onTabClick("deepDive")}
                                             onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("deepDive");
+                                                if (e.key === "Enter" || e.key === " ") onTabClick("deepDive");
                                             }}
                                         >
                                             Deep Dive
@@ -674,21 +774,18 @@ const ResultWithDetailsPage = () => {
                                             className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
                                             role="button"
                                             tabIndex={0}
-                                            onClick={() => activateTab("sources")}
+                                            onClick={() => onTabClick("sources")}
                                             onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("sources");
+                                                if (e.key === "Enter" || e.key === " ") onTabClick("sources");
                                             }}
                                         >
                                             Sources
                                         </div>
                                     </div>
                                 </div>
-                                <div
-                                    className={styles.tabPanels}
-                                    style={{ height: activePanelHeight ? `${activePanelHeight}px` : undefined }}
-                                >
+                                </div>
+                                <div className={styles.tabPanels}>
                                     <div
-                                        ref={overviewPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
                                         <div className={styles.phResultCard}>
@@ -697,10 +794,12 @@ const ResultWithDetailsPage = () => {
                                             </div>
                                             <div className={styles.phResultCardText}>
                                                 <p className={styles.phResultCardTitle}>
-                                                    {PH_RESULT_CARD_MOCK.cardTitle}
+                                                    {withTrailingPeriod(
+                                                        parsedOverview?.title ?? PH_RESULT_CARD_MOCK.cardTitle
+                                                    )}
                                                 </p>
                                                 <p className={styles.phResultCardBody}>
-                                                    {PH_RESULT_CARD_MOCK.cardBody}
+                                                    {parsedOverview?.body ?? PH_RESULT_CARD_MOCK.cardBody}
                                                 </p>
                                             </div>
                                         </div>
@@ -751,14 +850,13 @@ const ResultWithDetailsPage = () => {
                                     </div>
 
                                     <div
-                                        ref={deepDivePanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "deepDive" ? styles.tabPanelActive : ""}`}
                                     >
                                         <div
                                             className={styles.deepDiveResearch}
                                             onClick={handleInsightContentClick}
                                         >
-                                            {DEEP_DIVE_SECTIONS.map((section) => (
+                                            {deepDiveSections.map((section) => (
                                                 <section
                                                     key={section.title}
                                                     className={styles.deepDiveCard}
@@ -778,11 +876,11 @@ const ResultWithDetailsPage = () => {
                                                             className={styles.deepDiveBulletRow}
                                                         >
                                                             <div
-                                                                className={`${styles.deepDiveBullet} ${item.muted ? styles.deepDiveBulletMuted : ""}`}
+                                                                className={styles.deepDiveBullet}
                                                                 aria-hidden
                                                             />
                                                             <p
-                                                                className={`${styles.deepDiveBulletText} ${item.muted ? styles.deepDiveBulletTextMuted : ""}`}
+                                                                className={styles.deepDiveBulletText}
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: formatInsightHtml(item.text),
                                                                 }}
@@ -795,7 +893,6 @@ const ResultWithDetailsPage = () => {
                                     </div>
 
                                     <div
-                                        ref={sourcesPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "sources" ? styles.tabPanelActive : ""}`}
                                     >
                                         <div className={`${styles.source} ${styles.sourceNoGapFromRecommendations}`}>
@@ -874,6 +971,11 @@ const ResultWithDetailsPage = () => {
                                         </div>
                                     </div>
                                 </div>
+                                <div
+                                    ref={tabScrollStabilizerRef}
+                                    className={styles.tabScrollStabilizer}
+                                    aria-hidden
+                                />
                             </div>
                         </div>
                     </div>
@@ -902,7 +1004,7 @@ const ResultWithDetailsPage = () => {
                 </BottomBlock>
             </div>
         </>
-    )
+    );
 };
 
 export default ResultWithDetailsPage;
