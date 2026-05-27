@@ -4,6 +4,7 @@
     flex-direction: column;
     min-height: 100dvh;
     padding-top: 56px;
+    position: relative;
 
     scrollbar-gutter: stable;
     scroll-padding-bottom: min(200px, 36dvh);
@@ -129,6 +130,22 @@
 .privacyPolicyWrap {
     display: flex;
     justify-content: center;
+}
+
+.skipForNow {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    width: fit-content;
+    align-self: flex-end;
+    font-size: 14px;
+    line-height: 19px;
+    color: #717680;
+    cursor: pointer;
+}
+
+.skipForNow:active {
+    transform: scale(0.99);
 }
 
 .privacyPolicy {

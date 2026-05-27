@@ -1,7 +1,7 @@
 import {
     ETHNIC_OTHER_OPTION,
     ETHNIC_OPTIONS,
-} from "../../components/PersonalData/EthnicBackground/EthnicBackground";
+} from "../../components/PersonalData/EthnicBackground/ethnicOptions";
 
 const KNOWN_ETHNIC_CHIPS = new Set(ETHNIC_OPTIONS);
 

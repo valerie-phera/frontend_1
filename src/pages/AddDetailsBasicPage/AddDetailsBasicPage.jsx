@@ -5,7 +5,7 @@ import PersonalData from "../../components/PersonalData/PersonalData";
 import {
     ETHNIC_OTHER_OPTION,
     ETHNIC_OPTIONS,
-} from "../../components/PersonalData/EthnicBackground/EthnicBackground";
+} from "../../components/PersonalData/EthnicBackground/ethnicOptions";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
@@ -20,12 +20,6 @@ import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionSto
 import InfoCircle from "../../assets/icons/InfoCircle";
 
 import styles from "./AddDetailsBasicPage.module.css";
-
-const toArray = (value) => {
-    if (Array.isArray(value)) return value.filter(Boolean);
-    if (value === undefined || value === null || value === "") return [];
-    return [value].filter(Boolean);
-};
 
 const buildEthnicBackgroundsForSubmit = (backgrounds, otherText) => {
     const trimmed = String(otherText ?? "").trim().slice(0, 50);
@@ -134,7 +128,7 @@ const AddDetailsBasicPage = () => {
         setLifeStage(Array.isArray(next.lifeStage) ? next.lifeStage : []);
         setEthnicBackground(next.ethnicChips);
         setEthnicOtherText(next.ethnicOtherText);
-    }, [locationKey]);
+    }, [locationKey, state]);
 
     useEffect(() => {
         if (basicValidationVisible && basicSectionIssues.count === 0) {
@@ -174,14 +168,12 @@ const AddDetailsBasicPage = () => {
         setBasicValidationVisible(false);
 
         const ageTrimmed = String(age ?? "").trim();
-        let ageForApi = undefined;
         if (ageTrimmed !== "") {
             const ageNum = parseInt(ageTrimmed, 10);
             if (Number.isNaN(ageNum) || ageNum < 1) {
                 alert("Please enter a valid age, or leave the field empty.");
                 return;
             }
-            ageForApi = ageNum;
         }
 
         if (ethnicBackground.includes(ETHNIC_OTHER_OPTION)) {
@@ -320,6 +312,12 @@ const AddDetailsBasicPage = () => {
                         Next
                     </Button>
                     <ButtonReverse onClick={handleGoBack}>Go back</ButtonReverse>
+                    <button
+                        type="button"
+                        className={styles.skipForNow}
+                    >
+                        Skip for now
+                    </button>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
                             We respect your privacy. Only you can save and see your results.
