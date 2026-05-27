@@ -199,11 +199,45 @@ const splitIntoSentences = (rawText) => {
     if (!text) return [];
 
     // Basic sentence splitting for UI bullets.
-    // Keeps punctuation, splits on space after . ! ? when the next chunk looks like a new sentence.
-    return text
-        .split(/(?<=[.!?])\s+(?=[A-Z0-9(])/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+    // Split after `. ! ?` when followed by whitespace/end.
+    // Important: do NOT split inside decimals like `6.1`.
+    const out = [];
+    let start = 0;
+
+    const isDigit = (ch) => ch >= "0" && ch <= "9";
+
+    const pushChunk = (endExclusive) => {
+        const chunk = text.slice(start, endExclusive).trim();
+        if (chunk) out.push(chunk);
+    };
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch !== "." && ch !== "!" && ch !== "?") continue;
+
+        const next = text[i + 1];
+        const followedBySpaceOrEnd = next === " " || next === undefined;
+        if (!followedBySpaceOrEnd) continue;
+
+        if (ch === ".") {
+            const prev = text[i - 1];
+            // Find next non-space char
+            let j = i + 1;
+            while (j < text.length && text[j] === " ") j++;
+            const nextNonSpace = text[j];
+            // Skip decimals (digit . digit)
+            if (isDigit(prev) && isDigit(nextNonSpace)) continue;
+        }
+
+        pushChunk(i + 1);
+        let k = i + 1;
+        while (k < text.length && text[k] === " ") k++;
+        start = k;
+        i = k - 1;
+    }
+
+    pushChunk(text.length);
+    return out;
 };
 
 /**
@@ -219,6 +253,14 @@ const splitByBoldLabels = (rawText) => {
     if (matches.length === 0) return [s];
 
     const chunks = [];
+
+    // Preserve any leading text before the first bold label.
+    const firstIdx = matches[0]?.index ?? 0;
+    if (firstIdx > 0) {
+        const leading = s.slice(0, firstIdx).trim();
+        if (leading) chunks.push(leading);
+    }
+
     for (let i = 0; i < matches.length; i++) {
         const start = matches[i].index ?? 0;
         const end = i + 1 < matches.length ? (matches[i + 1].index ?? s.length) : s.length;
