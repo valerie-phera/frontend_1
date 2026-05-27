@@ -325,6 +325,9 @@ const ResultPageTest = () => {
                                     id="result-ph-info"
                                     className={`${styles.infoBlockWrap} ${infoOpen ? styles.infoBlockWrapOpen : ""}`}
                                     aria-hidden={!infoOpen}
+                                    onClick={() => {
+                                        if (infoOpen) setInfoOpen(false);
+                                    }}
                                 >
                                     <div className={styles.infoBlockInner}>
                                         <div className={styles.infoBlock}>
