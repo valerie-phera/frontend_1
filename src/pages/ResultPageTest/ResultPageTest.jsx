@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
@@ -16,6 +16,10 @@ import {
     consumePendingInterceptResultToBasic,
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
+import {
+    readActiveResultMeta,
+    writeActiveResultMeta,
+} from "../../shared/utils/activeResultSessionStorage";
 import useExportResults from "../../hooks/useExportResults";
 import {
     PH_SCALE_MAX,
@@ -91,6 +95,8 @@ const getCardCopy = (level, phValueFixed) => {
 
 const ResultPageTest = () => {
     const navigate = useNavigate();
+    const { state } = useLocation();
+    const navigationType = useNavigationType();
     const { handleExport } = useExportResults();
 
     useLayoutEffect(() => {
@@ -124,11 +130,31 @@ const ResultPageTest = () => {
         return `${day}.${month}.${year} | ${hours}:${minutes} ${ampm}`;
     };
 
-    const [phValue, setPhValue] = useState(DEFAULT_PH);
+    // Restore previous pH only when user navigates back/forward (POP).
+    // For a fresh entry to /result (PUSH), keep the default value.
+    const activeMeta = navigationType === "POP" ? readActiveResultMeta() : null;
+
+    const [phValue, setPhValue] = useState(() => {
+        const fromNav = state?.phValue;
+        const fromSession = activeMeta?.phValue;
+        const candidate = fromNav ?? fromSession ?? DEFAULT_PH;
+        const n = Number(candidate);
+        return Number.isFinite(n) ? clampPh(n) : DEFAULT_PH;
+    });
+
+    const [timestamp, setTimestamp] = useState(() => {
+        // Keep stable across renders and back/forward navigation.
+        return state?.timestamp ?? activeMeta?.timestamp ?? formatDate();
+    });
     const [isDragging, setIsDragging] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
     const scaleRef = useRef(null);
+
+    useEffect(() => {
+        // Persist current result so browser back keeps user choice.
+        writeActiveResultMeta({ phValue, timestamp });
+    }, [phValue, timestamp]);
 
     useLayoutEffect(() => {
         const el = scaleRef.current;
@@ -178,7 +204,6 @@ const ResultPageTest = () => {
 
     const phLevel = getPhLevel(phValue);
     const levelConfig = LEVEL_CONFIG[phLevel];
-    const timestamp = formatDate();
     const { leftPercent: markerLeftPercent, bgPosX: markerBgPosX } = getMarkerLayout(
         phValue,
         scaleWidthPx,
