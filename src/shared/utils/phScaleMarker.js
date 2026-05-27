@@ -2,7 +2,9 @@ export const PH_SCALE_MIN = 3.5;
 export const PH_SCALE_MAX = 7.0;
 
 export const SCALE_SEGMENT_COLORS = ["#C6C955", "#60866E", "#526338", "#33372D", "#0C1446"];
-export const SCALE_GRADIENT = `linear-gradient(90deg, ${SCALE_SEGMENT_COLORS.join(", ")})`;
+/** Same stops as Figma pH scale — marker samples must match `.scale` background */
+export const SCALE_GRADIENT =
+    "linear-gradient(90deg, #C6C955 0%, #526338 25%, #526338 50%, #33372D 75%, #0C1446 100%)";
 
 /** Must match `.scaleMarker` width/height in result page CSS modules */
 export const MARKER_PX = 24;
