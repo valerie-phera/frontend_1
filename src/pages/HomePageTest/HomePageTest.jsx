@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import homePageImg from "../../assets/images/homePageImg.webp";
 
@@ -13,8 +14,19 @@ import EditIcon from "../../assets/icons/EditIcon";
 
 import styles from "./HomePageTest.module.css";
 
+const CONSENT_STORAGE_KEY = "phera_privacy_and_consent";
+
 const HomePageTest = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Returning to the start (incl. via logo) should reset the flow.
+    try {
+      sessionStorage.removeItem(CONSENT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return (
     <>
@@ -92,7 +104,13 @@ const HomePageTest = () => {
 
         <BottomBlock>
           <div className={styles.btnsBlock}>
-            <Button onClick={() => navigate("/privacy-and-consent")}>Continue</Button>
+            <Button
+              onClick={() =>
+                navigate("/privacy-and-consent", { state: { resetConsent: true } })
+              }
+            >
+              Continue
+            </Button>
             <div className={styles.bottomText}>
               <p>We respect your privacy. Only you can save and see your results. </p>
             </div>
