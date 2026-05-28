@@ -30,7 +30,7 @@ const resultThemeByLevel = {
         borderColor: "#526338",
         color: "#414651",
     },
-    Elevated: {
+    "Elevated": {
         backgroundColor: "rgba(12, 20, 70, 0.12)",
         borderColor: "#0C1446",
         color: "#263E3A",

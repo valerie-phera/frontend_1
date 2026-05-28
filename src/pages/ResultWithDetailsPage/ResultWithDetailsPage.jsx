@@ -15,6 +15,10 @@ import StarsIcon from "../../assets/icons/StarsIcon";
 import CitationsIcon from "../../assets/icons/CitationsIcon";
 import ArrowUpLink from "../../assets/icons/ArrowUpLink";
 import CheckBold from "../../assets/icons/CheckBold";
+import ArrowUpRightIcon from "../../assets/icons/ArrowUpRightIcon";
+import ArrowUp_14 from "../../assets/icons/ArrowUp_14";
+import InfoCircle_14 from "../../assets/icons/InfoCircle_14";
+import PhonendoscopeIcon from "../../assets/icons/PhonendoscopeIcon";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
@@ -368,6 +372,40 @@ const ResultWithDetailsPage = () => {
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
     const backendInterpretation = state?.interpretation;
+
+    const badgeBgByPhLevel = {
+        Normal: "#F1F6F4",
+        "Slightly Elevated": "#E6F2F4",
+        Elevated: "#EFF1FA",
+        "Slightly Low": "#E9EAEB",
+    };
+
+    const resultThemeByPhLevel = {
+        Normal: {
+            backgroundColor: "rgba(198, 201, 85, 0.12)",
+            borderColor: "#C6C955",
+        },
+        "Slightly Elevated": {
+            backgroundColor: "rgba(82, 99, 56, 0.12)",
+            borderColor: "#526338",
+        },
+        Elevated: {
+            backgroundColor: "rgba(12, 20, 70, 0.12)",
+            borderColor: "#0C1446",
+        },
+    };
+
+    const resultTheme = phLevel ? resultThemeByPhLevel[phLevel] : null;
+    const levelPhBackground =
+        resultTheme?.backgroundColor ?? (phLevel ? badgeBgByPhLevel[phLevel] : null) ?? "#F1F6F4";
+    const levelPhBorderColor = resultTheme?.borderColor ?? "#263E3A";
+
+    const PhResultCardIcon =
+        phLevel === "Slightly Elevated"
+            ? ArrowUpRightIcon
+            : phLevel === "Elevated"
+                ? ArrowUp_14
+                : CheckBold;
     const { lead: computedLead, suffix: computedSuffix } = getInterpretationParts(
         phLevel,
         Number(phValue).toFixed(2)
@@ -675,7 +713,7 @@ const ResultWithDetailsPage = () => {
                         <h1 className={styles.title}>Your full pH result</h1>
                         <div className={styles.visualBlock}>
                             <div className={styles.visualBlockTop}>
-                                <PhBadge level={phLevel} />
+                                <PhBadge level={phLevel} variant="result" />
                                 <div className={styles.actions}>
                                     <button
                                         type="button"
@@ -836,9 +874,18 @@ const ResultWithDetailsPage = () => {
                                     <div
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
-                                        <div className={styles.phResultCard}>
-                                            <div className={styles.phResultCardSign}>
-                                                <CheckBold />
+                                        <div
+                                            className={styles.phResultCard}
+                                            style={{
+                                                backgroundColor: levelPhBackground,
+                                                borderColor: levelPhBorderColor,
+                                            }}
+                                        >
+                                            <div
+                                                className={styles.phResultCardSign}
+                                                style={{ backgroundColor: levelPhBorderColor }}
+                                            >
+                                                <PhResultCardIcon />
                                             </div>
                                             <div className={styles.phResultCardText}>
                                                 <p className={styles.phResultCardTitle}>
