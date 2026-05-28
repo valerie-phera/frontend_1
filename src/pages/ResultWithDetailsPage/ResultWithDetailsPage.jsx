@@ -912,20 +912,30 @@ const ResultWithDetailsPage = () => {
                                                         </div>
                                                     ))}
                                                 </div>
-                                                {phLevel === "Slightly Elevated" ? (
-                                                    <div className={styles.phResultCardSlightlyElevated}>
-                                                        <div className={styles.phResultCardSignSlightlyElevated}>
-                                                            <InfoCircle_14 />
+                                                {phLevel === "Slightly Elevated" || phLevel === "Elevated" ? (
+                                                    <div
+                                                        className={styles.phResultCardLevelNote}
+                                                        style={{
+                                                            "--ph-level-note-bg": levelPhBackground,
+                                                            "--ph-level-note-border": levelPhBorderColor,
+                                                        }}
+                                                    >
+                                                        <div
+                                                            className={styles.phResultCardLevelNoteSign}
+                                                            style={{ backgroundColor: levelPhBorderColor }}
+                                                        >
+                                                            {phLevel === "Elevated" ? <PhonendoscopeIcon /> : <InfoCircle_14 />}
                                                         </div>
-                                                        <div className={styles.phResultCardTextSlightlyElevated}>
-                                                            <p className={styles.phResultCardTitleSlightlyElevated}>
-                                                                Worth keeping an eye on.
+                                                        <div className={styles.phResultCardLevelNoteText}>
+                                                            <p className={styles.phResultCardLevelNoteTitle}>
+                                                                {phLevel === "Elevated"
+                                                                    ? "Speaking with a doctor is a good next step."
+                                                                    : "Worth keeping an eye on."}
                                                             </p>
-                                                            <p className={styles.phResultCardBodySlightlyElevated}>
-                                                                A single slightly elevated reading often has a temporary
-                                                                cause. If this level repeats in your next test,
-                                                                mentioning it to your doctor is a sensible step - there's
-                                                                no need to rush.
+                                                            <p className={styles.phResultCardLevelNoteBody}>
+                                                                {phLevel === "Elevated"
+                                                                    ? "An elevated pH alone is not a diagnosis. A brief consultation can confirm what's happening and rule out conditions like bacterial vaginosis. Most are highly treatable."
+                                                                    : "A single slightly elevated reading often has a temporary cause. If this level repeats in your next test, mentioning it to your doctor is a sensible step - there's no need to rush."}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -962,20 +972,30 @@ const ResultWithDetailsPage = () => {
                                                             Consult your healthcare provider can help ensure everything is as it should be.
                                                         </p>
                                                     </div>
-                                                    {phLevel === "Slightly Elevated" ? (
-                                                        <div className={styles.phResultCardSlightlyElevated}>
-                                                            <div className={styles.phResultCardSignSlightlyElevated}>
-                                                                <InfoCircle_14 />
+                                                    {phLevel === "Slightly Elevated" || phLevel === "Elevated" ? (
+                                                        <div
+                                                            className={styles.phResultCardLevelNote}
+                                                            style={{
+                                                                "--ph-level-note-bg": levelPhBackground,
+                                                                "--ph-level-note-border": levelPhBorderColor,
+                                                            }}
+                                                        >
+                                                            <div
+                                                                className={styles.phResultCardLevelNoteSign}
+                                                                style={{ backgroundColor: levelPhBorderColor }}
+                                                            >
+                                                                {phLevel === "Elevated" ? <PhonendoscopeIcon /> : <InfoCircle_14 />}
                                                             </div>
-                                                            <div className={styles.phResultCardTextSlightlyElevated}>
-                                                                <p className={styles.phResultCardTitleSlightlyElevated}>
-                                                                    Worth keeping an eye on.
+                                                            <div className={styles.phResultCardLevelNoteText}>
+                                                                <p className={styles.phResultCardLevelNoteTitle}>
+                                                                    {phLevel === "Elevated"
+                                                                        ? "Speaking with a doctor is a good next step."
+                                                                        : "Worth keeping an eye on."}
                                                                 </p>
-                                                                <p className={styles.phResultCardBodySlightlyElevated}>
-                                                                    A single slightly elevated reading often has a temporary
-                                                                    cause. If this level repeats in your next test,
-                                                                    mentioning it to your doctor is a sensible step - there's
-                                                                    no need to rush.
+                                                                <p className={styles.phResultCardLevelNoteBody}>
+                                                                    {phLevel === "Elevated"
+                                                                        ? "An elevated pH alone is not a diagnosis. A brief consultation can confirm what's happening and rule out conditions like bacterial vaginosis. Most are highly treatable."
+                                                                        : "A single slightly elevated reading often has a temporary cause. If this level repeats in your next test, mentioning it to your doctor is a sensible step - there's no need to rush."}
                                                                 </p>
                                                             </div>
                                                         </div>
