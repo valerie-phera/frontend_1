@@ -878,6 +878,7 @@ const ResultWithDetailsPage = () => {
                                             className={styles.phResultCard}
                                             style={{
                                                 backgroundColor: levelPhBackground,
+                                                "--ph-result-card-border": levelPhBorderColor,
                                                 borderColor: levelPhBorderColor,
                                             }}
                                         >
@@ -899,47 +900,87 @@ const ResultWithDetailsPage = () => {
                                             </div>
                                         </div>
                                         {overviewParagraphs.length > 0 ? (
-                                            <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                                {overviewParagraphs.map((t, index) => (
-                                                    <div key={index} className={styles.text}>
-                                                        <div className={styles.point} />
-                                                        <p
-                                                            className={styles.innerText}
-                                                            dangerouslySetInnerHTML={{ __html: t }}
-                                                        />
+                                            <>
+                                                <div className={styles.wrapText} onClick={handleInsightContentClick}>
+                                                    {overviewParagraphs.map((t, index) => (
+                                                        <div key={index} className={styles.text}>
+                                                            <div className={styles.point} />
+                                                            <p
+                                                                className={styles.innerText}
+                                                                dangerouslySetInnerHTML={{ __html: t }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {phLevel === "Slightly Elevated" ? (
+                                                    <div className={styles.phResultCardSlightlyElevated}>
+                                                        <div className={styles.phResultCardSignSlightlyElevated}>
+                                                            <InfoCircle_14 />
+                                                        </div>
+                                                        <div className={styles.phResultCardTextSlightlyElevated}>
+                                                            <p className={styles.phResultCardTitleSlightlyElevated}>
+                                                                Worth keeping an eye on.
+                                                            </p>
+                                                            <p className={styles.phResultCardBodySlightlyElevated}>
+                                                                A single slightly elevated reading often has a temporary
+                                                                cause. If this level repeats in your next test,
+                                                                mentioning it to your doctor is a sensible step - there's
+                                                                no need to rush.
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                ) : null}
+                                            </>
                                         ) : (
                                             <>
                                                 <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
-                                                <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                                    {[
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                    ].map((t, index) => (
-                                                        <div key={index} className={styles.text}>
-                                                            <div className={styles.point} />
-                                                            <p className={styles.innerText}>
-                                                                {t}{" "}
-                                                                <button
-                                                                    type="button"
-                                                                    className={styles.bracketRefLink}
-                                                                    data-citation-ref="2"
-                                                                    aria-label="View source 2"
-                                                                >
-                                                                    [2]
-                                                                </button>
-                                                                .
-                                                            </p>
+                                                <>
+                                                    <div className={styles.wrapText} onClick={handleInsightContentClick}>
+                                                        {[
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                        ].map((t, index) => (
+                                                            <div key={index} className={styles.text}>
+                                                                <div className={styles.point} />
+                                                                <p className={styles.innerText}>
+                                                                    {t}{" "}
+                                                                    <button
+                                                                        type="button"
+                                                                        className={styles.bracketRefLink}
+                                                                        data-citation-ref="2"
+                                                                        aria-label="View source 2"
+                                                                    >
+                                                                        [2]
+                                                                    </button>
+                                                                    .
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                        <p className={styles.overviewNote}>
+                                                            Consult your healthcare provider can help ensure everything is as it should be.
+                                                        </p>
+                                                    </div>
+                                                    {phLevel === "Slightly Elevated" ? (
+                                                        <div className={styles.phResultCardSlightlyElevated}>
+                                                            <div className={styles.phResultCardSignSlightlyElevated}>
+                                                                <InfoCircle_14 />
+                                                            </div>
+                                                            <div className={styles.phResultCardTextSlightlyElevated}>
+                                                                <p className={styles.phResultCardTitleSlightlyElevated}>
+                                                                    Worth keeping an eye on.
+                                                                </p>
+                                                                <p className={styles.phResultCardBodySlightlyElevated}>
+                                                                    A single slightly elevated reading often has a temporary
+                                                                    cause. If this level repeats in your next test,
+                                                                    mentioning it to your doctor is a sensible step - there's
+                                                                    no need to rush.
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    ))}
-                                                    <p className={styles.overviewNote}>
-                                                        Consult your healthcare provider can help ensure everything is as it should be.
-                                                    </p>
-                                                </div>
+                                                    ) : null}
+                                                </>
                                             </>
                                         )}
                                     </div>
