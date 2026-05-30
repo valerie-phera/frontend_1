@@ -1,6 +1,6 @@
 import analyzingDataPageImg from "../../assets/images/analyzingDataPageImg.webp";
 import completePageImg from "../../assets/images/completePageImg.webp";
-import { preloadImages } from "./preloadImage";
+import { preloadImage, preloadImages } from "./preloadImage";
 
 export { analyzingDataPageImg, completePageImg };
 
