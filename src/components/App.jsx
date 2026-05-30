@@ -34,11 +34,12 @@ import "../shared/styles/style.css";
 
 function App() {
   useEffect(() => {
-    const idle = window.requestIdleCallback?.(() => preloadAnalyzingFlowImages(), {
-      timeout: 2500,
-    });
+    const run = () => {
+      preloadAnalyzingFlowImages();
+    };
+    const idle = window.requestIdleCallback?.(run, { timeout: 1500 });
     if (idle === undefined) {
-      const t = window.setTimeout(preloadAnalyzingFlowImages, 400);
+      const t = window.setTimeout(run, 200);
       return () => window.clearTimeout(t);
     }
     return () => window.cancelIdleCallback?.(idle);

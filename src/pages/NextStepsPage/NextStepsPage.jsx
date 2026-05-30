@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { analyzingDataPageImg } from "../../shared/utils/flowImages";
+import { preloadImage } from "../../shared/utils/preloadImage";
 
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
@@ -42,6 +45,10 @@ const NextStepsPage = ({ lockedItems: lockedItemsProp, totalSteps: totalStepsPro
 
     const stepsRemaining = Math.max(1, lockedItems.length);
     const moreStepsText = stepsRemaining === 1 ? "1 more step" : `${stepsRemaining} more steps`;
+
+    useEffect(() => {
+        preloadImage(analyzingDataPageImg);
+    }, []);
 
     return (
         <>

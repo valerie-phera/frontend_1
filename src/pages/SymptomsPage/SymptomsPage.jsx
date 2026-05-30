@@ -17,7 +17,7 @@ import {
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
-import { analyzingDataPageImg } from "../../shared/utils/flowImages";
+import { analyzingDataPageImg, goToAnalyzingData } from "../../shared/utils/flowImages";
 import { preloadImage } from "../../shared/utils/preloadImage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import InfoCircle from "../../assets/icons/InfoCircle";
@@ -197,23 +197,24 @@ const SymptomsPage = () => {
             return "/analyzing-data";
         })();
 
+        const nextState = {
+            ...state,
+            discharge: stripNone(discharge),
+            vulvaCondition: stripNone(vulvaCondition),
+            smell: stripNone(smell),
+            urination: stripNone(urination),
+            notes,
+            lifeStage,
+            hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
+            currentMedications,
+        };
+
         if (nextPath === "/analyzing-data") {
-            preloadImage(analyzingDataPageImg);
+            goToAnalyzingData(navigate, nextState);
+            return;
         }
 
-        navigate(nextPath, {
-            state: {
-                ...state,
-                discharge: stripNone(discharge),
-                vulvaCondition: stripNone(vulvaCondition),
-                smell: stripNone(smell),
-                urination: stripNone(urination),
-                notes,
-                lifeStage,
-                hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
-                currentMedications,
-            },
-        });
+        navigate(nextPath, { state: nextState });
     };
 
     const handleGoBack = () => {

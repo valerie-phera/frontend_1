@@ -5,5 +5,11 @@ import { preloadImages } from "./preloadImage";
 export { analyzingDataPageImg, completePageImg };
 
 export function preloadAnalyzingFlowImages() {
-    preloadImages([analyzingDataPageImg, completePageImg]);
+    return preloadImages([analyzingDataPageImg, completePageImg]);
+}
+
+/** Fire-and-forget preload, then navigate — keeps transitions smooth on hero-image pages. */
+export function goToAnalyzingData(navigate, state) {
+    preloadImage(analyzingDataPageImg);
+    navigate("/analyzing-data", { state });
 }
