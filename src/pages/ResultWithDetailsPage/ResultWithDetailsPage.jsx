@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDeviceFrame } from "../../components/Layout/DeviceFrame/DeviceFrame";
 
@@ -426,7 +427,9 @@ const ResultWithDetailsPage = () => {
     const pageRef = useRef(null);
     const insightsHeadingRef = useRef(null);
     const insightsStickyHeaderRef = useRef(null);
+    const tabPanelsRef = useRef(null);
     const tabScrollStabilizerRef = useRef(null);
+    const insightsPinScrollTopRef = useRef(0);
     const tabSwitchScrollStateRef = useRef(null);
     const citationsContentRef = useRef(null);
     const pendingCitationRef = useRef(null);
@@ -436,10 +439,9 @@ const ResultWithDetailsPage = () => {
 
     const getInsightsStickyTop = () => (window.matchMedia("(max-width: 767px)").matches ? 56 : 0);
 
-    const isInsightsHeaderPinned = () => {
-        const header = insightsStickyHeaderRef.current;
-        if (!header) return false;
-        return Math.abs(header.getBoundingClientRect().top - getInsightsStickyTop()) <= 6;
+    const getScrollerClientTop = (scroller) => {
+        if (!scroller || scroller === window) return 0;
+        return scroller.getBoundingClientRect().top;
     };
 
     const getPageScroller = () => {
@@ -461,44 +463,72 @@ const ResultWithDetailsPage = () => {
         scroller.scrollTo({ top: t, behavior: "auto" });
     };
 
+    const getMaxScrollTop = (scroller) => {
+        if (!scroller || scroller === window) {
+            const root = document.scrollingElement;
+            if (!root) return 0;
+            return Math.max(0, root.scrollHeight - root.clientHeight);
+        }
+        return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    };
+
+    const measureInsightsPinScrollTop = () => {
+        const header = insightsStickyHeaderRef.current;
+        const panels = tabPanelsRef.current;
+        if (!header || !panels) return insightsPinScrollTopRef.current ?? 0;
+
+        const scroller = getPageScroller();
+        const stickyTop = getInsightsStickyTop();
+        const scrollerTop = getScrollerClientTop(scroller);
+        const currentScroll = getScrollTop(scroller);
+        const headerHeight = header.getBoundingClientRect().height;
+        const panelsRect = panels.getBoundingClientRect();
+        const panelsDocTop = currentScroll + panelsRect.top - scrollerTop;
+
+        return Math.max(0, panelsDocTop - headerHeight - stickyTop);
+    };
+
+    const updateInsightsPinScrollTopCache = () => {
+        insightsPinScrollTopRef.current = measureInsightsPinScrollTop();
+    };
+
     const setStabilizerHeight = (px) => {
         const el = tabScrollStabilizerRef.current;
         if (!el) return;
         el.style.height = px > 0 ? `${Math.ceil(px)}px` : "0px";
     };
 
-    const stabilizePinnedHeaderOnTabSwitch = () => {
-        const saved = tabSwitchScrollStateRef.current;
-        tabSwitchScrollStateRef.current = null;
-        if (!saved?.wasPinned) {
+    const applyPinnedTabView = (savedPinScrollTop) => {
+        const header = insightsStickyHeaderRef.current;
+        const panels = tabPanelsRef.current;
+        if (!header || !panels) return;
+
+        const scroller = getPageScroller();
+        const currentScroll = getScrollTop(scroller);
+        const pinScrollTop =
+            savedPinScrollTop ?? measureInsightsPinScrollTop();
+
+        if (pinScrollTop <= 0) {
             setStabilizerHeight(0);
             return;
         }
 
-        const scroller = getPageScroller();
-        const prevTop = saved.scrollTop ?? 0;
-
-        // If new tab is shorter, the browser clamps scrollTop. Add just enough bottom space
-        // to keep the previous scrollTop stable so the sticky header doesn't "drop".
-        const getMaxScrollTop = () => {
-            if (!scroller || scroller === window) {
-                const root = document.scrollingElement;
-                if (!root) return 0;
-                return Math.max(0, root.scrollHeight - root.clientHeight);
-            }
-            return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-        };
-
-        // First clear to measure natural height.
-        setStabilizerHeight(0);
-        const naturalMax = getMaxScrollTop();
-        const deficit = prevTop - naturalMax;
-        if (deficit > 1) {
-            setStabilizerHeight(deficit + 4);
+        // User hasn't reached insights yet — keep their scroll position.
+        if (currentScroll + 4 < pinScrollTop) {
+            setStabilizerHeight(0);
+            return;
         }
 
-        // Restore scrollTop (now it shouldn't clamp).
-        setScrollTop(scroller, prevTop);
+        let maxScroll = getMaxScrollTop(scroller);
+        const neededStabilizer = Math.max(0, Math.ceil(pinScrollTop - maxScroll + 4));
+        if (neededStabilizer > 0) {
+            setStabilizerHeight(neededStabilizer);
+            maxScroll = getMaxScrollTop(scroller);
+        } else {
+            setStabilizerHeight(0);
+        }
+
+        setScrollTop(scroller, Math.min(Math.max(0, pinScrollTop), maxScroll));
     };
 
     const scrollElementIntoView = (el) => {
@@ -561,12 +591,18 @@ const ResultWithDetailsPage = () => {
 
     const onTabClick = (nextTab) => {
         if (nextTab === activeTab) return;
-        const scroller = getPageScroller();
-        tabSwitchScrollStateRef.current = {
-            wasPinned: isInsightsHeaderPinned(),
-            scrollTop: getScrollTop(scroller),
-        };
-        setActiveTab(nextTab);
+
+        const shouldScrollToPanelTop = pendingCitationRef.current == null;
+        if (!shouldScrollToPanelTop) {
+            tabSwitchScrollStateRef.current = { scrollToPanelTop: false };
+            setActiveTab(nextTab);
+            return;
+        }
+
+        const pinScrollTop = measureInsightsPinScrollTop();
+        tabSwitchScrollStateRef.current = { scrollToPanelTop: true, pinScrollTop };
+        flushSync(() => setActiveTab(nextTab));
+        requestAnimationFrame(() => applyPinnedTabView(pinScrollTop));
     };
 
     const handleImportedData = (data) => {
@@ -674,9 +710,32 @@ const ResultWithDetailsPage = () => {
         : [];
 
     useLayoutEffect(() => {
-        stabilizePinnedHeaderOnTabSwitch();
-        // One extra frame helps when layout/DOM heights update late.
-        requestAnimationFrame(() => stabilizePinnedHeaderOnTabSwitch());
+        updateInsightsPinScrollTopCache();
+        window.addEventListener("resize", updateInsightsPinScrollTopCache);
+        return () => window.removeEventListener("resize", updateInsightsPinScrollTopCache);
+    }, [infoOpen, overviewParagraphs.length, deepDiveSections.length, citations.length]);
+
+    useEffect(() => {
+        const onScroll = () => updateInsightsPinScrollTopCache();
+        const scroller = getPageScroller();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        scroller?.addEventListener?.("scroll", onScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            scroller?.removeEventListener?.("scroll", onScroll);
+        };
+    }, []);
+
+    useLayoutEffect(() => {
+        const saved = tabSwitchScrollStateRef.current;
+        if (!saved?.scrollToPanelTop) return undefined;
+
+        const pinScrollTop = saved.pinScrollTop;
+        tabSwitchScrollStateRef.current = null;
+
+        applyPinnedTabView(pinScrollTop);
+        const frameId = requestAnimationFrame(() => applyPinnedTabView(pinScrollTop));
+        return () => window.cancelAnimationFrame(frameId);
     }, [activeTab, overviewParagraphs.length, deepDiveSections.length, citations.length]);
 
     useLayoutEffect(() => {
@@ -833,45 +892,45 @@ const ResultWithDetailsPage = () => {
                                     >
                                         <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
                                     </div>
-                                <div className={styles.SectionTabs}>
-                                    <div className={styles.tabList}>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => onTabClick("overview")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") onTabClick("overview");
-                                            }}
-                                        >
-                                            Overview
-                                        </div>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => onTabClick("deepDive")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") onTabClick("deepDive");
-                                            }}
-                                        >
-                                            Deep Dive
-                                        </div>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => onTabClick("sources")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") onTabClick("sources");
-                                            }}
-                                        >
-                                            Sources
+                                    <div className={styles.SectionTabs}>
+                                        <div className={styles.tabList}>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("overview")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("overview");
+                                                }}
+                                            >
+                                                Overview
+                                            </div>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("deepDive")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("deepDive");
+                                                }}
+                                            >
+                                                Deep Dive
+                                            </div>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("sources")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("sources");
+                                                }}
+                                            >
+                                                Sources
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                </div>
-                                <div className={styles.tabPanels}>
+                                <div ref={tabPanelsRef} className={styles.tabPanels}>
                                     <div
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >

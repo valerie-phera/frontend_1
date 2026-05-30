@@ -188,7 +188,7 @@
 
 .insightsStickyHeader {
     position: sticky;
-    top: 56px;
+    top: 55px;
     z-index: 5;
     background: #fff;
     border-top-left-radius: 10px;
