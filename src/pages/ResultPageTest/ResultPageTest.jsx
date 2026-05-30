@@ -26,6 +26,7 @@ import {
     PH_SCALE_MIN,
     SCALE_GRADIENT,
     clientXToPhScale,
+    formatPhOneDecimal,
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
@@ -276,7 +277,7 @@ const ResultPageTest = () => {
                                             <Minus />
                                         </button>
                                         <div className={styles.numberDate}>
-                                            <div className={styles.num}>{phValue.toFixed(1)}</div>
+                                            <div className={styles.num}>{formatPhOneDecimal(phValue)}</div>
                                             <div className={styles.date}>{timestamp}</div>
                                         </div>
                                         <button

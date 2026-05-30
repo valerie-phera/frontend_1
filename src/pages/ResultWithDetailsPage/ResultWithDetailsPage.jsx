@@ -34,6 +34,7 @@ import {
     PH_SCALE_MIN,
     SCALE_GRADIENT,
     clampPhScale,
+    formatPhOneDecimal,
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
@@ -46,12 +47,6 @@ const MIN_PH = PH_SCALE_MIN;
 const MAX_PH = PH_SCALE_MAX;
 
 const clampPhDisplay = (n) => clampPhScale(n, MIN_PH, MAX_PH);
-
-const formatPhNumber = (value, decimals = 2) => {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "";
-    return n.toFixed(decimals).replace(/\.?0+$/, "");
-};
 
 const extractCitationLinks = (rawText) => {
     const text = String(rawText ?? "");
@@ -370,7 +365,7 @@ const ResultWithDetailsPage = () => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const { state } = useLocation();
-    const phValue = state?.phValue;
+    const phValue = state?.phValue ?? state?.ph_value;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
     const backendInterpretation = state?.interpretation;
@@ -751,7 +746,7 @@ const ResultWithDetailsPage = () => {
                                     />
                                 </div>
                             </div>
-                            <div className={styles.num}>{formatPhNumber(phValue, 2)}</div>
+                            <div className={styles.num}>{formatPhOneDecimal(phValue, MIN_PH, MAX_PH)}</div>
                             <div className={styles.date}>{timestamp}</div>
                             <div ref={scaleRef} className={styles.scale} role="presentation">
                                 <div

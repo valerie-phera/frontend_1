@@ -21,6 +21,13 @@ export const clampPhScale = (n, min = PH_SCALE_MIN, max = PH_SCALE_MAX) => {
     return Math.min(max, Math.max(min, x));
 };
 
+/** Display pH with exactly one decimal (4 → "4.0", 4.3 → "4.3"). */
+export const formatPhOneDecimal = (value, min = PH_SCALE_MIN, max = PH_SCALE_MAX) => {
+    const raw = Number(value);
+    if (!Number.isFinite(raw)) return "";
+    return clampPhScale(raw, min, max).toFixed(1);
+};
+
 const phToTravelT = (ph, min, max) => (clampPhScale(ph, min, max) - min) / (max - min);
 
 /** Marker position + gradient slice aligned with `.scale` */
