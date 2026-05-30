@@ -17,6 +17,8 @@ import {
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
+import { analyzingDataPageImg } from "../../shared/utils/flowImages";
+import { preloadImage } from "../../shared/utils/preloadImage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 import InfoCircle from "../../assets/icons/InfoCircle";
 
@@ -195,6 +197,10 @@ const SymptomsPage = () => {
             return "/analyzing-data";
         })();
 
+        if (nextPath === "/analyzing-data") {
+            preloadImage(analyzingDataPageImg);
+        }
+
         navigate(nextPath, {
             state: {
                 ...state,
@@ -229,6 +235,10 @@ const SymptomsPage = () => {
         const hasFertilityTreatment = meds.includes("Fertility treatment");
         return !hasBirthControl && !hasFertilityTreatment;
     })();
+
+    useEffect(() => {
+        preloadImage(analyzingDataPageImg);
+    }, []);
 
     return (
         <>

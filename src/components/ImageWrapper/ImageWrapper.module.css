@@ -1,9 +1,13 @@
 .img {
     width: 100%;
+    margin-inline: auto;
     overflow: hidden;
+    flex-shrink: 0;
+    contain: layout style;
 }
 
-.img img {
+.imgEl {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;

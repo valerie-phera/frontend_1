@@ -37,6 +37,8 @@ import {
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
+import { completePageImg } from "../../shared/utils/flowImages";
+import { preloadImage } from "../../shared/utils/preloadImage";
 import styles from "./ResultWithDetailsPage.module.css";
 import phInfoStyles from "../ResultPageTest/ResultPageTest.module.css";
 
@@ -600,6 +602,10 @@ const ResultWithDetailsPage = () => {
         console.log("[ResultWithDetailsPage] recommendations:", state?.recommendations);
         console.log("[ResultWithDetailsPage] `citations`:", state?.citations);
     }, [state]);
+
+    useEffect(() => {
+        preloadImage(completePageImg);
+    }, []);
 
     const detailOptions = useDetailsFromState(state);
     const detailsList = detailOptions.map((item, idx) => (

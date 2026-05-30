@@ -26,7 +26,13 @@ const TestCompletePage = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={completePageImg} alt="Home page img" width={243} height={280} />
+                            <ImageWrapper
+                                src={completePageImg}
+                                alt="Home page img"
+                                width={243}
+                                height={280}
+                                priority
+                            />
                         </div>
                     </div>
                     <div className={styles.textBlock}>

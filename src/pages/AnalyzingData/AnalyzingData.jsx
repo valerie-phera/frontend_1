@@ -296,7 +296,13 @@ const AnalyzingData = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={analyzingDataPageImg} alt="Analyzing Data Img" width={243} height={235} />
+                            <ImageWrapper
+                                src={analyzingDataPageImg}
+                                alt="Analyzing Data Img"
+                                width={243}
+                                height={235}
+                                priority
+                            />
                         </div>
                     </div>
                     <div className={styles.textBlock}>
