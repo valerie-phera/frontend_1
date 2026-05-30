@@ -203,7 +203,8 @@
     width: 100%;
     height: 17px;
     border-radius: 100px;
-    touch-action: none;
+    /* pan-y: allow vertical page scroll; horizontal drag handled via pointer events */
+    touch-action: pan-y;
     cursor: pointer;
 }
 
@@ -214,7 +215,7 @@
     z-index: 2;
     padding: 12px;
     box-sizing: content-box;
-    touch-action: none;
+    touch-action: pan-y;
     cursor: grab;
     display: flex;
     align-items: center;

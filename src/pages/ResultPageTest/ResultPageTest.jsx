@@ -230,7 +230,7 @@ const ResultPageTest = () => {
 
     return (
         <>
-            <div className={styles.content}>
+            <div className={styles.content} data-scroll-container>
                 <Container>
                     <div className={styles.section}>
                         <h1 className={styles.title}>Enter your pH</h1>

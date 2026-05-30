@@ -26,6 +26,29 @@ body {
     width: 100%;
 }
 
+/*
+ * Mobile: scroll inside #root instead of the document.
+ * Prevents iOS Safari pull-to-refresh and the "stuck" overscroll bounce
+ * that shows up on short/interactive pages like /result.
+ */
+@media (max-width: 767px) {
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    #root {
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* Desktop/tablet: the app scrolls inside DeviceFrame ".screen" */
 @media (min-width: 768px) {
     html,
