@@ -185,7 +185,13 @@
 
 .sheetOverlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    right: auto;
+    width: min(100%, 393px);
+    max-width: 393px;
+    transform: translateX(-50%);
     z-index: 2000;
 }
 
@@ -277,5 +283,11 @@
 @media (min-width: 768px) {
     .sheetOverlay {
         position: absolute;
+        inset: 0;
+        left: 0;
+        right: 0;
+        width: auto;
+        max-width: none;
+        transform: none;
     }
 }
