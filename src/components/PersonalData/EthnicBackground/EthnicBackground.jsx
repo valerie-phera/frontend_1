@@ -6,6 +6,7 @@ import {
   ETHNIC_OTHER_OPTION,
   ETHNIC_OPTIONS,
 } from "./ethnicOptions";
+import Button from "../../Button/Button";
 import styles from "./EthnicBackground.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -14,9 +15,34 @@ const options = ETHNIC_OPTIONS;
 /** Matches CSS hide animation duration + small buffer before unmount. */
 const OTHER_PANEL_ANIM_MS = 430;
 
+const OTHER_CHIP_LABEL_MAX = 30;
+
+const truncateChipLabel = (text, maxLen = OTHER_CHIP_LABEL_MAX) => {
+  const s = String(text ?? "");
+  if (s.length <= maxLen) return s;
+  return `${s.slice(0, maxLen)}...`;
+};
+
+const sanitizeOtherText = (raw) => {
+  const normalized = String(raw ?? "").normalize("NFKC");
+  const noControl = Array.from(normalized)
+    .filter((ch) => {
+      const code = ch.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join("");
+
+  return noControl
+    .replace(/[!?@#*()_+=\d"<>[\]{}|`~^$%\\]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^\s+/, "")
+    .slice(0, 50);
+};
+
 const EthnicBackground = ({
   ethnicBackground,
   onChange,
+  setEthnicBackground,
   otherText = "",
   onOtherTextChange,
   otherInputMode = "always",
@@ -25,6 +51,9 @@ const EthnicBackground = ({
 }) => {
   const isModalMode = otherInputMode === "when_other";
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetDraft, setSheetDraft] = useState([]);
+  const [sheetOtherDraft, setSheetOtherDraft] = useState("");
+  const [sheetOtherError, setSheetOtherError] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef({
     active: false,
@@ -41,11 +70,53 @@ const EthnicBackground = ({
   }, []);
 
   const openSheet = useCallback(() => {
+    const committed = Array.isArray(ethnicBackground) ? ethnicBackground : [];
+    setSheetDraft([...committed]);
+    setSheetOtherDraft(otherText ?? "");
+    setSheetOtherError(false);
     setIsSheetOpen(true);
     setDragOffset(0);
     dragRef.current.active = false;
     dragRef.current.moved = false;
-  }, []);
+  }, [ethnicBackground, otherText]);
+
+  const applySheet = useCallback(() => {
+    const next = Array.isArray(sheetDraft) ? sheetDraft : [];
+    const otherSelected = next.includes(ETHNIC_OTHER_OPTION);
+    const otherTrimmed = String(sheetOtherDraft ?? "").trim();
+
+    if (otherSelected && !otherTrimmed) {
+      setSheetOtherError(true);
+      requestAnimationFrame(() => {
+        sheetOtherInputRef.current?.focus();
+      });
+      return;
+    }
+
+    setSheetOtherError(false);
+    if (typeof setEthnicBackground === "function") {
+      setEthnicBackground(next);
+    } else {
+      const prev = Array.isArray(ethnicBackground) ? ethnicBackground : [];
+      const prevSet = new Set(prev);
+      const nextSet = new Set(next);
+      for (const item of options) {
+        const was = prevSet.has(item);
+        const now = nextSet.has(item);
+        if (was !== now) onChange(item);
+      }
+    }
+    onOtherTextChange?.(sheetOtherDraft);
+    closeSheet();
+  }, [
+    sheetDraft,
+    sheetOtherDraft,
+    setEthnicBackground,
+    ethnicBackground,
+    onChange,
+    onOtherTextChange,
+    closeSheet,
+  ]);
 
   const [otherPanelClosing, setOtherPanelClosing] = useState(false);
   const closeTimerRef = useRef(null);
@@ -69,7 +140,6 @@ const EthnicBackground = ({
       const wasSelected = ethnicBackground.includes(item);
       if (item === ETHNIC_OTHER_OPTION && otherInputMode === "when_other") {
         if (wasSelected) {
-          // In modal mode, hide other input immediately when deselecting.
           onOtherTextChange?.("");
         }
       }
@@ -78,16 +148,48 @@ const EthnicBackground = ({
     [ethnicBackground, onChange, onOtherTextChange, otherInputMode]
   );
 
-  const list = useMemo(
-    () =>
-      options.map((item) => {
-        const isActive = ethnicBackground.includes(item);
+  const toggleSheetDraft = useCallback((item) => {
+    setSheetDraft((prev) => {
+      const arr = Array.isArray(prev) ? prev : [];
+      const wasSelected = arr.includes(item);
+      if (wasSelected) {
+        if (item === ETHNIC_OTHER_OPTION) {
+          setSheetOtherDraft("");
+          setSheetOtherError(false);
+        }
+        return arr.filter((x) => x !== item);
+      }
+      if (item === ETHNIC_OTHER_OPTION) {
+        setSheetOtherError(false);
+      }
+      return [...arr, item];
+    });
+  }, []);
+
+  const renderOptionChips = useCallback(
+    (activeList, onToggle, { inSheet = false, items = options } = {}) =>
+      items.map((item) => {
+        const isActive = activeList.includes(item);
         return (
           <div
             key={item}
             className={isActive ? styles.isemSelected : styles.item}
             onClick={() => {
               if (
+                inSheet &&
+                item === ETHNIC_OTHER_OPTION &&
+                otherInputMode === "when_other"
+              ) {
+                if (otherPanelClosing) {
+                  clearCloseTimer();
+                  setOtherPanelClosing(false);
+                  return;
+                }
+                toggleSheetDraft(item);
+                return;
+              }
+              if (
+                !inSheet &&
                 item === ETHNIC_OTHER_OPTION &&
                 otherInputMode === "when_other"
               ) {
@@ -99,10 +201,7 @@ const EthnicBackground = ({
                 if (isActive) {
                   setOtherPanelClosing(true);
                   clearCloseTimer();
-                  // Unselect immediately for snappier UX, but keep the panel mounted
-                  // via `otherPanelClosing` so the hide animation can run.
                   onChange(item);
-                  closeSheet();
                   closeTimerRef.current = window.setTimeout(() => {
                     onOtherTextChange?.("");
                     setOtherPanelClosing(false);
@@ -110,19 +209,18 @@ const EthnicBackground = ({
                   }, OTHER_PANEL_ANIM_MS);
                   return;
                 }
-                // Selecting "+ Other" in modal mode: open sheet and keep it selected.
                 openSheet();
                 onChange(item);
                 return;
               }
-              handleOptionToggle(item);
+              onToggle(item);
             }}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                handleOptionToggle(item);
+                onToggle(item);
               }
             }}
           >
@@ -132,45 +230,50 @@ const EthnicBackground = ({
       }),
     [
       clearCloseTimer,
-      closeSheet,
-      ethnicBackground,
-      handleOptionToggle,
       onChange,
       onOtherTextChange,
       openSheet,
       otherInputMode,
       otherPanelClosing,
+      toggleSheetDraft,
     ]
   );
 
+  const list = useMemo(
+    () => renderOptionChips(ethnicBackground, handleOptionToggle),
+    [ethnicBackground, handleOptionToggle, renderOptionChips]
+  );
+
+  const sheetList = useMemo(
+    () => renderOptionChips(sheetDraft, toggleSheetDraft, { inSheet: true }),
+    [sheetDraft, toggleSheetDraft, renderOptionChips]
+  );
+
+  const isOtherInSheetDraft = sheetDraft.includes(ETHNIC_OTHER_OPTION);
+  const showSheetOtherError =
+    sheetOtherError || (showOtherError && isOtherInSheetDraft);
+
+  const sheetSelectedCount = sheetDraft.length;
+  const applyButtonLabel =
+    sheetSelectedCount > 0
+      ? `Apply (${sheetSelectedCount} selected)`
+      : "Apply";
+
   const handleOtherInputChange = (e) => {
-    const raw = String(e.target.value ?? "");
-    const normalized = raw.normalize("NFKC");
-    // Keep it short, readable, and safe:
-    // - remove ASCII control chars (no regex to avoid `no-control-regex`)
-    // - strip digits and punctuation we do not need
-    // - collapse whitespace
-    // - cap length
-    const noControl = Array.from(normalized)
-      .filter((ch) => {
-        const code = ch.charCodeAt(0);
-        return code >= 32 && code !== 127;
-      })
-      .join("");
+    onOtherTextChange?.(sanitizeOtherText(e.target.value));
+  };
 
-    const next = noControl
-      .replace(/[!?@#*()_+=\d"<>[\]{}|`~^$%\\]/g, "")
-      .replace(/\s+/g, " ")
-      .replace(/^\s+/, "")
-      .slice(0, 50);
-
-    onOtherTextChange?.(next);
+  const handleSheetOtherInputChange = (e) => {
+    setSheetOtherDraft(sanitizeOtherText(e.target.value));
+    setSheetOtherError(false);
   };
 
   const inputBlockRef = useRef(null);
   const hintRef = useRef(null);
+  const sheetOtherInputRef = useRef(null);
 
   useEffect(() => {
+    if (isModalMode) return;
     if (otherInputMode !== "when_other") return;
     if (!isOtherSelected || otherPanelClosing) return;
     requestAnimationFrame(() => {
@@ -180,7 +283,14 @@ const EthnicBackground = ({
         inline: "nearest",
       });
     });
-  }, [isOtherSelected, otherPanelClosing, otherInputMode]);
+  }, [isModalMode, isOtherSelected, otherPanelClosing, otherInputMode]);
+
+  useEffect(() => {
+    if (!isSheetOpen || !isOtherInSheetDraft) return;
+    requestAnimationFrame(() => {
+      sheetOtherInputRef.current?.focus();
+    });
+  }, [isSheetOpen, isOtherInSheetDraft]);
 
   useEffect(() => {
     if (!isSheetOpen) return;
@@ -208,12 +318,19 @@ const EthnicBackground = ({
         const trimmed = String(otherText ?? "").trim();
         chips.push({
           key: item,
-          label: trimmed ? trimmed : ETHNIC_OTHER_OPTION,
+          label: trimmed ? truncateChipLabel(trimmed) : ETHNIC_OTHER_OPTION,
+          ariaLabel: trimmed || ETHNIC_OTHER_OPTION,
           value: item,
           isOther: true,
         });
       } else {
-        chips.push({ key: item, label: item, value: item, isOther: false });
+        chips.push({
+          key: item,
+          label: item,
+          ariaLabel: item,
+          value: item,
+          isOther: false,
+        });
       }
     }
     return chips;
@@ -289,58 +406,40 @@ const EthnicBackground = ({
           <div className={styles.modalField}>
             <button
               type="button"
-              className={styles.selectChip}
+              className={`${styles.selectChip} ${
+                selectedChips.length > 0 ? styles.selectChipFilled : ""
+              }`.trim()}
               onClick={openSheet}
             >
-              Select your background(s)
+              <span className={styles.selectChipText}>
+                {selectedChips.length > 0
+                  ? "Your background(s)"
+                  : "Select your background(s)"}
+              </span>
+              {selectedChips.length > 0 && (
+                <span className={styles.selectChipBadge}>
+                  {selectedChips.length} selected
+                </span>
+              )}
             </button>
 
             {selectedChips.length > 0 && (
               <div className={styles.selectedList}>
                 {selectedChips.map((c) => (
-                  <button
-                    key={c.key}
-                    type="button"
-                    className={styles.selectedChip}
-                    onClick={() => handleChipRemove(c.value)}
-                    aria-label={`Remove ${c.label}`}
-                  >
+                  <div key={c.key} className={styles.selectedChip}>
                     <span className={styles.selectedChipText}>{c.label}</span>
-                    <span className={styles.selectedChipX} aria-hidden>
-                      ×
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      className={styles.selectedChipRemove}
+                      onClick={() => handleChipRemove(c.value)}
+                      aria-label={`Remove ${c.ariaLabel ?? c.label}`}
+                    >
+                      <span className={styles.selectedChipX} aria-hidden>
+                        ×
+                      </span>
+                    </button>
+                  </div>
                 ))}
-              </div>
-            )}
-
-            {showOtherInput && (
-              <div
-                ref={inputBlockRef}
-                className={`${styles.inputBlock} ${
-                  isOtherSelected && !otherPanelClosing ? styles.inputBlockOpen : ""
-                }`.trim()}
-                aria-hidden={!(isOtherSelected && !otherPanelClosing)}
-              >
-                <input
-                  type="text"
-                  className={`${styles.input} ${
-                    showOtherError ? styles.inputError : ""
-                  }`.trim()}
-                  placeholder="e.g. Afro-Caribbean"
-                  maxLength={50}
-                  aria-invalid={showOtherError}
-                  value={otherText}
-                  onChange={handleOtherInputChange}
-                />
-                <p
-                  ref={hintRef}
-                  className={`${styles.inputHint} ${
-                    showOtherError ? styles.inputHintError : ""
-                  }`.trim()}
-                >
-                  Please specify your background
-                </p>
               </div>
             )}
           </div>
@@ -392,42 +491,66 @@ const EthnicBackground = ({
               </p>
             </div>
 
-            <div className={styles.sheetList}>{list}</div>
+            <div className={styles.sheetList}>{sheetList}</div>
+            {isOtherInSheetDraft && (
+              <div className={styles.sheetOtherInput}>
+                <input
+                  ref={sheetOtherInputRef}
+                  type="text"
+                  className={`${styles.input} ${
+                    showSheetOtherError ? styles.inputError : ""
+                  }`.trim()}
+                  placeholder="e.g. Afro-Caribbean"
+                  maxLength={50}
+                  aria-invalid={showSheetOtherError}
+                  value={sheetOtherDraft}
+                  onChange={handleSheetOtherInputChange}
+                />
+                <p
+                  className={`${styles.inputHint} ${
+                    showSheetOtherError ? styles.inputHintError : ""
+                  }`.trim()}
+                >
+                  Please specify your background
+                </p>
+              </div>
+            )}
+            <Button className={styles.modalBtn} onClick={applySheet}>
+              {applyButtonLabel}
+            </Button>
           </div>
         </div>
       )}
 
-      {showOtherInput && (
-        !isModalMode && (
-          <div
-            ref={inputBlockRef}
-            className={`${styles.inputBlock} ${
-              isOtherSelected && !otherPanelClosing ? styles.inputBlockOpen : ""
+      {showOtherInput && !isModalMode && (
+        <div
+          ref={inputBlockRef}
+          className={`${styles.inputBlock} ${
+            isOtherSelected && !otherPanelClosing ? styles.inputBlockOpen : ""
+          }`.trim()}
+          aria-hidden={!(isOtherSelected && !otherPanelClosing)}
+        >
+          <input
+            type="text"
+            className={`${styles.input} ${
+              showOtherError ? styles.inputError : ""
             }`.trim()}
-            aria-hidden={!(isOtherSelected && !otherPanelClosing)}
+            placeholder="e.g. Afro-Caribbean"
+            maxLength={50}
+            aria-invalid={showOtherError}
+            {...(otherInputMode === "when_other"
+              ? { value: otherText, onChange: handleOtherInputChange }
+              : { onChange: handleOtherInputChange })}
+          />
+          <p
+            ref={hintRef}
+            className={`${styles.inputHint} ${
+              showOtherError ? styles.inputHintError : ""
+            }`.trim()}
           >
-            <input
-              type="text"
-              className={`${styles.input} ${
-                showOtherError ? styles.inputError : ""
-              }`.trim()}
-              placeholder="e.g. Afro-Caribbean"
-              maxLength={50}
-              aria-invalid={showOtherError}
-              {...(otherInputMode === "when_other"
-                ? { value: otherText, onChange: handleOtherInputChange }
-                : { onChange: handleOtherInputChange })}
-            />
-            <p
-              ref={hintRef}
-              className={`${styles.inputHint} ${
-                showOtherError ? styles.inputHintError : ""
-              }`.trim()}
-            >
-              Please specify your background
-            </p>
-          </div>
-        )
+            Please specify your background
+          </p>
+        </div>
       )}
     </>
   );

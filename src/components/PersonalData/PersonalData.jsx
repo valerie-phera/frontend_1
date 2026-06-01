@@ -199,6 +199,9 @@ const PersonalData = ({
                     <EthnicBackground
                         ethnicBackground={ethnicBackground}
                         onChange={handleEthnicBackgroundChange}
+                        setEthnicBackground={
+                            showFullForm ? undefined : setEthnicBackground
+                        }
                         otherText={ethnicOtherText}
                         onOtherTextChange={setEthnicOtherText}
                         otherInputMode={showFullForm ? "always" : "when_other"}

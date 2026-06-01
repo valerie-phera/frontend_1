@@ -15,17 +15,57 @@
 
 .selectChip {
     box-sizing: border-box;
-    width: fit-content;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
     max-width: 100%;
-    padding: 8px 10px 9px;
+    padding: 10px 14px;
+    gap: 14px;
     border: 1px dashed #717680;
-    border-radius: 100px;
+    border-radius: 10px;
     background: #FFFFFF;
     color: #717680;
-    font-size: 14px;
-    line-height: 19px;
+    font-size: 16px;
+    line-height: 22px;
+    text-align: left;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+}
+
+.selectChipFilled {
+    border: 1px solid #0C121E;
+    background: #E6F2F4;
+    min-height: 43px;
+}
+
+.selectChipText {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 400;
+    text-align: left;
+    color: inherit;
+}
+
+.selectChipFilled .selectChipText {
+    color: #00343D;
+}
+
+.selectChipBadge {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px 4px;
+    background: #00343D;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    color: #FFFFFF;
+    white-space: nowrap;
 }
 
 .selectedList {
@@ -44,27 +84,60 @@
     background-color: var(--main-color);
     color: #FFFFFF;
     font-size: 14px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    overflow: visible;
 }
 
 .selectedChipText {
     display: inline-block;
-    max-width: 240px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+}
+
+.selectedChipRemove {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.selectedChipRemove::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: -1;
+    width: 42px;
+    height: 42px;
+    transform: translate(-50%, -50%);
+}
+
+.selectedChipRemove:focus-visible::before {
+    outline: 2px solid rgba(255, 255, 255, 0.85);
+    outline-offset: 2px;
+    border-radius: 100px;
 }
 
 .selectedChipX {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
-    width: 10px;
-    height: 10px;
     align-items: center;
     justify-content: center;
+    width: 10px;
+    height: 10px;
     font-size: 16px;
-    line-height: 10px;
-    margin-top: -1px;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .list {
@@ -229,7 +302,7 @@
 .sheetHandle {
     width: 62px;
     height: 0px;
-    border: 4px solid #D5D7DA;
+    border: 3px solid #D5D7DA;
     border-radius: 100px;
 }
 
@@ -242,8 +315,8 @@
     border-radius: 100px;
     border: none;
     background: transparent;
-    color: #1F1F1F;
-    font-size: 26px;
+    color: #626363;
+    font-size: 27px;
     line-height: 42px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -253,7 +326,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-right: 46px;
+    padding-right: 40px;
 }
 
 .sheetTitle {
@@ -277,6 +350,23 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.sheetOtherInput {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.sheetOtherInput .input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modalBtn {
+    margin-top: 12px;
 }
 
 /* Desktop: keep the sheet inside the phone frame (DeviceFrame screen) */
