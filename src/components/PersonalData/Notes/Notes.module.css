@@ -35,6 +35,11 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.wrapSkipped .title,
+.wrapSkipped .text {
+    color: #A4A7AE;
+}
+
 .text {
     color: #1F1F1F;
     max-width: 100%;

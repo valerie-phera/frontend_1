@@ -1,5 +1,10 @@
 import AgeInput from "./AgeInput/AgeInput";
 import LifeStage from "./LifeStage/LifeStage";
+import {
+    applyDetailChipSelection,
+    stripDetailOptions,
+} from "../../shared/utils/detailChipSelection";
+import { toggleListItem } from "../../shared/utils/toggleListItem";
 import EthnicBackground from "./EthnicBackground/EthnicBackground";
 import MenstrualCycle from "./MenstrualCycle/MenstrualCycle";
 import HormoneDiagnoses from "./HormoneDiagnoses/HormoneDiagnoses";
@@ -16,20 +21,6 @@ import InfoTooltip from "../InfoTooltip/InfoTooltip";
 import styles from "./PersonalData.module.css";
 
 const noop = () => {};
-
-const toggleWithNone = (prev, value) => {
-    const NONE = "None";
-    const arr = Array.isArray(prev) ? prev : [];
-
-    if (value === NONE) {
-        return arr.includes(NONE) ? [] : [NONE];
-    }
-
-    const withoutNone = arr.filter((x) => x !== NONE);
-    return withoutNone.includes(value)
-        ? withoutNone.filter((x) => x !== value)
-        : [...withoutNone, value];
-};
 
 const PersonalData = ({
     variant = "full",
@@ -76,17 +67,18 @@ const PersonalData = ({
         ethnicOtherMissing: false,
         count: 0,
     },
+    skipped = false,
 }) => {
     const showFullForm = variant !== "basic";
 
     const showAgeHeadingError =
-        !showFullForm &&
+        showFullForm &&
         basicValidationVisible &&
         (basicSectionIssues.ageMissing || basicSectionIssues.ageInvalid);
     const showLifeHeadingError =
-        !showFullForm && basicValidationVisible && basicSectionIssues.lifeMissing;
+        showFullForm && basicValidationVisible && basicSectionIssues.lifeMissing;
     const showEthnicHeadingError =
-        !showFullForm && basicValidationVisible && basicSectionIssues.ethnicMissing;
+        showFullForm && basicValidationVisible && basicSectionIssues.ethnicMissing;
 
     const isTryingToConceive = Array.isArray(lifeStage)
         ? lifeStage.includes("Trying to conceive")
@@ -105,6 +97,10 @@ const PersonalData = ({
                 "Postmenopause",
             ]);
             const prevArr = Array.isArray(prev) ? prev : [];
+
+            const detailNext = applyDetailChipSelection(prevArr, value);
+            if (detailNext !== null) return detailNext;
+
             const tryingSelected = prevArr.includes("Trying to conceive");
             const pregnantSelected = prevArr.includes("Pregnant");
 
@@ -112,7 +108,7 @@ const PersonalData = ({
                 return prevArr;
             }
 
-            let next = toggleWithNone(prevArr, value);
+            let next = toggleListItem(stripDetailOptions(prevArr), value);
 
             // If user selects "Trying to conceive", force-remove Menopause/Postmenopause
             if (next.includes("Trying to conceive")) {
@@ -140,15 +136,11 @@ const PersonalData = ({
     };
 
     const handleMenstrualCycleChange = (value) => {
-        setMenstrualCycle((prev) =>
-            prev.includes(value)
-                ? prev.filter((h) => h !== value)
-                : [...prev, value]
-        );
+        setMenstrualCycle((prev) => toggleListItem(prev, value));
     };
 
     const handleHormoneDiagnosesChange = (value) => {
-        setHormoneDiagnoses((prev) => toggleWithNone(prev, value));
+        setHormoneDiagnoses((prev) => toggleListItem(prev, value));
     };
 
     const handleDischargeChange = (value) => {
@@ -160,15 +152,15 @@ const PersonalData = ({
     };
 
     const handleVulvaConditionChange = (value) => {
-        setVulvaCondition((prev) => toggleWithNone(prev, value));
+        setVulvaCondition((prev) => toggleListItem(prev, value));
     };
 
     const handleSmellChange = (value) => {
-        setSmell((prev) => toggleWithNone(prev, value));
+        setSmell((prev) => toggleListItem(prev, value));
     };
 
     const handleUrinationChange = (value) => {
-        setUrination((prev) => toggleWithNone(prev, value));
+        setUrination((prev) => toggleListItem(prev, value));
     };
 
     return (
@@ -180,14 +172,18 @@ const PersonalData = ({
                         onChange={setAge}
                         showHeadingError={showAgeHeadingError}
                         showError={
-                            !showFullForm &&
-                            basicValidationVisible && basicSectionIssues.ageInvalid
+                            showFullForm &&
+                            basicValidationVisible &&
+                            basicSectionIssues.ageInvalid
                         }
+                        skipped={skipped}
                     />
                     <LifeStage
                         lifeStage={lifeStage}
                         onChange={handleLifeStageChange}
                         showHeadingError={showLifeHeadingError}
+                        showDetailOptions={!showFullForm}
+                        skipped={skipped}
                         disabledItems={
                             isPregnant
                                 ? ["Trying to conceive", "Menopause", "Postmenopause"]
@@ -205,9 +201,11 @@ const PersonalData = ({
                         otherText={ethnicOtherText}
                         onOtherTextChange={setEthnicOtherText}
                         otherInputMode={showFullForm ? "always" : "when_other"}
+                        showPreferNotToSay={!showFullForm}
+                        skipped={skipped}
                         showHeadingError={showEthnicHeadingError}
                         showOtherError={
-                            !showFullForm &&
+                            showFullForm &&
                             basicValidationVisible &&
                             basicSectionIssues.ethnicOtherMissing
                         }

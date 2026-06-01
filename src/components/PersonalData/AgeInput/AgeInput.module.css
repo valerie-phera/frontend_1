@@ -29,6 +29,24 @@
     color: #A4A7AE;
 }
 
+.inputSkipped {
+    background-color: #FDFDFD;
+    border-color: #0C121E;
+    color: #A4A7AE;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.inputSkippedFilled {
+    color: #A4A7AE;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.wrapSkipped h4 svg path {
+    fill: #A4A7AE;
+}
+
 .selected {
     color: var(--main-color-secondary)
 }

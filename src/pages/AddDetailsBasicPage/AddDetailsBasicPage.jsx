@@ -6,6 +6,8 @@ import {
     ETHNIC_OTHER_OPTION,
     ETHNIC_OPTIONS,
 } from "../../components/PersonalData/EthnicBackground/ethnicOptions";
+import { FORM_PREFER_NOT_TO_SAY } from "../../shared/constants/formDetailOptions";
+import { stripNoneToken } from "../../shared/utils/toggleListItem";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
@@ -14,16 +16,27 @@ import {
     writeBasicFormSnapshot,
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
+import { readAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
+import {
+    getEmptyStepFormPatch,
+    isStepSkipped,
+    persistBasicSkip,
+    readPreSkipSnapshot,
+} from "../../shared/utils/addDetailsSkipStorage";
 import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 
-import InfoCircle from "../../assets/icons/InfoCircle";
+import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 
 import styles from "./AddDetailsBasicPage.module.css";
 
 const buildEthnicBackgroundsForSubmit = (backgrounds, otherText) => {
+    const bgSet = new Set(Array.isArray(backgrounds) ? backgrounds : []);
+    if (bgSet.has(FORM_PREFER_NOT_TO_SAY)) {
+        return [FORM_PREFER_NOT_TO_SAY];
+    }
+
     const trimmed = String(otherText ?? "").trim().slice(0, 50);
-    const bgSet = new Set(backgrounds);
     const hasOther = bgSet.has(ETHNIC_OTHER_OPTION);
     const mainOrdered = ETHNIC_OPTIONS.filter(
         (o) => o !== ETHNIC_OTHER_OPTION && bgSet.has(o)
@@ -97,19 +110,60 @@ const AddDetailsBasicPage = () => {
     const timestamp = state?.timestamp;
     const recommendations = state?.recommendations;
 
-    const [age, setAge] = useState(() => resolveBasicFormState(state).age);
+    const initialBasic = useMemo(() => resolveBasicFormState(state), [state]);
+    const initialDraft = useMemo(
+        () => readAddDetailsDraft(phValue, timestamp),
+        [phValue, timestamp]
+    );
+    const initialSkipped = useMemo(
+        () =>
+            initialBasic.basicSkipped || isStepSkipped(initialDraft, "basic"),
+        [initialBasic.basicSkipped, initialDraft]
+    );
+    const initialPreSkipSnapshot = useMemo(
+        () =>
+            initialBasic.basicPreSkipSnapshot ??
+            readPreSkipSnapshot(initialDraft, "basic"),
+        [initialBasic.basicPreSkipSnapshot, initialDraft]
+    );
+    const initialDisplayFields = useMemo(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return {
+                age: initialPreSkipSnapshot.age ?? "",
+                lifeStage: stripNoneToken(initialPreSkipSnapshot.lifeStage),
+                ethnicBackground: Array.isArray(
+                    initialPreSkipSnapshot.ethnicBackground
+                )
+                    ? initialPreSkipSnapshot.ethnicBackground
+                    : [],
+                ethnicOtherText: initialPreSkipSnapshot.ethnicOtherText ?? "",
+            };
+        }
+        return {
+            age: initialBasic.age,
+            lifeStage: initialBasic.lifeStage,
+            ethnicBackground: initialBasic.ethnicChips,
+            ethnicOtherText: initialBasic.ethnicOtherText,
+        };
+    }, [initialSkipped, initialPreSkipSnapshot, initialBasic]);
+
+    const [age, setAge] = useState(() => initialDisplayFields.age);
     const [lifeStage, setLifeStage] = useState(
-        () => resolveBasicFormState(state).lifeStage
+        () => initialDisplayFields.lifeStage
     );
     const [ethnicBackground, setEthnicBackground] = useState(
-        () => resolveBasicFormState(state).ethnicChips
+        () => initialDisplayFields.ethnicBackground
     );
     const [ethnicOtherText, setEthnicOtherText] = useState(
-        () => resolveBasicFormState(state).ethnicOtherText
+        () => initialDisplayFields.ethnicOtherText
     );
     const [basicValidationVisible, setBasicValidationVisible] = useState(false);
+    const [isSkipped, setIsSkipped] = useState(() => initialSkipped);
+    const [preSkipSnapshot, setPreSkipSnapshot] = useState(
+        () => initialPreSkipSnapshot
+    );
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
-    const errorTextWrapRef = useRef(null);
+    const personalizeHintRef = useRef(null);
 
     const basicSectionIssues = useMemo(
         () =>
@@ -124,11 +178,30 @@ const AddDetailsBasicPage = () => {
 
     useEffect(() => {
         const next = resolveBasicFormState(state);
-        setAge(next.age ?? "");
-        setLifeStage(Array.isArray(next.lifeStage) ? next.lifeStage : []);
-        setEthnicBackground(next.ethnicChips);
-        setEthnicOtherText(next.ethnicOtherText);
-    }, [locationKey, state]);
+        const draft = readAddDetailsDraft(phValue, timestamp);
+        const skipped = next.basicSkipped || isStepSkipped(draft, "basic");
+        const snap =
+            next.basicPreSkipSnapshot ?? readPreSkipSnapshot(draft, "basic");
+
+        setIsSkipped(skipped);
+        setPreSkipSnapshot(snap);
+
+        if (skipped && snap) {
+            setAge(snap.age ?? "");
+            setLifeStage(stripNoneToken(snap.lifeStage));
+            setEthnicBackground(
+                Array.isArray(snap.ethnicBackground)
+                    ? snap.ethnicBackground
+                    : []
+            );
+            setEthnicOtherText(snap.ethnicOtherText ?? "");
+        } else {
+            setAge(next.age ?? "");
+            setLifeStage(stripNoneToken(next.lifeStage));
+            setEthnicBackground(next.ethnicChips);
+            setEthnicOtherText(next.ethnicOtherText);
+        }
+    }, [locationKey, state, phValue, timestamp]);
 
     useEffect(() => {
         if (basicValidationVisible && basicSectionIssues.count === 0) {
@@ -142,7 +215,7 @@ const AddDetailsBasicPage = () => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (cancelled) return;
-                errorTextWrapRef.current?.scrollIntoView({
+                personalizeHintRef.current?.scrollIntoView({
                     block: "end",
                     behavior: "smooth",
                     inline: "nearest",
@@ -154,9 +227,91 @@ const AddDetailsBasicPage = () => {
         };
     }, [errorBannerScrollToken]);
 
+    const handleSkipForNow = () => {
+        if (isSkipped) {
+            const restored = preSkipSnapshot;
+            if (restored) {
+                setAge(restored.age ?? "");
+                setLifeStage(
+                    Array.isArray(restored.lifeStage) ? restored.lifeStage : []
+                );
+                setEthnicBackground(
+                    Array.isArray(restored.ethnicBackground)
+                        ? restored.ethnicBackground
+                        : []
+                );
+                setEthnicOtherText(restored.ethnicOtherText ?? "");
+            }
+            setPreSkipSnapshot(null);
+            setIsSkipped(false);
+            if (phValue !== undefined && phValue !== null) {
+                const ethnicForApi = restored
+                    ? buildEthnicBackgroundsForSubmit(
+                          restored.ethnicBackground ?? [],
+                          restored.ethnicOtherText ?? ""
+                      )
+                    : [];
+                persistBasicSkip(phValue, timestamp, {
+                    skipped: false,
+                    preSkipSnapshot: null,
+                    formPatch: restored
+                        ? {
+                              age: restored.age ?? "",
+                              lifeStage: stripNoneToken(restored.lifeStage),
+                              ethnicBackground: ethnicForApi,
+                              ethnicOtherText: restored.ethnicOtherText ?? "",
+                          }
+                        : {},
+                });
+            }
+            return;
+        }
+
+        const snapshot = {
+            age,
+            lifeStage: Array.isArray(lifeStage) ? [...lifeStage] : [],
+            ethnicBackground: Array.isArray(ethnicBackground)
+                ? [...ethnicBackground]
+                : [],
+            ethnicOtherText,
+        };
+        setPreSkipSnapshot(snapshot);
+        setBasicValidationVisible(false);
+        setIsSkipped(true);
+        if (phValue !== undefined && phValue !== null) {
+            persistBasicSkip(phValue, timestamp, {
+                skipped: true,
+                preSkipSnapshot: snapshot,
+                formPatch: getEmptyStepFormPatch("basic"),
+            });
+        }
+    };
+
     const handleSaveDetails = async () => {
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+
+        if (isSkipped) {
+            persistBasicSkip(phValue, timestamp, {
+                skipped: true,
+                preSkipSnapshot,
+                formPatch: getEmptyStepFormPatch("basic"),
+            });
+            writeActiveResultMeta({ phValue, timestamp });
+
+            navigate("/add-details/hormonal-health", {
+                state: {
+                    phValue,
+                    timestamp,
+                    recommendations,
+                    age: "",
+                    lifeStage: [],
+                    ethnicBackground: [],
+                    ethnicOtherText: "",
+                },
+            });
             return;
         }
 
@@ -194,18 +349,15 @@ const AddDetailsBasicPage = () => {
             .slice(0, 50);
         const hasOtherChip = ethnicBackground.includes(ETHNIC_OTHER_OPTION);
 
-        // Persist locally for the next steps (no backend yet)
-        writeBasicFormSnapshot(phValue, timestamp, {
-            age,
-            lifeStage,
-            ethnicBackground: ethnicForApi,
-            ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-        });
-        writeAddDetailsDraft(phValue, timestamp, {
-            age,
-            lifeStage,
-            ethnicBackground: ethnicForApi,
-            ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+        persistBasicSkip(phValue, timestamp, {
+            skipped: false,
+            preSkipSnapshot: null,
+            formPatch: {
+                age,
+                lifeStage,
+                ethnicBackground: ethnicForApi,
+                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+            },
         });
         writeActiveResultMeta({ phValue, timestamp });
 
@@ -234,17 +386,19 @@ const AddDetailsBasicPage = () => {
                 ? buildEthnicBackgroundsForSubmit(ethnicBackground, ethnicOtherText)
                 : [];
 
-            writeBasicFormSnapshot(phValue, timestamp, {
-                age,
-                lifeStage,
-                ethnicBackground: ethnicForState,
-                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-            });
-            writeAddDetailsDraft(phValue, timestamp, {
-                age,
-                lifeStage,
-                ethnicBackground: ethnicForState,
-                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+            persistBasicSkip(phValue, timestamp, {
+                skipped: isSkipped,
+                preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
+                formPatch: isSkipped
+                    ? getEmptyStepFormPatch("basic")
+                    : {
+                          age,
+                          lifeStage,
+                          ethnicBackground: ethnicForState,
+                          ethnicOtherText: hasOtherChip
+                              ? trimmedOtherForState
+                              : "",
+                      },
             });
             writeActiveResultMeta({ phValue, timestamp });
         }
@@ -279,45 +433,35 @@ const AddDetailsBasicPage = () => {
                                 setEthnicOtherText={setEthnicOtherText}
                                 basicValidationVisible={basicValidationVisible}
                                 basicSectionIssues={basicSectionIssues}
+                                skipped={isSkipped}
                             />
                         </div>
-                        {basicValidationVisible &&
-                            (basicSectionIssues.bannerCount ?? basicSectionIssues.count) > 0 && (
-                                <div
-                                    ref={errorTextWrapRef}
-                                    className={styles.errorTextWrap}
-                                    role="alert"
-                                >
-                                    <div
-                                        className={styles.errorIcon}
-                                        aria-hidden
-                                    >
-                                        <InfoCircle />
-                                    </div>
-                                    <p className={styles.errorText}>
-                                        {(basicSectionIssues.bannerCount ?? basicSectionIssues.count) === 1
-                                            ? "1 section still needs a selection"
-                                            : (basicSectionIssues.bannerCount ?? basicSectionIssues.count) === 2
-                                                ? "2 sections still need a selection"
-                                                : "3 sections still need a selection"}
-                                    </p>
-                                </div>
-                            )}
                     </div>
                 </Container>
                 <BottomBlock>
+                    <AddDetailsSkipButton
+                        isSkipped={isSkipped}
+                        onClick={handleSkipForNow}
+                    />
+                    {!isSkipped &&
+                        basicValidationVisible &&
+                        basicSectionIssues.count > 0 && (
+                            <p
+                                ref={personalizeHintRef}
+                                className={styles.personalizeHint}
+                                role="alert"
+                            >
+                                Answering these questions helps personalize your
+                                result. You can also skip for now.
+                            </p>
+                        )}
                     <Button
+                        className={styles.nextButton}
                         onClick={handleSaveDetails}
                     >
                         Next
                     </Button>
                     <ButtonReverse onClick={handleGoBack}>Go back</ButtonReverse>
-                    <button
-                        type="button"
-                        className={styles.skipForNow}
-                    >
-                        Skip for now
-                    </button>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
                             We respect your privacy. Only you can save and see your results.

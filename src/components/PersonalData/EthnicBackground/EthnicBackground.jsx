@@ -7,6 +7,14 @@ import {
   ETHNIC_OPTIONS,
 } from "./ethnicOptions";
 import Button from "../../Button/Button";
+import DetailChipRow, {
+  FORM_PREFER_NOT_TO_SAY,
+} from "../DetailChipRow/DetailChipRow";
+import { FORM_DETAIL_SET } from "../../../shared/constants/formDetailOptions";
+import {
+  applyDetailChipSelection,
+  stripDetailOptions,
+} from "../../../shared/utils/detailChipSelection";
 import styles from "./EthnicBackground.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -48,6 +56,8 @@ const EthnicBackground = ({
   otherInputMode = "always",
   showHeadingError = false,
   showOtherError = false,
+  showPreferNotToSay = false,
+  skipped = false,
 }) => {
   const isModalMode = otherInputMode === "when_other";
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -70,7 +80,9 @@ const EthnicBackground = ({
   }, []);
 
   const openSheet = useCallback(() => {
-    const committed = Array.isArray(ethnicBackground) ? ethnicBackground : [];
+    const committed = stripDetailOptions(
+      Array.isArray(ethnicBackground) ? ethnicBackground : []
+    );
     setSheetDraft([...committed]);
     setSheetOtherDraft(otherText ?? "");
     setSheetOtherError(false);
@@ -81,7 +93,9 @@ const EthnicBackground = ({
   }, [ethnicBackground, otherText]);
 
   const applySheet = useCallback(() => {
-    const next = Array.isArray(sheetDraft) ? sheetDraft : [];
+    const next = stripDetailOptions(
+      Array.isArray(sheetDraft) ? sheetDraft : []
+    );
     const otherSelected = next.includes(ETHNIC_OTHER_OPTION);
     const otherTrimmed = String(sheetOtherDraft ?? "").trim();
 
@@ -302,6 +316,11 @@ const EthnicBackground = ({
   }, [isSheetOpen, closeSheet]);
 
   useEffect(() => {
+    if (!skipped || !isSheetOpen) return;
+    closeSheet();
+  }, [skipped, isSheetOpen, closeSheet]);
+
+  useEffect(() => {
     if (!isSheetOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -311,7 +330,9 @@ const EthnicBackground = ({
   }, [isSheetOpen]);
 
   const selectedChips = useMemo(() => {
-    const arr = Array.isArray(ethnicBackground) ? ethnicBackground : [];
+    const arr = (Array.isArray(ethnicBackground) ? ethnicBackground : []).filter(
+      (item) => !FORM_DETAIL_SET.has(item)
+    );
     const chips = [];
     for (const item of arr) {
       if (item === ETHNIC_OTHER_OPTION) {
@@ -345,6 +366,23 @@ const EthnicBackground = ({
     },
     [onChange, onOtherTextChange]
   );
+
+  const handlePreferNotToSay = useCallback(() => {
+    if (typeof setEthnicBackground !== "function") return;
+
+    setEthnicBackground((prev) => {
+      const prevArr = Array.isArray(prev) ? prev : [];
+      const detailNext = applyDetailChipSelection(
+        prevArr,
+        FORM_PREFER_NOT_TO_SAY
+      );
+      if (detailNext === null) return prevArr;
+      if (detailNext.includes(FORM_PREFER_NOT_TO_SAY)) {
+        onOtherTextChange?.("");
+      }
+      return detailNext;
+    });
+  }, [onOtherTextChange, setEthnicBackground]);
 
   const sheetTranslate = Math.max(0, dragOffset);
   const sheetStyle = isSheetOpen
@@ -388,7 +426,7 @@ const EthnicBackground = ({
 
   return (
     <>
-      <div className={styles.wrap}>
+      <div className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}>
         <InfoTooltip
           title={
             <span className={titleStyles.titleWithIcon}>
@@ -397,7 +435,7 @@ const EthnicBackground = ({
             </span>
           }
           showArrow={false}
-          showErrorCircle={showHeadingError}
+          showErrorCircle={showHeadingError && !skipped}
         >
           Racial and ethnic backgrounds are linked to natural differences in genetics, immune responses, and care habits. This can shape vaginal flora and therefore its acidity, moisture, and scent. Knowing this helps pHera understand what is normal for your body.
         </InfoTooltip>
@@ -407,9 +445,15 @@ const EthnicBackground = ({
             <button
               type="button"
               className={`${styles.selectChip} ${
-                selectedChips.length > 0 ? styles.selectChipFilled : ""
+                skipped
+                  ? styles.selectChipSkipped
+                  : selectedChips.length > 0
+                      ? styles.selectChipFilled
+                      : ""
               }`.trim()}
-              onClick={openSheet}
+              onClick={skipped ? undefined : openSheet}
+              aria-disabled={skipped}
+              tabIndex={skipped ? -1 : 0}
             >
               <span className={styles.selectChipText}>
                 {selectedChips.length > 0
@@ -417,7 +461,11 @@ const EthnicBackground = ({
                   : "Select your background(s)"}
               </span>
               {selectedChips.length > 0 && (
-                <span className={styles.selectChipBadge}>
+                <span
+                  className={`${styles.selectChipBadge} ${
+                    skipped ? styles.selectChipBadgeSkipped : ""
+                  }`.trim()}
+                >
                   {selectedChips.length} selected
                 </span>
               )}
@@ -426,13 +474,22 @@ const EthnicBackground = ({
             {selectedChips.length > 0 && (
               <div className={styles.selectedList}>
                 {selectedChips.map((c) => (
-                  <div key={c.key} className={styles.selectedChip}>
+                  <div
+                    key={c.key}
+                    className={`${styles.selectedChip} ${
+                      skipped ? styles.selectedChipSkipped : ""
+                    }`.trim()}
+                  >
                     <span className={styles.selectedChipText}>{c.label}</span>
                     <button
                       type="button"
                       className={styles.selectedChipRemove}
-                      onClick={() => handleChipRemove(c.value)}
+                      onClick={
+                        skipped ? undefined : () => handleChipRemove(c.value)
+                      }
+                      aria-disabled={skipped}
                       aria-label={`Remove ${c.ariaLabel ?? c.label}`}
+                      tabIndex={skipped ? -1 : 0}
                     >
                       <span className={styles.selectedChipX} aria-hidden>
                         ×
@@ -440,6 +497,22 @@ const EthnicBackground = ({
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+            {showPreferNotToSay && (
+              <div
+                className={
+                  selectedChips.length > 0 ? undefined : styles.preferNotToSayRow
+                }
+              >
+                <DetailChipRow
+                  selected={ethnicBackground}
+                  onChange={handlePreferNotToSay}
+                  options={[FORM_PREFER_NOT_TO_SAY]}
+                  showDivider={selectedChips.length > 0}
+                  dividerFlushTop
+                  skipped={skipped}
+                />
               </div>
             )}
           </div>

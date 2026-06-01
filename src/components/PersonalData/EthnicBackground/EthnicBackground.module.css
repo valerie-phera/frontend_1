@@ -13,6 +13,14 @@
     padding-top: 12px;
 }
 
+.preferNotToSayRow {
+    margin-top: 6px;
+}
+
+.wrapSkipped h4 svg path {
+    fill: #A4A7AE;
+}
+
 .selectChip {
     box-sizing: border-box;
     display: flex;
@@ -22,7 +30,7 @@
     max-width: 100%;
     padding: 10px 14px;
     gap: 14px;
-    border: 1px dashed #717680;
+    border: 1px solid #717680;
     border-radius: 10px;
     background: #FFFFFF;
     color: #717680;
@@ -53,6 +61,18 @@
     color: #00343D;
 }
 
+.selectChip.selectChipSkipped {
+    border: 1px solid #0C121E;
+    background: #F5F5F5;
+    color: #A4A7AE;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.selectChip.selectChipSkipped .selectChipText {
+    color: #A4A7AE;
+}
+
 .selectChipBadge {
     flex: none;
     display: inline-flex;
@@ -66,6 +86,11 @@
     line-height: 16px;
     color: #FFFFFF;
     white-space: nowrap;
+}
+
+.selectChipBadge.selectChipBadgeSkipped {
+    background: #A4A7AE;
+    color: #FFFFFF;
 }
 
 .selectedList {
@@ -84,7 +109,20 @@
     background-color: var(--main-color);
     color: #FFFFFF;
     font-size: 14px;
+    font-weight: 600;
     overflow: visible;
+}
+
+.selectedChip.selectedChipSkipped {
+    border: 1px solid #A4A7AE;
+    background-color: #A4A7AE;
+    color: #FFFFFF;
+    pointer-events: none;
+    cursor: default;
+}
+
+.selectedChip.selectedChipSkipped .selectedChipText {
+    color: #FFFFFF;
 }
 
 .selectedChipText {

@@ -14,8 +14,19 @@ import {
     readAddDetailsDraft,
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
+import {
+    applyDetailChipSelection,
+    stripDetailOptions,
+} from "../../shared/utils/detailChipSelection";
+import { stripNoneToken, toggleListItem } from "../../shared/utils/toggleListItem";
+import {
+    getEmptyStepFormPatch,
+    isStepSkipped,
+    persistStepSkip,
+    readPreSkipSnapshot,
+} from "../../shared/utils/addDetailsSkipStorage";
+import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
-import InfoCircle from "../../assets/icons/InfoCircle";
 
 const computeHormonalSectionIssues = (
     menstrualCycle,
@@ -48,20 +59,50 @@ const HormonalHealthPage = () => {
         [phValue, timestamp]
     );
 
-    const [menstrualCycle, setMenstrualCycle] = useState(
-        draft?.menstrualCycle || []
-    );
-    const [hormoneDiagnoses, setHormoneDiagnoses] = useState(
-        draft?.hormoneDiagnoses || []
-    );
-    const [currentMedications, setCurrentMedications] = useState(
-        draft?.currentMedications || []
-    );
+    const initialSkipped = isStepSkipped(draft, "hormonal");
+    const initialPreSkipSnapshot = readPreSkipSnapshot(draft, "hormonal");
+
+    const [menstrualCycle, setMenstrualCycle] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return stripNoneToken(initialPreSkipSnapshot.menstrualCycle);
+        }
+        return draft?.menstrualCycle || [];
+    });
+    const [hormoneDiagnoses, setHormoneDiagnoses] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return stripNoneToken(initialPreSkipSnapshot.hormoneDiagnoses);
+        }
+        return draft?.hormoneDiagnoses || [];
+    });
+    const [currentMedications, setCurrentMedications] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return stripNoneToken(initialPreSkipSnapshot.currentMedications);
+        }
+        return draft?.currentMedications || [];
+    });
     useEffect(() => {
-        setMenstrualCycle(draft?.menstrualCycle || []);
-        setHormoneDiagnoses(draft?.hormoneDiagnoses || []);
-        setCurrentMedications(draft?.currentMedications || []);
-    }, [draft?.menstrualCycle, draft?.hormoneDiagnoses, draft?.currentMedications]);
+        const skipped = isStepSkipped(draft, "hormonal");
+        const snap = readPreSkipSnapshot(draft, "hormonal");
+
+        setIsSkipped(skipped);
+        setPreSkipSnapshot(snap);
+
+        if (skipped && snap) {
+            setMenstrualCycle(stripNoneToken(snap.menstrualCycle));
+            setHormoneDiagnoses(stripNoneToken(snap.hormoneDiagnoses));
+            setCurrentMedications(stripNoneToken(snap.currentMedications));
+        } else {
+            setMenstrualCycle(stripNoneToken(draft?.menstrualCycle));
+            setHormoneDiagnoses(stripNoneToken(draft?.hormoneDiagnoses));
+            setCurrentMedications(stripNoneToken(draft?.currentMedications));
+        }
+    }, [
+        draft?.menstrualCycle,
+        draft?.hormoneDiagnoses,
+        draft?.currentMedications,
+        draft?.hormonalSkipped,
+        draft?.hormonalPreSkipSnapshot,
+    ]);
 
     const isBirthControlDisabled = useMemo(() => {
         const block = new Set([
@@ -98,8 +139,14 @@ const HormonalHealthPage = () => {
     }, [isBirthControlDisabled]);
 
     const [validationVisible, setValidationVisible] = useState(false);
+    const [isSkipped, setIsSkipped] = useState(() =>
+        isStepSkipped(draft, "hormonal")
+    );
+    const [preSkipSnapshot, setPreSkipSnapshot] = useState(
+        () => readPreSkipSnapshot(draft, "hormonal")
+    );
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
-    const errorTextWrapRef = useRef(null);
+    const personalizeHintRef = useRef(null);
 
     const sectionIssues = useMemo(
         () =>
@@ -123,7 +170,7 @@ const HormonalHealthPage = () => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (cancelled) return;
-                errorTextWrapRef.current?.scrollIntoView({
+                personalizeHintRef.current?.scrollIntoView({
                     block: "end",
                     behavior: "smooth",
                     inline: "nearest",
@@ -136,70 +183,149 @@ const HormonalHealthPage = () => {
     }, [errorBannerScrollToken]);
 
     const handleMenstrualChange = (value) => {
-        setMenstrualCycle((prev) =>
-            prev.includes(value)
-                ? prev.filter((x) => x !== value)
-                : [...prev, value]
-        );
+        setMenstrualCycle((prev) => {
+            const detailNext = applyDetailChipSelection(prev, value);
+            if (detailNext !== null) return detailNext;
+
+            const withoutDetail = stripDetailOptions(prev);
+            return withoutDetail.includes(value)
+                ? withoutDetail.filter((x) => x !== value)
+                : [...withoutDetail, value];
+        });
     };
 
     const handleDiagnosesChange = (value) => {
         setHormoneDiagnoses((prev) => {
-            const NONE = "None";
+            const detailNext = applyDetailChipSelection(prev, value);
+            if (detailNext !== null) return detailNext;
 
-            if (value === NONE) {
-                return prev.includes(NONE) ? [] : [NONE];
-            }
-
-            const withoutNone = prev.filter((x) => x !== NONE);
-            return withoutNone.includes(value)
-                ? withoutNone.filter((x) => x !== value)
-                : [...withoutNone, value];
+            return toggleListItem(stripDetailOptions(prev), value);
         });
     };
 
     const handleMedicationsChange = (value) => {
         setCurrentMedications((prev) => {
-            const NONE = "None";
+            const detailNext = applyDetailChipSelection(prev, value);
+            if (detailNext !== null) return detailNext;
+
             const BIRTH_CONTROL = "Birth control";
             const FERTILITY_TREATMENT = "Fertility treatment";
+            const prevArr = stripNoneToken(stripDetailOptions(prev));
 
-            if (value === NONE) {
-                return prev.includes(NONE) ? [] : [NONE];
-            }
-
-            const withoutNone = prev.filter((x) => x !== NONE);
-
-            // Make these two options mutually exclusive.
             if (value === BIRTH_CONTROL) {
-                if (withoutNone.includes(BIRTH_CONTROL)) {
-                    return withoutNone.filter((x) => x !== BIRTH_CONTROL);
+                if (prevArr.includes(BIRTH_CONTROL)) {
+                    return prevArr.filter((x) => x !== BIRTH_CONTROL);
                 }
                 return [
-                    ...withoutNone.filter((x) => x !== FERTILITY_TREATMENT),
+                    ...prevArr.filter((x) => x !== FERTILITY_TREATMENT),
                     BIRTH_CONTROL,
                 ];
             }
 
             if (value === FERTILITY_TREATMENT) {
-                if (withoutNone.includes(FERTILITY_TREATMENT)) {
-                    return withoutNone.filter((x) => x !== FERTILITY_TREATMENT);
+                if (prevArr.includes(FERTILITY_TREATMENT)) {
+                    return prevArr.filter((x) => x !== FERTILITY_TREATMENT);
                 }
                 return [
-                    ...withoutNone.filter((x) => x !== BIRTH_CONTROL),
+                    ...prevArr.filter((x) => x !== BIRTH_CONTROL),
                     FERTILITY_TREATMENT,
                 ];
             }
 
-            return withoutNone.includes(value)
-                ? withoutNone.filter((x) => x !== value)
-                : [...withoutNone, value];
+            return toggleListItem(prevArr, value);
         });
+    };
+
+    const handleSkipForNow = () => {
+        if (isSkipped) {
+            const restored = preSkipSnapshot;
+            if (restored) {
+                setMenstrualCycle(
+                    Array.isArray(restored.menstrualCycle)
+                        ? restored.menstrualCycle
+                        : []
+                );
+                setHormoneDiagnoses(
+                    Array.isArray(restored.hormoneDiagnoses)
+                        ? restored.hormoneDiagnoses
+                        : []
+                );
+                setCurrentMedications(
+                    Array.isArray(restored.currentMedications)
+                        ? restored.currentMedications
+                        : []
+                );
+            }
+            setPreSkipSnapshot(null);
+            setIsSkipped(false);
+            if (phValue !== undefined && phValue !== null) {
+                persistStepSkip(phValue, timestamp, "hormonal", {
+                    skipped: false,
+                    preSkipSnapshot: null,
+                    formPatch: {
+                        menstrualCycle: Array.isArray(restored.menstrualCycle)
+                            ? restored.menstrualCycle
+                            : [],
+                        hormoneDiagnoses: Array.isArray(
+                            restored.hormoneDiagnoses
+                        )
+                            ? restored.hormoneDiagnoses
+                            : [],
+                        currentMedications: Array.isArray(
+                            restored.currentMedications
+                        )
+                            ? restored.currentMedications
+                            : [],
+                    },
+                });
+            }
+            return;
+        }
+
+        const snapshot = {
+            menstrualCycle: Array.isArray(menstrualCycle)
+                ? [...menstrualCycle]
+                : [],
+            hormoneDiagnoses: Array.isArray(hormoneDiagnoses)
+                ? [...hormoneDiagnoses]
+                : [],
+            currentMedications: Array.isArray(currentMedications)
+                ? [...currentMedications]
+                : [],
+        };
+        setPreSkipSnapshot(snapshot);
+        setValidationVisible(false);
+        setIsSkipped(true);
+        if (phValue !== undefined && phValue !== null) {
+            persistStepSkip(phValue, timestamp, "hormonal", {
+                skipped: true,
+                preSkipSnapshot: snapshot,
+                formPatch: getEmptyStepFormPatch("hormonal"),
+            });
+        }
     };
 
     const handleNext = () => {
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+
+        if (isSkipped) {
+            persistStepSkip(phValue, timestamp, "hormonal", {
+                skipped: true,
+                preSkipSnapshot,
+                formPatch: getEmptyStepFormPatch("hormonal"),
+            });
+
+            navigate("/add-details/symptoms", {
+                state: {
+                    ...state,
+                    menstrualCycle: [],
+                    hormoneDiagnoses: [],
+                    currentMedications: [],
+                },
+            });
             return;
         }
 
@@ -217,10 +343,14 @@ const HormonalHealthPage = () => {
             ? hormoneDiagnoses.filter((x) => x !== "None")
             : [];
 
-        writeAddDetailsDraft(phValue, timestamp, {
-            menstrualCycle,
-            hormoneDiagnoses,
-            currentMedications,
+        persistStepSkip(phValue, timestamp, "hormonal", {
+            skipped: false,
+            preSkipSnapshot: null,
+            formPatch: {
+                menstrualCycle,
+                hormoneDiagnoses,
+                currentMedications,
+            },
         });
 
         navigate("/add-details/symptoms", {
@@ -235,10 +365,16 @@ const HormonalHealthPage = () => {
 
     const handleGoBack = () => {
         if (phValue !== undefined && phValue !== null) {
-            writeAddDetailsDraft(phValue, timestamp, {
-                menstrualCycle,
-                hormoneDiagnoses,
-                currentMedications,
+            persistStepSkip(phValue, timestamp, "hormonal", {
+                skipped: isSkipped,
+                preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
+                formPatch: isSkipped
+                    ? getEmptyStepFormPatch("hormonal")
+                    : {
+                          menstrualCycle,
+                          hormoneDiagnoses,
+                          currentMedications,
+                      },
             });
         }
         navigate(-1);
@@ -270,56 +406,50 @@ const HormonalHealthPage = () => {
                             <MenstrualCycle
                                 menstrualCycle={menstrualCycle}
                                 onChange={handleMenstrualChange}
-                                showHeadingError={
-                                    validationVisible &&
-                                    sectionIssues.menstrualMissing
-                                }
+                                showDetailOptions
+                                skipped={isSkipped}
                             />
                             <CurrentMedications
                                 currentMedications={currentMedications}
                                 onChange={handleMedicationsChange}
-                                showHeadingError={
-                                    validationVisible &&
-                                    sectionIssues.medicationsMissing
-                                }
+                                showDetailOptions
+                                skipped={isSkipped}
                                 disabledItems={medicationDisabledItems}
                                 hiddenItems={medicationHiddenItems}
                             />
-                                   <HormoneDiagnoses
+                            <HormoneDiagnoses
                                 hormoneDiagnoses={hormoneDiagnoses}
                                 onChange={handleDiagnosesChange}
-                                showHeadingError={
-                                    validationVisible &&
-                                    sectionIssues.diagnosesMissing
-                                }
+                                showDetailOptions
+                                skipped={isSkipped}
                             />
                         </div>
-                        {validationVisible && sectionIssues.count > 0 && (
-                            <div
-                                ref={errorTextWrapRef}
-                                className={basicStyles.errorTextWrap}
-                                role="alert"
-                            >
-                                <div
-                                    className={basicStyles.errorIcon}
-                                    aria-hidden
-                                >
-                                    <InfoCircle />
-                                </div>
-                                <p className={basicStyles.errorText}>
-                                    {sectionIssues.count === 1
-                                        ? "1 section still needs a selection"
-                                        : sectionIssues.count === 2
-                                            ? "2 sections still need a selection"
-                                            : "3 sections still need a selection"}
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </Container>
 
                 <BottomBlock>
-                    <Button onClick={handleNext}>Next</Button>
+                    <AddDetailsSkipButton
+                        isSkipped={isSkipped}
+                        onClick={handleSkipForNow}
+                    />
+                    {!isSkipped &&
+                        validationVisible &&
+                        sectionIssues.count > 0 && (
+                            <p
+                                ref={personalizeHintRef}
+                                className={basicStyles.personalizeHint}
+                                role="alert"
+                            >
+                                Answering these questions helps personalize your
+                                result. You can also skip for now.
+                            </p>
+                        )}
+                    <Button
+                        className={basicStyles.nextButton}
+                        onClick={handleNext}
+                    >
+                        Next
+                    </Button>
                     <ButtonReverse onClick={handleGoBack}>
                         Go back
                     </ButtonReverse>

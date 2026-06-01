@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import GroupIcon from "../../../assets/AddDetailsIcons/GroupIcon";
+import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import styles from "./Discharge.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -16,15 +17,48 @@ const options = [
     "Red / Brown",
 ];
 
-const Discharge = ({ discharge, onChange, showHeadingError = false }) => {
+const Discharge = ({
+    discharge,
+    onChange,
+    showHeadingError = false,
+    skipped = false,
+}) => {
+    const selected = Array.isArray(discharge) ? discharge : [];
+
     const list = options.map((item) => {
-        const isActive = discharge.includes(item);
+        if (skipped) {
+            const isSelected = selected.includes(item);
+            return (
+                <div
+                    key={item}
+                    className={
+                        isSelected
+                            ? skippedStyles.itemSkippedSelected
+                            : skippedStyles.itemSkippedInactive
+                    }
+                    role="presentation"
+                    aria-hidden={!isSelected}
+                >
+                    <span>{item}</span>
+                </div>
+            );
+        }
+
+        const isActive = selected.includes(item);
 
         return (
             <div
                 key={item}
                 className={isActive ? styles.itemSelected : styles.item}
                 onClick={() => onChange(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onChange(item);
+                    }
+                }}
             >
                 <span>{item}</span>
             </div>
@@ -32,7 +66,11 @@ const Discharge = ({ discharge, onChange, showHeadingError = false }) => {
     });
 
     return (
-        <div className={styles.wrap}>
+        <div
+            className={`${styles.wrap} ${
+                skipped ? skippedStyles.wrapSkipped : ""
+            }`.trim()}
+        >
             <InfoTooltip
                 title={
                     <span className={titleStyles.titleWithIcon}>
@@ -41,7 +79,7 @@ const Discharge = ({ discharge, onChange, showHeadingError = false }) => {
                     </span>
                 }
                 showArrow={false}
-                showErrorCircle={showHeadingError}
+                showErrorCircle={showHeadingError && !skipped}
             >
                 Discharge varies from person to person. It is influenced by your cycle, hygiene products, medications, stress, and a lot of other factors. Look out for discharge of unusual colour and texture.
             </InfoTooltip>

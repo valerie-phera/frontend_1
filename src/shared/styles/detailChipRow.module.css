@@ -1,0 +1,98 @@
+.divider {
+    border-bottom: 1px solid #E9EAEB;
+    margin: 10px 0;
+}
+
+.dividerFlushTop {
+    margin-top: 0;
+}
+
+.detailRow {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.itemDetail {
+    box-sizing: border-box;
+    padding: 8px 10px 9px;
+    border: 1px dashed #717680;
+    border-radius: 100px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 19px;
+    text-align: center;
+    background-color: #FFFFFF;
+    color: #717680;
+}
+
+.itemDetailSelected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    padding: 8px 10px 9px;
+    border: 1px solid var(--main-color);
+    border-radius: 100px;
+    background-color: var(--main-color);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 19px;
+    text-align: center;
+    color: #fff;
+    cursor: pointer;
+}
+
+.itemDetail:active,
+.itemDetailSelected:active {
+    transform: scale(0.99);
+}
+
+.itemDetail:focus-visible,
+.itemDetailSelected:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .itemDetail:hover {
+        background-color: #00343D0D;
+        color: var(--main-color);
+        border: 1px dashed var(--main-color);
+    }
+
+    .itemDetailSelected:hover {
+        background-color: var(--main-color);
+    }
+}
+
+.itemDetailSkipped {
+    box-sizing: border-box;
+    padding: 8px 10px 9px;
+    border: 1px dashed #717680;
+    border-radius: 100px;
+    font-size: 14px;
+    line-height: 19px;
+    text-align: center;
+    background-color: #FFFFFF;
+    color: #717680;
+    pointer-events: none;
+    cursor: default;
+}
+
+.itemDetailSkippedSelected {
+    box-sizing: border-box;
+    padding: 8px 10px 9px;
+    border: 1px solid #A4A7AE;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 19px;
+    text-align: center;
+    background-color: #A4A7AE;
+    color: #FFFFFF;
+    pointer-events: none;
+    cursor: default;
+}

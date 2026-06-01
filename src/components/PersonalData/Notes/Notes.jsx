@@ -12,7 +12,7 @@ import styles from "./Notes.module.css";
 const FOOTER_CLEARANCE_PX = 12;
 const MIN_SCROLL_DELTA_PX = 2;
 
-const Notes = ({ notes, setNotes }) => {
+const Notes = ({ notes, setNotes, skipped = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
   const editAreaRef = useRef(null);
@@ -135,12 +135,22 @@ const Notes = ({ notes, setNotes }) => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
+  useEffect(() => {
+    if (skipped) setIsEditing(false);
+  }, [skipped]);
+
   return (
     <div
-      className={styles.wrap}
+      className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}
       ref={containerRef}
-      onClick={() => !isEditing && setIsEditing(true)}
-      style={{ cursor: isEditing ? "auto" : "pointer" }}
+      onClick={() => {
+        if (skipped) return;
+        if (!isEditing) setIsEditing(true);
+      }}
+      style={{
+        cursor: skipped ? "default" : isEditing ? "auto" : "pointer",
+        pointerEvents: skipped ? "none" : undefined,
+      }}
     >
       <div className={styles.heading}>
         <h4 className={styles.title}>Notes</h4>

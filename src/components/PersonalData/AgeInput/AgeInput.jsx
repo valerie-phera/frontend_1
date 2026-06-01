@@ -14,6 +14,7 @@ const AgeInput = ({
     onChange,
     showHeadingError = false,
     showError = false,
+    skipped = false,
 }) => {
     const [localAge, setLocalAge] = useState(age ?? "");
     const [error, setError] = useState("");
@@ -48,7 +49,7 @@ const AgeInput = ({
     const inlineErrorText = error || (showError ? ERROR_TEXT : "");
 
     return (
-        <div className={styles.wrap}>
+        <div className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}>
             <InfoTooltip
                 title={
                     <span className={titleStyles.titleWithIcon}>
@@ -68,13 +69,21 @@ const AgeInput = ({
                 pattern="[0-9]*"
                 className={`${styles.input} ${
                     showInlineError ? styles.inputError : ""
-                }`}
+                } ${
+                    skipped
+                        ? localAge !== "" && localAge != null
+                            ? styles.inputSkippedFilled
+                            : styles.inputSkipped
+                        : ""
+                }`.trim()}
                 placeholder="Enter your age"
                 value={localAge}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 min={MIN_AGE}
                 max={MAX_AGE}
+                disabled={skipped}
+                aria-disabled={skipped}
             />
 
             {showInlineError && inlineErrorText && (
