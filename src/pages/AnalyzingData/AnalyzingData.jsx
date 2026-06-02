@@ -14,6 +14,7 @@ import { readAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionSt
 import { readActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 import { clearPendingAnalysis, readPendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 import { getInterpretation } from "../../shared/utils/getInterpretation";
+import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 
 const MIN_WAIT_MS = 8_000;
 const BACKEND_TIMEOUT_MS = 90_000;
@@ -198,34 +199,48 @@ const AnalyzingData = () => {
                         next_steps: backendResponse?.next_steps ?? state?.next_steps,
                         citations: backendResponse?.citations ?? state?.citations ?? [],
                         age: draft?.age ?? state?.age,
-                        lifeStage: stripTokens(draft?.lifeStage ?? state?.lifeStage, [
-                            "None",
-                        ]),
-                        ethnicBackground: draft?.ethnicBackground ?? state?.ethnicBackground,
-                        menstrualCycle: draft?.menstrualCycle ?? state?.menstrualCycle,
-                        hormoneDiagnoses: stripTokens(
-                            draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses,
-                            ["None"]
+                        lifeStage: stripDetailOptions(
+                            stripTokens(draft?.lifeStage ?? state?.lifeStage, ["None"])
                         ),
-                        currentMedications: stripTokens(
-                            draft?.currentMedications ?? state?.currentMedications,
-                            ["None"]
+                        ethnicBackground: stripDetailOptions(
+                            draft?.ethnicBackground ?? state?.ethnicBackground
+                        ),
+                        menstrualCycle: stripDetailOptions(
+                            draft?.menstrualCycle ?? state?.menstrualCycle
+                        ),
+                        hormoneDiagnoses: stripDetailOptions(
+                            stripTokens(
+                                draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses,
+                                ["None"]
+                            )
+                        ),
+                        currentMedications: stripDetailOptions(
+                            stripTokens(
+                                draft?.currentMedications ?? state?.currentMedications,
+                                ["None"]
+                            )
                         ),
                         birthControl: draft?.birthControl ?? state?.birthControl,
                         hormoneTherapy: draft?.hormoneTherapy ?? state?.hormoneTherapy,
                         fertilityJourney: draft?.fertilityJourney ?? state?.fertilityJourney,
-                        discharge: stripTokens(draft?.discharge ?? state?.discharge, [
-                            "None",
-                            "No discharge",
-                        ]),
-                        vulvaCondition: stripTokens(
-                            draft?.vulvaCondition ?? state?.vulvaCondition,
-                            ["None"]
+                        discharge: stripDetailOptions(
+                            stripTokens(draft?.discharge ?? state?.discharge, [
+                                "None",
+                                "No discharge",
+                            ])
                         ),
-                        smell: stripTokens(draft?.smell ?? state?.smell, ["None"]),
-                        urination: stripTokens(draft?.urination ?? state?.urination, [
-                            "None",
-                        ]),
+                        vulvaCondition: stripDetailOptions(
+                            stripTokens(
+                                draft?.vulvaCondition ?? state?.vulvaCondition,
+                                ["None"]
+                            )
+                        ),
+                        smell: stripDetailOptions(
+                            stripTokens(draft?.smell ?? state?.smell, ["None"])
+                        ),
+                        urination: stripDetailOptions(
+                            stripTokens(draft?.urination ?? state?.urination, ["None"])
+                        ),
                         notes: draft?.notes ?? state?.notes,
                     },
                 });

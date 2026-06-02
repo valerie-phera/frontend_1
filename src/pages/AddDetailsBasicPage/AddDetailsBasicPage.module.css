@@ -4,6 +4,7 @@
     flex-direction: column;
     min-height: 100dvh;
     padding-top: 56px;
+    position: relative;
 
     scrollbar-gutter: stable;
     scroll-padding-bottom: min(200px, 36dvh);
@@ -19,8 +20,6 @@
 .containerInner {
     display: flex;
     flex-direction: column;
-    /* padding-top: 26px; */
-    /* padding-bottom: min(140px, 28dvh); */
     padding-bottom: 2px;
 
     flex: 1
@@ -94,41 +93,72 @@
     max-width: 100%;
 }
 
-.errorTextWrap {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
-    margin-top: 14px;
-    padding: 0 16px;
-    text-align: center;
-    scroll-margin-bottom: min(200px, 36dvh);
-}
-
-.errorIcon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: #CC3433;
-}
-
-.errorIcon svg {
-    width: 20px;
-    height: 20px;
-}
-
-.errorText {
+.personalizeHint {
+    margin-bottom: 5px;
+    padding: 0 18px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 600;
     font-size: 14px;
     line-height: 1.3;
-    color: #CC3433;
-    margin: 0;
-    text-align: left;
+    text-align: center;
+    color: #2F8E96;
+}
+
+.nextButton {
+    margin-top: 0;
 }
 
 .privacyPolicyWrap {
     display: flex;
     justify-content: center;
+}
+
+.skipForNow {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 14px;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    width: fit-content;
+    min-height: 44px;
+    align-self: flex-end;
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 19px;
+    color: #717680;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    margin-bottom: 5px;
+}
+
+.skipForNow:focus,
+.skipForNow:focus-visible {
+    outline: none;
+}
+
+.skipForNow:active {
+    transform: scale(0.99);
+}
+
+.skipForNowActive {
+    color: #2F8E96;
+    font-weight: 600;
+}
+
+.skipForNowIcon {
+    display: flex;
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+}
+
+.skipForNowLabel {
+    flex: none;
 }
 
 .privacyPolicy {

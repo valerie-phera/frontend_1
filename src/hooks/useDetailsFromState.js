@@ -1,4 +1,5 @@
 import { formatNotesForDisplay } from "../shared/utils/notesDisplay";
+import { stripDetailOptions } from "../shared/utils/detailChipSelection";
 
 const useDetailsFromState = (state) => {
   const strip = (arr, tokens) => {
@@ -6,6 +7,9 @@ const useDetailsFromState = (state) => {
     const set = new Set(Array.isArray(tokens) ? tokens : []);
     return list.filter((x) => x && !set.has(x));
   };
+
+  const stripUi = (arr, tokens = []) =>
+    strip(stripDetailOptions(arr), tokens);
 
   const birthControlValues = state?.birthControl
     ? Object.values(state.birthControl).filter(Boolean)
@@ -29,22 +33,24 @@ const useDetailsFromState = (state) => {
 
   const detailOptions = [
     state?.age,
-    ...(state?.lifeStage?.length ? strip(state.lifeStage, ["None"]) : []),
-    ...(state?.ethnicBackground?.length ? state.ethnicBackground : []),
-    ...(state?.menstrualCycle?.length ? state.menstrualCycle : []),
-    ...(state?.hormoneDiagnoses?.length ? strip(state.hormoneDiagnoses, ["None"]) : []),
+    ...(state?.lifeStage?.length ? stripUi(state.lifeStage, ["None"]) : []),
+    ...(state?.ethnicBackground?.length ? stripUi(state.ethnicBackground) : []),
+    ...(state?.menstrualCycle?.length ? stripUi(state.menstrualCycle) : []),
+    ...(state?.hormoneDiagnoses?.length
+      ? stripUi(state.hormoneDiagnoses, ["None"])
+      : []),
     ...(state?.currentMedications?.length
-      ? strip(state.currentMedications, ["None"])
+      ? stripUi(state.currentMedications, ["None"])
       : []),
     ...birthControlValues,
     ...hormoneTherapyValues,
     ...fertilityJourneyValues,
     ...(state?.discharge?.length
-      ? strip(state.discharge, ["None", "No discharge"])
+      ? stripUi(state.discharge, ["None", "No discharge"])
       : []),
-    ...(state?.vulvaCondition?.length ? state.vulvaCondition : []),
-    ...(state?.smell?.length ? state.smell : []),
-    ...(state?.urination?.length ? state.urination : []),
+    ...(state?.vulvaCondition?.length ? stripUi(state.vulvaCondition, ["None"]) : []),
+    ...(state?.smell?.length ? stripUi(state.smell, ["None"]) : []),
+    ...(state?.urination?.length ? stripUi(state.urination, ["None"]) : []),
     ...(notesDisplay ? [notesDisplay] : []),
   ].filter(Boolean);
 

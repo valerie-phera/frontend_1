@@ -2,28 +2,54 @@ import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import ToiletIcon from "../../../assets/AddDetailsIcons/ToiletIcon";
+import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import styles from "./Urination.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
-const options = [
-    "None",
-    "Frequent urination",
-    "Burning sensation",
-];
+const options = ["Frequent urination", "Burning sensation"];
 
 const Urination = ({
     urination,
     onChange,
     showHeadingError = false,
+    skipped = false,
 }) => {
+    const selected = Array.isArray(urination) ? urination : [];
+
     const list = options.map((item) => {
-        const isActive = urination.includes(item);
+        if (skipped) {
+            const isSelected = selected.includes(item);
+            return (
+                <div
+                    key={item}
+                    className={
+                        isSelected
+                            ? skippedStyles.itemSkippedSelected
+                            : skippedStyles.itemSkippedInactive
+                    }
+                    role="presentation"
+                    aria-hidden={!isSelected}
+                >
+                    <span>{item}</span>
+                </div>
+            );
+        }
+
+        const isActive = selected.includes(item);
 
         return (
             <div
                 key={item}
                 className={isActive ? styles.itemSelected : styles.item}
                 onClick={() => onChange(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onChange(item);
+                    }
+                }}
             >
                 <span>{item}</span>
             </div>
@@ -31,7 +57,11 @@ const Urination = ({
     });
 
     return (
-        <div className={styles.wrap}>
+        <div
+            className={`${styles.wrap} ${
+                skipped ? skippedStyles.wrapSkipped : ""
+            }`.trim()}
+        >
             <InfoTooltip
                 title={
                     <span className={titleStyles.titleWithIcon}>
@@ -40,7 +70,7 @@ const Urination = ({
                     </span>
                 }
                 showArrow={false}
-                showErrorCircle={showHeadingError}
+                showErrorCircle={showHeadingError && !skipped}
             >
                 It is normal to urinate more often after drinking more fluids, coffee, or during periods of stress. More trips to the bathroom than is normal for you. A brief burning sensation can happen after using a new product or after sex. If such sensations last a long time or appear with other symptoms, they may signal an infection.
             </InfoTooltip>

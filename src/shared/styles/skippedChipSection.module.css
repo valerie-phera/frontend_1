@@ -1,0 +1,29 @@
+.wrapSkipped h4 svg path {
+    fill: #A4A7AE;
+}
+
+.itemSkippedInactive {
+    padding: 8px 10px 9px;
+    border: 1px solid #A4A7AE;
+    border-radius: 100px;
+    background-color: #FFFFFF;
+    font-size: 14px;
+    color: #A4A7AE;
+    pointer-events: none;
+    cursor: default;
+}
+
+.itemSkippedSelected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 9px;
+    border: 1px solid #A4A7AE;
+    border-radius: 100px;
+    background-color: #A4A7AE;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+    pointer-events: none;
+    cursor: default;
+}

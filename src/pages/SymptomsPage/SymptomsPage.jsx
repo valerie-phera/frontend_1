@@ -17,10 +17,17 @@ import {
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
+import {
+    getEmptyStepFormPatch,
+    isStepSkipped,
+    persistStepSkip,
+    readPreSkipSnapshot,
+} from "../../shared/utils/addDetailsSkipStorage";
+import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
+import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 import { analyzingDataPageImg, goToAnalyzingData } from "../../shared/utils/flowImages";
 import { preloadImage } from "../../shared/utils/preloadImage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
-import InfoCircle from "../../assets/icons/InfoCircle";
 
 const computeSymptomsSectionIssues = (
     discharge,
@@ -61,25 +68,79 @@ const SymptomsPage = () => {
         [phValue, timestamp]
     );
 
-    const [discharge, setDischarge] = useState(draft?.discharge || []);
-    const [vulvaCondition, setVulvaCondition] = useState(
-        draft?.vulvaCondition || []
-    );
-    const [smell, setSmell] = useState(draft?.smell || []);
-    const [urination, setUrination] = useState(draft?.urination || []);
-    const [notes, setNotes] = useState(draft?.notes ?? "");
+    const initialSkipped = isStepSkipped(draft, "symptoms");
+    const initialPreSkipSnapshot = readPreSkipSnapshot(draft, "symptoms");
+
+    const [discharge, setDischarge] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.discharge || [];
+        }
+        return draft?.discharge || [];
+    });
+    const [vulvaCondition, setVulvaCondition] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.vulvaCondition || [];
+        }
+        return draft?.vulvaCondition || [];
+    });
+    const [smell, setSmell] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.smell || [];
+        }
+        return draft?.smell || [];
+    });
+    const [urination, setUrination] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.urination || [];
+        }
+        return draft?.urination || [];
+    });
+    const [notes, setNotes] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.notes ?? "";
+        }
+        return draft?.notes ?? "";
+    });
 
     useEffect(() => {
-        setDischarge(draft?.discharge || []);
-        setVulvaCondition(draft?.vulvaCondition || []);
-        setSmell(draft?.smell || []);
-        setUrination(draft?.urination || []);
-        setNotes(draft?.notes ?? "");
-    }, [draft?.discharge, draft?.vulvaCondition, draft?.smell, draft?.urination, draft?.notes]);
+        const skipped = isStepSkipped(draft, "symptoms");
+        const snap = readPreSkipSnapshot(draft, "symptoms");
+
+        setIsSkipped(skipped);
+        setPreSkipSnapshot(snap);
+
+        if (skipped && snap) {
+            setDischarge(snap.discharge || []);
+            setVulvaCondition(snap.vulvaCondition || []);
+            setSmell(snap.smell || []);
+            setUrination(snap.urination || []);
+            setNotes(snap.notes ?? "");
+        } else {
+            setDischarge(draft?.discharge || []);
+            setVulvaCondition(draft?.vulvaCondition || []);
+            setSmell(draft?.smell || []);
+            setUrination(draft?.urination || []);
+            setNotes(draft?.notes ?? "");
+        }
+    }, [
+        draft?.discharge,
+        draft?.vulvaCondition,
+        draft?.smell,
+        draft?.urination,
+        draft?.notes,
+        draft?.symptomsSkipped,
+        draft?.symptomsPreSkipSnapshot,
+    ]);
 
     const [validationVisible, setValidationVisible] = useState(false);
+    const [isSkipped, setIsSkipped] = useState(() =>
+        isStepSkipped(draft, "symptoms")
+    );
+    const [preSkipSnapshot, setPreSkipSnapshot] = useState(
+        () => readPreSkipSnapshot(draft, "symptoms")
+    );
     const [errorBannerScrollToken, setErrorBannerScrollToken] = useState(0);
-    const errorTextWrapRef = useRef(null);
+    const personalizeHintRef = useRef(null);
 
     const sectionIssues = useMemo(
         () =>
@@ -104,7 +165,7 @@ const SymptomsPage = () => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (cancelled) return;
-                errorTextWrapRef.current?.scrollIntoView({
+                personalizeHintRef.current?.scrollIntoView({
                     block: "end",
                     behavior: "smooth",
                     inline: "nearest",
@@ -118,17 +179,11 @@ const SymptomsPage = () => {
 
     const toggleInList = (setter) => (value) => {
         setter((prev) => {
-            const NONE = "None";
             const arr = Array.isArray(prev) ? prev : [];
-
-            if (value === NONE) {
-                return arr.includes(NONE) ? [] : [NONE];
-            }
-
-            const withoutNone = arr.filter((x) => x !== NONE);
-            return withoutNone.includes(value)
-                ? withoutNone.filter((x) => x !== value)
-                : [...withoutNone, value];
+            const cleaned = arr.filter((x) => x !== "None");
+            return cleaned.includes(value)
+                ? cleaned.filter((x) => x !== value)
+                : [...cleaned, value];
         });
     };
 
@@ -148,9 +203,131 @@ const SymptomsPage = () => {
         });
     };
 
+    const handleSkipForNow = () => {
+        if (isSkipped) {
+            const restored = preSkipSnapshot;
+            if (restored) {
+                setDischarge(
+                    Array.isArray(restored.discharge) ? restored.discharge : []
+                );
+                setVulvaCondition(
+                    Array.isArray(restored.vulvaCondition)
+                        ? restored.vulvaCondition
+                        : []
+                );
+                setSmell(Array.isArray(restored.smell) ? restored.smell : []);
+                setUrination(
+                    Array.isArray(restored.urination) ? restored.urination : []
+                );
+                setNotes(restored.notes ?? "");
+            }
+            setPreSkipSnapshot(null);
+            setIsSkipped(false);
+            if (phValue !== undefined && phValue !== null) {
+                persistStepSkip(phValue, timestamp, "symptoms", {
+                    skipped: false,
+                    preSkipSnapshot: null,
+                    formPatch: restored
+                        ? {
+                              discharge: Array.isArray(restored.discharge)
+                                  ? restored.discharge
+                                  : [],
+                              vulvaCondition: Array.isArray(
+                                  restored.vulvaCondition
+                              )
+                                  ? restored.vulvaCondition
+                                  : [],
+                              smell: Array.isArray(restored.smell)
+                                  ? restored.smell
+                                  : [],
+                              urination: Array.isArray(restored.urination)
+                                  ? restored.urination
+                                  : [],
+                              notes: restored.notes ?? "",
+                          }
+                        : {},
+                });
+            }
+            return;
+        }
+
+        const snapshot = {
+            discharge: Array.isArray(discharge) ? [...discharge] : [],
+            vulvaCondition: Array.isArray(vulvaCondition)
+                ? [...vulvaCondition]
+                : [],
+            smell: Array.isArray(smell) ? [...smell] : [],
+            urination: Array.isArray(urination) ? [...urination] : [],
+            notes,
+        };
+        setPreSkipSnapshot(snapshot);
+        setValidationVisible(false);
+        setIsSkipped(true);
+        if (phValue !== undefined && phValue !== null) {
+            persistStepSkip(phValue, timestamp, "symptoms", {
+                skipped: true,
+                preSkipSnapshot: snapshot,
+                formPatch: getEmptyStepFormPatch("symptoms"),
+            });
+        }
+    };
+
     const handleNext = () => {
         if (phValue === undefined || phValue === null) {
             alert("Missing pH result. Please go back and complete the test.");
+            return;
+        }
+
+        if (isSkipped) {
+            persistStepSkip(phValue, timestamp, "symptoms", {
+                skipped: true,
+                preSkipSnapshot,
+                formPatch: getEmptyStepFormPatch("symptoms"),
+            });
+            writeActiveResultMeta({ phValue, timestamp });
+
+            const stripUiTokens = (v) =>
+                stripDetailOptions(
+                    Array.isArray(v) ? v.filter((x) => x !== "None") : []
+                );
+            const lifeStage = stripUiTokens(state?.lifeStage);
+            const currentMedications = stripUiTokens(state?.currentMedications);
+
+            const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
+            const hasBirthControl = has(currentMedications, "Birth control");
+            const hasFertilityTreatment = has(
+                currentMedications,
+                "Fertility treatment"
+            );
+
+            const nextPath = (() => {
+                if (hasFertilityTreatment) {
+                    return "/add-details/next-steps/fertility-treatment";
+                }
+                if (hasBirthControl) {
+                    return "/add-details/next-steps/birth-control";
+                }
+                return "/analyzing-data";
+            })();
+
+            const nextState = {
+                ...state,
+                discharge: [],
+                vulvaCondition: [],
+                smell: [],
+                urination: [],
+                notes: "",
+                lifeStage,
+                hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
+                currentMedications,
+            };
+
+            if (nextPath === "/analyzing-data") {
+                goToAnalyzingData(navigate, nextState);
+                return;
+            }
+
+            navigate(nextPath, { state: nextState });
             return;
         }
 
@@ -161,20 +338,26 @@ const SymptomsPage = () => {
         }
         setValidationVisible(false);
 
-        writeAddDetailsDraft(phValue, timestamp, {
-            discharge,
-            vulvaCondition,
-            smell,
-            urination,
-            notes,
+        persistStepSkip(phValue, timestamp, "symptoms", {
+            skipped: false,
+            preSkipSnapshot: null,
+            formPatch: {
+                discharge,
+                vulvaCondition,
+                smell,
+                urination,
+                notes,
+            },
         });
         writeActiveResultMeta({ phValue, timestamp });
 
-        const stripNone = (v) =>
-            Array.isArray(v) ? v.filter((x) => x !== "None") : [];
+        const stripUiTokens = (v) =>
+            stripDetailOptions(
+                Array.isArray(v) ? v.filter((x) => x !== "None") : []
+            );
 
-        const lifeStage = stripNone(state?.lifeStage);
-        const currentMedications = stripNone(state?.currentMedications);
+        const lifeStage = stripUiTokens(state?.lifeStage);
+        const currentMedications = stripUiTokens(state?.currentMedications);
 
         const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
         const hasBirthControl = has(currentMedications, "Birth control");
@@ -199,13 +382,13 @@ const SymptomsPage = () => {
 
         const nextState = {
             ...state,
-            discharge: stripNone(discharge),
-            vulvaCondition: stripNone(vulvaCondition),
-            smell: stripNone(smell),
-            urination: stripNone(urination),
+            discharge: stripUiTokens(discharge),
+            vulvaCondition: stripUiTokens(vulvaCondition),
+            smell: stripUiTokens(smell),
+            urination: stripUiTokens(urination),
             notes,
             lifeStage,
-            hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
+            hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
             currentMedications,
         };
 
@@ -219,12 +402,18 @@ const SymptomsPage = () => {
 
     const handleGoBack = () => {
         if (phValue !== undefined && phValue !== null) {
-            writeAddDetailsDraft(phValue, timestamp, {
-                discharge,
-                vulvaCondition,
-                smell,
-                urination,
-                notes,
+            persistStepSkip(phValue, timestamp, "symptoms", {
+                skipped: isSkipped,
+                preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
+                formPatch: isSkipped
+                    ? getEmptyStepFormPatch("symptoms")
+                    : {
+                          discharge,
+                          vulvaCondition,
+                          smell,
+                          urination,
+                          notes,
+                      },
             });
         }
         navigate(-1);
@@ -265,7 +454,9 @@ const SymptomsPage = () => {
                             <Discharge
                                 discharge={discharge}
                                 onChange={handleDischargeChange}
+                                skipped={isSkipped}
                                 showHeadingError={
+                                    !isSkipped &&
                                     validationVisible &&
                                     sectionIssues.dischargeMissing
                                 }
@@ -273,7 +464,9 @@ const SymptomsPage = () => {
                             <VulvaCondition
                                 vulvaCondition={vulvaCondition}
                                 onChange={toggleInList(setVulvaCondition)}
+                                skipped={isSkipped}
                                 showHeadingError={
+                                    !isSkipped &&
                                     validationVisible &&
                                     sectionIssues.vulvaMissing
                                 }
@@ -281,7 +474,9 @@ const SymptomsPage = () => {
                             <Smell
                                 smell={smell}
                                 onChange={toggleInList(setSmell)}
+                                skipped={isSkipped}
                                 showHeadingError={
+                                    !isSkipped &&
                                     validationVisible &&
                                     sectionIssues.smellMissing
                                 }
@@ -289,37 +484,43 @@ const SymptomsPage = () => {
                             <Urination
                                 urination={urination}
                                 onChange={toggleInList(setUrination)}
+                                skipped={isSkipped}
                                 showHeadingError={
+                                    !isSkipped &&
                                     validationVisible &&
                                     sectionIssues.urinationMissing
                                 }
                             />
-                            <Notes notes={notes} setNotes={setNotes} />
+                            <Notes
+                                notes={notes}
+                                setNotes={setNotes}
+                                skipped={isSkipped}
+                            />
                         </div>
-                        {validationVisible && sectionIssues.count > 0 && (
-                            <div
-                                ref={errorTextWrapRef}
-                                className={basicStyles.errorTextWrap}
-                                role="alert"
-                            >
-                                <div
-                                    className={basicStyles.errorIcon}
-                                    aria-hidden
-                                >
-                                    <InfoCircle />
-                                </div>
-                                <p className={basicStyles.errorText}>
-                                    {sectionIssues.count === 1
-                                        ? "1 section still needs a selection"
-                                        : `${sectionIssues.count} sections still need a selection`}
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </Container>
 
                 <BottomBlock>
-                    <Button onClick={handleNext}>
+                    <AddDetailsSkipButton
+                        isSkipped={isSkipped}
+                        onClick={handleSkipForNow}
+                    />
+                    {!isSkipped &&
+                        validationVisible &&
+                        sectionIssues.count > 0 && (
+                            <p
+                                ref={personalizeHintRef}
+                                className={basicStyles.personalizeHint}
+                                role="alert"
+                            >
+                                Answering these questions helps personalize your
+                                result. You can also skip for now.
+                            </p>
+                        )}
+                    <Button
+                        className={basicStyles.nextButton}
+                        onClick={handleNext}
+                    >
                         {submitFromSymptoms ? "Submit" : "Next"}
                     </Button>
                     <ButtonReverse onClick={handleGoBack}>

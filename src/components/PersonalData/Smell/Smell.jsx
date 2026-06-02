@@ -2,26 +2,54 @@ import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import WavesIcon from "../../../assets/AddDetailsIcons/WavesIcon";
+import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import styles from "./Smell.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
 const options = [
-    "None",
     "Strong and unpleasant (“fishy”)",
     "Sour",
     "Chemical-like",
     "Very strong or rotten",
 ];
 
-const Smell = ({ smell, onChange, showHeadingError = false }) => {
+const Smell = ({ smell, onChange, showHeadingError = false, skipped = false }) => {
+    const selected = Array.isArray(smell) ? smell : [];
+
     const list = options.map((item) => {
-        const isActive = smell.includes(item);
+        if (skipped) {
+            const isSelected = selected.includes(item);
+            return (
+                <div
+                    key={item}
+                    className={
+                        isSelected
+                            ? skippedStyles.itemSkippedSelected
+                            : skippedStyles.itemSkippedInactive
+                    }
+                    role="presentation"
+                    aria-hidden={!isSelected}
+                >
+                    <span>{item}</span>
+                </div>
+            );
+        }
+
+        const isActive = selected.includes(item);
 
         return (
             <div
                 key={item}
                 className={isActive ? styles.itemSelected : styles.item}
                 onClick={() => onChange(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onChange(item);
+                    }
+                }}
             >
                 <span>{item}</span>
             </div>
@@ -29,7 +57,11 @@ const Smell = ({ smell, onChange, showHeadingError = false }) => {
     });
 
     return (
-        <div className={styles.wrap}>
+        <div
+            className={`${styles.wrap} ${
+                skipped ? skippedStyles.wrapSkipped : ""
+            }`.trim()}
+        >
             <InfoTooltip
                 title={
                     <span className={titleStyles.titleWithIcon}>
@@ -38,7 +70,7 @@ const Smell = ({ smell, onChange, showHeadingError = false }) => {
                     </span>
                 }
                 showArrow={false}
-                showErrorCircle={showHeadingError}
+                showErrorCircle={showHeadingError && !skipped}
             >
                 A healthy vagina can have a natural scent that is metallic, musky, earthy, or tangy - all of these are normal! If you notice any of the unusual odors, such as those listed below, it might be helpful to mention them to your clinician.
             </InfoTooltip>

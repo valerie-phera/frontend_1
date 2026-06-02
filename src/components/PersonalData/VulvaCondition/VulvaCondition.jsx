@@ -2,28 +2,54 @@ import { memo } from "react";
 
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import FlowerIcom from "../../../assets/AddDetailsIcons/FlowerIcom";
+import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import styles from "./VulvaCondition.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
-const options = [
-    "None",
-    "Dry",
-    "Itchy",
-];
+const options = ["Dry", "Itchy"];
 
 const VulvaCondition = ({
     vulvaCondition,
     onChange,
     showHeadingError = false,
+    skipped = false,
 }) => {
+    const selected = Array.isArray(vulvaCondition) ? vulvaCondition : [];
+
     const list = options.map((item) => {
-        const isActive = vulvaCondition.includes(item);
+        if (skipped) {
+            const isSelected = selected.includes(item);
+            return (
+                <div
+                    key={item}
+                    className={
+                        isSelected
+                            ? skippedStyles.itemSkippedSelected
+                            : skippedStyles.itemSkippedInactive
+                    }
+                    role="presentation"
+                    aria-hidden={!isSelected}
+                >
+                    <span>{item}</span>
+                </div>
+            );
+        }
+
+        const isActive = selected.includes(item);
 
         return (
             <div
                 key={item}
                 className={isActive ? styles.itemSelected : styles.item}
                 onClick={() => onChange(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onChange(item);
+                    }
+                }}
             >
                 <span>{item}</span>
             </div>
@@ -31,7 +57,11 @@ const VulvaCondition = ({
     });
 
     return (
-        <div className={styles.wrap}>
+        <div
+            className={`${styles.wrap} ${
+                skipped ? skippedStyles.wrapSkipped : ""
+            }`.trim()}
+        >
             <InfoTooltip
                 title={
                     <span className={titleStyles.titleWithIcon}>
@@ -40,7 +70,7 @@ const VulvaCondition = ({
                     </span>
                 }
                 showArrow={false}
-                showErrorCircle={showHeadingError}
+                showErrorCircle={showHeadingError && !skipped}
             >
                 It is normal to experience occasional dryness or itchiness - after shaving, using a new hygiene product, or wearing tight clothes. If such sensations become uncomfortable and appear along with other symptoms, they may signal an infection.
             </InfoTooltip>

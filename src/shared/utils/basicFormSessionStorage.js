@@ -1,7 +1,9 @@
 import {
     ETHNIC_OTHER_OPTION,
     ETHNIC_OPTIONS,
-} from "../../components/PersonalData/EthnicBackground/EthnicBackground";
+} from "../../components/PersonalData/EthnicBackground/ethnicOptions";
+import { FORM_PREFER_NOT_TO_SAY } from "../constants/formDetailOptions";
+import { stripNoneToken } from "./toggleListItem";
 
 const KNOWN_ETHNIC_CHIPS = new Set(ETHNIC_OPTIONS);
 
@@ -16,6 +18,10 @@ const INTERCEPT_TTL_MS = 25 * 60 * 1000;
 
 const normalizeEthnicFromRoute = (savedBg, savedOtherText) => {
     const arr = Array.isArray(savedBg) ? savedBg : [];
+    if (arr.includes(FORM_PREFER_NOT_TO_SAY)) {
+        return { chips: [FORM_PREFER_NOT_TO_SAY], otherText: "" };
+    }
+
     const savedTrim = String(savedOtherText ?? "").trim().slice(0, 50);
 
     const unknownCustom = [];
@@ -74,21 +80,16 @@ export const readBasicFormSnapshot = (phValue, timestamp) => {
     }
 };
 
-export const writeBasicFormSnapshot = (
-    phValue,
-    timestamp,
-    { age, lifeStage, ethnicBackground, ethnicOtherText }
-) => {
+export const writeBasicFormSnapshot = (phValue, timestamp, patch) => {
     if (phValue === undefined || phValue === null) return;
     try {
+        const prevRaw = sessionStorage.getItem(
+            basicFormSessionStorageKey(phValue, timestamp)
+        );
+        const prev = prevRaw ? JSON.parse(prevRaw) : {};
         sessionStorage.setItem(
             basicFormSessionStorageKey(phValue, timestamp),
-            JSON.stringify({
-                age,
-                lifeStage: Array.isArray(lifeStage) ? lifeStage : [],
-                ethnicBackground,
-                ethnicOtherText: ethnicOtherText ?? "",
-            })
+            JSON.stringify({ ...prev, ...(patch ?? {}) })
         );
     } catch {
         /* ignore quota / private mode */
@@ -115,16 +116,19 @@ export const resolveBasicFormState = (routeState) => {
         snap && Object.prototype.hasOwnProperty.call(snap, "age")
             ? snap.age
             : (routeState?.age ?? "");
-    const lifeStage =
+    const lifeStage = stripNoneToken(
         snap && Array.isArray(snap.lifeStage)
             ? snap.lifeStage
-            : routeState?.lifeStage || [];
+            : routeState?.lifeStage
+    );
 
     return {
         age,
         lifeStage,
         ethnicChips: ethnicNorm.chips,
         ethnicOtherText: ethnicNorm.otherText,
+        basicSkipped: Boolean(snap?.basicSkipped),
+        basicPreSkipSnapshot: snap?.basicPreSkipSnapshot ?? null,
     };
 };
 
