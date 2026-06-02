@@ -16,7 +16,7 @@ import { clearPendingAnalysis, readPendingAnalysis } from "../../shared/utils/pe
 import { getInterpretation } from "../../shared/utils/getInterpretation";
 import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 
-const MIN_WAIT_MS = 8_000;
+const MIN_WAIT_MS = 12_000;
 const BACKEND_TIMEOUT_MS = 90_000;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -263,10 +263,10 @@ const AnalyzingData = () => {
         // Строго без промежуточных значений: 0 → 30 → 50 → 75 → 100
         const steps = [
             { ms: 0, v: 0, step: 0 }, // 0%: 1st item spins
-            { ms: 2_000, v: 30, step: 1 }, // 30%: 1st done, 2nd spins
-            { ms: 4_000, v: 50, step: 2 }, // 50%: 2nd done, 3rd spins
-            { ms: 6_000, v: 75, step: 3 }, // 75%: 3rd done, 4th spins
-            { ms: 8_000, v: 99, step: 3 }, // 99%: keep 4th spinning until backend resolves
+            { ms: 3_000, v: 30, step: 1 }, // 30%: 1st done, 2nd spins
+            { ms: 6_000, v: 50, step: 2 }, // 50%: 2nd done, 3rd spins
+            { ms: 9_000, v: 75, step: 3 }, // 75%: 3rd done, 4th spins
+            { ms: 12_000, v: 99, step: 3 }, // 99%: keep 4th spinning until backend resolves
         ];
 
         const ids = steps.map((s) =>

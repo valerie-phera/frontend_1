@@ -183,7 +183,7 @@ const TailoredInsightsSection = ({ overviewParagraphs, showTitle = true }) => {
     <section className={styles.insightsSection} data-insights-section data-flow-block>
       {showTitle ? (
         <h2 className={styles.insightsTitle} data-insights-title>
-          Your personalized insights
+          Overview
         </h2>
       ) : null}
       <div className={styles.insightsCardFull} data-insights-card>
