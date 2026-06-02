@@ -5,12 +5,11 @@
     background: #ffffff;
     border-radius: 10px;
     box-sizing: border-box;
-}
-
-.accordionCollapsed {
     padding: 10px 16px;
-    justify-content: center;
-    min-height: 48px;
+    gap: 0;
+    transition:
+        padding 0.42s cubic-bezier(0.4, 0, 0.2, 1),
+        gap 0.42s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .accordionExpanded {
@@ -105,7 +104,7 @@
     width: 24px;
     height: 24px;
     flex-shrink: 0;
-    transition: transform 0.25s ease;
+    transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .caretOpen {
@@ -116,12 +115,38 @@
     fill: #2f8e96;
 }
 
+.bodyWrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bodyWrapperOpen {
+    grid-template-rows: 1fr;
+}
+
+.bodyInner {
+    overflow: hidden;
+    min-height: 0;
+}
+
 .body {
     display: flex;
     flex-direction: column;
     gap: 10px;
     position: relative;
     isolation: isolate;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition:
+        opacity 0.32s ease,
+        transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bodyWrapperOpen .body {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.06s;
 }
 
 .divider {
@@ -130,6 +155,12 @@
     border: none;
     border-top: 1px solid #e9eaeb;
     margin: 0;
+    opacity: 0;
+    transition: opacity 0.28s ease 0.04s;
+}
+
+.bodyWrapperOpen .divider {
+    opacity: 1;
 }
 
 .infoWrap {
@@ -139,4 +170,28 @@
     align-self: center;
     width: 20px;
     height: 36px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .accordion,
+    .caret,
+    .bodyWrapper,
+    .body,
+    .divider {
+        transition: none !important;
+    }
+
+    .bodyWrapper:not(.bodyWrapperOpen) .body {
+        opacity: 0;
+        transform: none;
+    }
+
+    .bodyWrapperOpen .body {
+        opacity: 1;
+        transform: none;
+    }
+
+    .bodyWrapperOpen .divider {
+        opacity: 1;
+    }
 }

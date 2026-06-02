@@ -31,9 +31,7 @@ const SymptomsAccordion = ({
         <div
             className={`${styles.accordion} ${
                 skipped ? styles.accordionSkipped : ""
-            } ${
-                isOpen && hasBody ? styles.accordionExpanded : styles.accordionCollapsed
-            }`.trim()}
+            } ${isOpen && hasBody ? styles.accordionExpanded : ""}`.trim()}
         >
             <button
                 type="button"
@@ -68,10 +66,20 @@ const SymptomsAccordion = ({
                 </span>
             </button>
 
-            {isOpen && hasBody ? (
-                <div className={styles.body}>
-                    <hr className={styles.divider} />
-                    {bodyContent}
+            {hasBody ? (
+                <div
+                    className={`${styles.bodyWrapper} ${
+                        isOpen ? styles.bodyWrapperOpen : ""
+                    }`.trim()}
+                    aria-hidden={!isOpen}
+                    inert={!isOpen}
+                >
+                    <div className={styles.bodyInner}>
+                        <div className={styles.body}>
+                            <hr className={styles.divider} />
+                            {bodyContent}
+                        </div>
+                    </div>
                 </div>
             ) : null}
         </div>
