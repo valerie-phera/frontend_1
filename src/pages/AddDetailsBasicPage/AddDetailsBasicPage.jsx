@@ -369,7 +369,7 @@ const AddDetailsBasicPage = () => {
                 recommendations,
                 age,
                 lifeStage: stripDetailOptions(lifeStage),
-                ethnicBackground: ethnicForApi,
+                ethnicBackground: stripDetailOptions(ethnicForApi),
                 ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
             },
         });

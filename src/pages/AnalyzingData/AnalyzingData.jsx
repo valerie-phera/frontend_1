@@ -195,8 +195,12 @@ const AnalyzingData = () => {
                         lifeStage: stripDetailOptions(
                             stripTokens(draft?.lifeStage ?? state?.lifeStage, ["None"])
                         ),
-                        ethnicBackground: draft?.ethnicBackground ?? state?.ethnicBackground,
-                        menstrualCycle: draft?.menstrualCycle ?? state?.menstrualCycle,
+                        ethnicBackground: stripDetailOptions(
+                            draft?.ethnicBackground ?? state?.ethnicBackground
+                        ),
+                        menstrualCycle: stripDetailOptions(
+                            draft?.menstrualCycle ?? state?.menstrualCycle
+                        ),
                         hormoneDiagnoses: stripDetailOptions(
                             stripTokens(
                                 draft?.hormoneDiagnoses ?? state?.hormoneDiagnoses,
@@ -212,18 +216,24 @@ const AnalyzingData = () => {
                         birthControl: draft?.birthControl ?? state?.birthControl,
                         hormoneTherapy: draft?.hormoneTherapy ?? state?.hormoneTherapy,
                         fertilityJourney: draft?.fertilityJourney ?? state?.fertilityJourney,
-                        discharge: stripTokens(draft?.discharge ?? state?.discharge, [
-                            "None",
-                            "No discharge",
-                        ]),
-                        vulvaCondition: stripTokens(
-                            draft?.vulvaCondition ?? state?.vulvaCondition,
-                            ["None"]
+                        discharge: stripDetailOptions(
+                            stripTokens(draft?.discharge ?? state?.discharge, [
+                                "None",
+                                "No discharge",
+                            ])
                         ),
-                        smell: stripTokens(draft?.smell ?? state?.smell, ["None"]),
-                        urination: stripTokens(draft?.urination ?? state?.urination, [
-                            "None",
-                        ]),
+                        vulvaCondition: stripDetailOptions(
+                            stripTokens(
+                                draft?.vulvaCondition ?? state?.vulvaCondition,
+                                ["None"]
+                            )
+                        ),
+                        smell: stripDetailOptions(
+                            stripTokens(draft?.smell ?? state?.smell, ["None"])
+                        ),
+                        urination: stripDetailOptions(
+                            stripTokens(draft?.urination ?? state?.urination, ["None"])
+                        ),
                         notes: draft?.notes ?? state?.notes,
                     },
                 });

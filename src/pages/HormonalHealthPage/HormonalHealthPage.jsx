@@ -358,7 +358,7 @@ const HormonalHealthPage = () => {
         navigate("/add-details/symptoms", {
             state: {
                 ...state,
-                menstrualCycle,
+                menstrualCycle: stripDetailOptions(menstrualCycle),
                 hormoneDiagnoses: stripDetailOptions(diagnosesForNext),
                 currentMedications: stripDetailOptions(medicationsForNext),
             },
