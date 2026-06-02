@@ -18,7 +18,7 @@
 .itemDetail {
     box-sizing: border-box;
     padding: 8px 10px 9px;
-    border: 2px dashed #717680;
+    border: 1px dashed #717680;
     border-radius: 100px;
     cursor: pointer;
     font-size: 14px;
