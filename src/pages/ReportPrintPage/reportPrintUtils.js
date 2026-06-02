@@ -51,6 +51,26 @@ export function blockExtendsBelowFooter(pageEl, blockEl) {
   return blockEl.getBoundingClientRect().bottom > limit + 1;
 }
 
+/**
+ * Sources overflow when the last citation row crosses the footer safe line.
+ * More reliable than the section box alone (flex + overflow:hidden can clip content).
+ * @param {HTMLElement|null} pageEl
+ */
+export function sourcesSectionOverflowsPage(pageEl) {
+  const sourcesEl = pageEl?.querySelector("[data-sources-section]");
+  if (!sourcesEl) return false;
+
+  const limit = getFooterContentLimit(pageEl);
+  if (limit == null) return false;
+
+  const lastRow = sourcesEl.querySelector("[data-citation-row]:last-child");
+  if (lastRow) {
+    return lastRow.getBoundingClientRect().bottom > limit + 1;
+  }
+
+  return blockExtendsBelowFooter(pageEl, sourcesEl);
+}
+
 /** @param {string[]} a @param {string[]} b */
 export function insightParagraphsEqual(a, b) {
   if (a === b) return true;
@@ -313,6 +333,189 @@ export function getDeepDiveParagraphs(data) {
 /** @param {unknown} text */
 export function formatOverviewParagraph(text) {
   return formatRecommendation(normalizeDeepDiveChunk(text));
+}
+
+/**
+ * Split text into chunks that each start with a bold section label.
+ * Supports `**Label:**` (backend) and `**Label** -` (overview normalization).
+ * @param {unknown} rawText
+ * @returns {string[]}
+ */
+export function splitByBoldLabels(rawText) {
+  const s = String(rawText ?? "").trim();
+  if (!s) return [];
+
+  const labelRe = /\*\*[^*]+:\*\*|\*\*[^*]+\*\*\s*-\s*/g;
+  const matches = [...s.matchAll(labelRe)];
+  if (matches.length === 0) return [s];
+
+  const chunks = [];
+  const firstIdx = matches[0]?.index ?? 0;
+  if (firstIdx > 0) {
+    const leading = s.slice(0, firstIdx).trim();
+    if (leading) chunks.push(leading);
+  }
+
+  for (let i = 0; i < matches.length; i += 1) {
+    const start = matches[i].index ?? 0;
+    const end = i + 1 < matches.length ? (matches[i + 1].index ?? s.length) : s.length;
+    const chunk = s.slice(start, end).trim();
+    if (chunk) chunks.push(chunk);
+  }
+
+  return chunks.length > 0 ? chunks : [s];
+}
+
+/**
+ * Normalize backend insight payloads (string, array, or nested object) into text parts.
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+export function extractInsightTextParts(raw) {
+  if (raw == null) return [];
+
+  if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
+    const s = normalizeDeepDiveChunk(raw);
+    return s ? [s] : [];
+  }
+
+  if (Array.isArray(raw)) {
+    return raw.flatMap((item) => extractInsightTextParts(item));
+  }
+
+  if (typeof raw === "object") {
+    const record = /** @type {Record<string, unknown>} */ (raw);
+    if (typeof record.text === "string") return extractInsightTextParts(record.text);
+    if (typeof record.content === "string") return extractInsightTextParts(record.content);
+    if (typeof record.body === "string") return extractInsightTextParts(record.body);
+    return Object.values(record).flatMap((value) => extractInsightTextParts(value));
+  }
+
+  return [];
+}
+
+/**
+ * Bullet paragraphs for insight sections (your_ph, your_symptoms, next_steps, etc.).
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+export function getInsightSectionParagraphs(raw) {
+  return extractInsightTextParts(raw)
+    .flatMap((part) => splitByBoldLabels(part))
+    .flatMap((part) => splitIntoSentences(part))
+    .map(formatOverviewParagraph)
+    .filter(Boolean);
+}
+
+/** @typedef {{ title: string, key: string, paragraphs: string[] }} PostOverviewSection */
+
+/** Sections rendered after Overview in the PDF report. */
+export const POST_OVERVIEW_SECTION_DEFS = [
+  { title: "Your ph", key: "your_ph" },
+  { title: "Your symptoms", key: "your_symptoms" },
+  { title: "Next steps", key: "next_steps" },
+];
+
+const POST_OVERVIEW_FIELD_ALIASES = {
+  your_ph: ["your_ph", "yourPh", "your-ph"],
+  your_symptoms: ["your_symptoms", "yourSymptoms", "your-symptoms"],
+  next_steps: ["next_steps", "nextSteps", "next-steps"],
+};
+
+/** @param {object|null|undefined} data @param {string} key */
+export function resolveInsightField(data, key) {
+  const aliases = POST_OVERVIEW_FIELD_ALIASES[key] ?? [key];
+
+  for (const alias of aliases) {
+    const direct = data?.[alias];
+    if (direct != null && direct !== "") return direct;
+  }
+
+  const nested = data?.recommendations ?? data?.agent_reply;
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    for (const alias of aliases) {
+      const value = nested[alias];
+      if (value != null && value !== "") return value;
+    }
+  }
+
+  return null;
+}
+
+/** @param {PostOverviewSection[]} sections */
+export function clonePostOverviewSections(sections) {
+  return sections.map((section) => ({
+    ...section,
+    paragraphs: [...section.paragraphs],
+  }));
+}
+
+/** @param {PostOverviewSection[]} a @param {PostOverviewSection[]} b */
+export function postOverviewSectionsEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every(
+    (section, index) =>
+      section.key === b[index].key &&
+      section.title === b[index].title &&
+      insightParagraphsEqual(section.paragraphs, b[index].paragraphs)
+  );
+}
+
+/**
+ * Remove the last bullet from the last section (for page-1 overflow).
+ * @param {PostOverviewSection[]} sections
+ */
+export function removeLastPostOverviewParagraph(sections) {
+  const next = clonePostOverviewSections(sections);
+
+  for (let i = next.length - 1; i >= 0; i -= 1) {
+    if (next[i].paragraphs.length === 0) continue;
+    const paragraph = next[i].paragraphs.pop();
+    const moved = {
+      key: next[i].key,
+      title: next[i].title,
+      paragraph,
+    };
+    return {
+      sections: next.filter((section) => section.paragraphs.length > 0),
+      moved,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * @param {PostOverviewSection[]} sections
+ * @param {{ key: string, title: string, paragraph: string }} moved
+ */
+export function prependPostOverviewParagraph(sections, moved) {
+  const next = clonePostOverviewSections(sections);
+  const existing = next.find((section) => section.key === moved.key);
+
+  if (existing) {
+    existing.paragraphs.unshift(moved.paragraph);
+    return next;
+  }
+
+  return [
+    {
+      key: moved.key,
+      title: moved.title,
+      paragraphs: [moved.paragraph],
+    },
+    ...next,
+  ];
+}
+
+/** @param {object} data @returns {PostOverviewSection[]} */
+export function getPostOverviewSections(data) {
+  return POST_OVERVIEW_SECTION_DEFS.map(({ title, key }) => ({
+    title,
+    key,
+    paragraphs: getInsightSectionParagraphs(resolveInsightField(data, key)),
+  })).filter((section) => section.paragraphs.length > 0);
 }
 
 /** @param {object} data */

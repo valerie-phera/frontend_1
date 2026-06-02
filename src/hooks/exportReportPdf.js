@@ -8,7 +8,7 @@ const PAGE_WIDTH_PX = 595;
 const PAGE_HEIGHT_PX = 940;
 const CAPTURE_SCALE = 2;
 /** Wait for pagination useLayoutEffects to settle before html2canvas */
-const LAYOUT_SETTLE_MS = 160;
+const LAYOUT_SETTLE_MS = 320;
 
 /**
  * Collect clickable `<a href>` bounds relative to a report page (for PDF link annotations).

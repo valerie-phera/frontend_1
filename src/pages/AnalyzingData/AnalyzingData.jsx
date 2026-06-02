@@ -174,6 +174,17 @@ const AnalyzingData = () => {
                     nextPhValue.toFixed(2)
                 );
 
+                const pickInsightField = (key) => {
+                    const top = backendResponse?.[key] ?? state?.[key];
+                    if (top != null && top !== "") return top;
+                    const reply = backendResponse?.agent_reply;
+                    if (reply && typeof reply === "object" && !Array.isArray(reply)) {
+                        const nested = reply[key];
+                        if (nested != null && nested !== "") return nested;
+                    }
+                    return undefined;
+                };
+
                 clearPendingAnalysis();
                 setProgress(100);
                 // Ensure the last step flips to "done" before navigation.
@@ -190,13 +201,11 @@ const AnalyzingData = () => {
                         interpretation: nextInterpretation,
                         overview: backendResponse?.overview ?? state?.overview,
                         recommendations: backendResponse?.agent_reply ?? state?.recommendations,
-                        your_ph: backendResponse?.your_ph ?? state?.your_ph,
-                        your_symptoms: backendResponse?.your_symptoms ?? state?.your_symptoms,
-                        your_personal_baseline:
-                            backendResponse?.your_personal_baseline ?? state?.your_personal_baseline,
-                        your_health_context:
-                            backendResponse?.your_health_context ?? state?.your_health_context,
-                        next_steps: backendResponse?.next_steps ?? state?.next_steps,
+                        your_ph: pickInsightField("your_ph"),
+                        your_symptoms: pickInsightField("your_symptoms"),
+                        your_personal_baseline: pickInsightField("your_personal_baseline"),
+                        your_health_context: pickInsightField("your_health_context"),
+                        next_steps: pickInsightField("next_steps"),
                         citations: backendResponse?.citations ?? state?.citations ?? [],
                         age: draft?.age ?? state?.age,
                         lifeStage: stripDetailOptions(

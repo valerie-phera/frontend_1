@@ -11,7 +11,12 @@ import {
   deepDiveSectionsEqual,
   getDeepDiveSections,
   getOverviewParagraphs,
+  getPostOverviewSections,
+  postOverviewSectionsEqual,
+  prependPostOverviewParagraph,
+  removeLastPostOverviewParagraph,
   blockExtendsBelowFooter,
+  sourcesSectionOverflowsPage,
   canPlaceInsightsOnPage1,
   insightParagraphsEqual,
   mergeInsightParagraphs,
@@ -176,29 +181,49 @@ const OverviewItems = ({ paragraphs }) =>
     </div>
   ));
 
-const TailoredInsightsSection = ({ overviewParagraphs, showTitle = true }) => {
-  if (!overviewParagraphs.length) return null;
+const InsightBulletsSection = ({
+  title,
+  paragraphs,
+  showTitle = true,
+  isPostOverview = false,
+}) => {
+  if (!paragraphs.length) return null;
 
   return (
-    <section className={styles.insightsSection} data-insights-section data-flow-block>
+    <section
+      className={styles.insightsSection}
+      data-insights-section
+      data-flow-block
+      {...(isPostOverview ? { "data-post-overview-section": true } : {})}
+    >
       {showTitle ? (
         <h2 className={styles.insightsTitle} data-insights-title>
-          Overview
+          {title}
         </h2>
       ) : null}
       <div className={styles.insightsCardFull} data-insights-card>
-        <OverviewItems paragraphs={overviewParagraphs} />
+        <OverviewItems paragraphs={paragraphs} />
       </div>
     </section>
   );
 };
+
+const PostOverviewSections = ({ sections }) =>
+  sections.map((section) => (
+    <InsightBulletsSection
+      key={section.key}
+      title={section.title}
+      paragraphs={section.paragraphs}
+      isPostOverview
+    />
+  ));
 
 const CitationList = ({ citations, startIndex = 0 }) =>
   citations.map((citation, index) => {
     const meta = parseCitationMeta(citation);
     const num = startIndex + index + 1;
     return (
-      <div key={`${num}-${meta.title}`} className={styles.citationRow}>
+      <div key={`${num}-${meta.title}`} className={styles.citationRow} data-citation-row>
         <span className={styles.citationNum}>{num}.</span>
         <div className={styles.citationBody}>
           <p className={styles.citationTitle}>{meta.title}</p>
@@ -261,6 +286,10 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     () => getOverviewParagraphs(data),
     [data?.overview]
   );
+  const postOverviewSections = useMemo(
+    () => getPostOverviewSections(data),
+    [data?.your_ph, data?.your_symptoms, data?.next_steps]
+  );
   const deepDiveSections = useMemo(
     () => getDeepDiveSections(data),
     [data?.recommendations, data?.agent_reply]
@@ -273,6 +302,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   const preInsightsProbeRef = useRef(null);
   const measureRef = useRef(null);
   const page1ShrinkGuardRef = useRef(0);
+  const page1PostShrinkGuardRef = useRef(0);
   const page2ShrinkGuardRef = useRef(0);
   const page3ShrinkGuardRef = useRef(0);
 
@@ -283,6 +313,8 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   const [page2DeepDive, setPage2DeepDive] = useState([]);
   const [page3DeepDive, setPage3DeepDive] = useState([]);
   const [page2CitationCount, setPage2CitationCount] = useState(0);
+  const [page1PostSections, setPage1PostSections] = useState([]);
+  const [page2PostSections, setPage2PostSections] = useState([]);
 
   const insightsOnPage1 = canPlaceInsightsOnPage1(
     reportedSymptoms,
@@ -296,6 +328,11 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     return page2Overview;
   }, [insightsOnPage1, page1Overview, page2Overview]);
 
+  const postOverviewContinuesOnPage2 = page2InsightsParagraphs.length > 0;
+  const hasPostOnPage1 = page1PostSections.some((section) => section.paragraphs.length > 0);
+  const hasPostOnPage2 = page2PostSections.some((section) => section.paragraphs.length > 0);
+  const hasPostOverviewSections = postOverviewSections.length > 0;
+
   const reportContentKey = useMemo(
     () =>
       [
@@ -305,6 +342,9 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
         yourDetails.length,
         reportedSymptoms.length,
         overviewParagraphs.join("\x1e"),
+        postOverviewSections
+          .map((s) => `${s.key}\x1f${s.paragraphs.join("\x1e")}`)
+          .join("\x1e"),
         deepDiveSections.map((s) => `${s.title ?? ""}\x1f${s.body}`).join("\x1e"),
         citations.length,
       ].join("\x1f"),
@@ -315,6 +355,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
       yourDetails.length,
       reportedSymptoms.length,
       overviewParagraphs,
+      postOverviewSections,
       deepDiveSections,
       citations.length,
     ]
@@ -322,6 +363,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
 
   useLayoutEffect(() => {
     page1ShrinkGuardRef.current = 0;
+    page1PostShrinkGuardRef.current = 0;
     page2ShrinkGuardRef.current = 0;
     setPage1Overview((prev) => (prev.length === 0 ? prev : []));
     setPage2Overview((prev) => (prev.length === 0 ? prev : []));
@@ -334,7 +376,25 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     setPage2CitationCount((prev) =>
       prev === citations.length ? prev : citations.length
     );
-  }, [reportContentKey, yourDetails.length, reportedSymptoms.length, citations.length]);
+    if (postOverviewContinuesOnPage2) {
+      setPage1PostSections([]);
+      setPage2PostSections((prev) =>
+        postOverviewSectionsEqual(prev, postOverviewSections) ? prev : postOverviewSections
+      );
+    } else {
+      setPage1PostSections((prev) =>
+        postOverviewSectionsEqual(prev, postOverviewSections) ? prev : postOverviewSections
+      );
+      setPage2PostSections((prev) => (prev.length === 0 ? prev : []));
+    }
+  }, [
+    reportContentKey,
+    yourDetails.length,
+    reportedSymptoms.length,
+    citations.length,
+    postOverviewSections,
+    postOverviewContinuesOnPage2,
+  ]);
 
   useLayoutEffect(() => {
     const pageEl = page1Ref.current;
@@ -442,6 +502,44 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     phValue,
   ]);
 
+  useLayoutEffect(() => {
+    const pageEl = page1Ref.current;
+    if (!pageEl || postOverviewContinuesOnPage2 || !hasPostOnPage1) return;
+
+    const postNodes = pageEl.querySelectorAll("[data-post-overview-section]");
+    const lastPostSection = postNodes[postNodes.length - 1];
+    const postOverflow =
+      lastPostSection && blockExtendsBelowFooter(pageEl, lastPostSection);
+
+    if (!postOverflow) {
+      page1PostShrinkGuardRef.current = 0;
+      return;
+    }
+
+    if (page1PostShrinkGuardRef.current > 80) return;
+    page1PostShrinkGuardRef.current += 1;
+
+    const removed = removeLastPostOverviewParagraph(page1PostSections);
+    if (!removed) return;
+
+    setPage1PostSections((prev) =>
+      postOverviewSectionsEqual(prev, removed.sections) ? prev : removed.sections
+    );
+    setPage2PostSections((prev) => prependPostOverviewParagraph(prev, removed.moved));
+  }, [
+    page1PostSections,
+    page2PostSections,
+    postOverviewContinuesOnPage2,
+    hasPostOnPage1,
+    page1Overview,
+    page2Overview,
+    page1ShowYourDetails,
+    page1ShowSymptoms,
+    interpretation,
+    phLevel,
+    phValue,
+  ]);
+
   const deepDiveContinuesOnPage3 = page3DeepDive.length > 0;
   const serializeDeepDive = (sections) =>
     sections.map((s) => `${s.title ?? ""}\x1f${s.body}`).join("\x1e");
@@ -463,6 +561,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   const showPage2Content =
     hasPage2OverflowDetails ||
     page2InsightsParagraphs.length > 0 ||
+    hasPostOnPage2 ||
     page2DeepDive.length > 0 ||
     showSourcesOnPage2;
   const showPage2 = showPage2Content || showPage3;
@@ -473,11 +572,8 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     if (!pageEl) return;
 
     const deepDiveEl = pageEl.querySelector("[data-deep-dive-section]");
-    const sourcesEl = pageEl.querySelector("[data-sources-section]");
     const sourcesOverflow =
-      page2Citations.length > 0 &&
-      sourcesEl &&
-      blockExtendsBelowFooter(pageEl, sourcesEl);
+      page2Citations.length > 0 && sourcesSectionOverflowsPage(pageEl);
     const deepDiveOverflow =
       page2DeepDive.length > 0 &&
       deepDiveEl &&
@@ -488,11 +584,11 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
       return;
     }
 
-    if (page2ShrinkGuardRef.current > 40) return;
+    if (page2ShrinkGuardRef.current > 120) return;
     page2ShrinkGuardRef.current += 1;
 
     if (sourcesOverflow && page2CitationCount > 0) {
-      setPage2CitationCount((prev) => (prev > 0 ? prev - 1 : prev));
+      setPage2CitationCount((prev) => (prev > 1 ? prev - 1 : 0));
       return;
     }
 
@@ -515,30 +611,51 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     page1ShowSymptoms,
     page2CitationCount,
     citations.length,
+    hasPostOnPage2,
+    page2PostSections,
+    page2DeepDive.length,
   ]);
 
   useLayoutEffect(() => {
     const pageEl = page3Ref.current;
+    const page2El = page2Ref.current;
     if (!pageEl || page3Citations.length === 0) {
       page3ShrinkGuardRef.current = 0;
       return;
     }
 
-    const sourcesEl = pageEl.querySelector("[data-sources-section]");
-    const sourcesOverflow =
-      sourcesEl && blockExtendsBelowFooter(pageEl, sourcesEl);
+    const sourcesOverflow = sourcesSectionOverflowsPage(pageEl);
 
     if (!sourcesOverflow) {
       page3ShrinkGuardRef.current = 0;
       return;
     }
 
-    if (page3ShrinkGuardRef.current > 40) return;
+    if (page3ShrinkGuardRef.current > 120) return;
     page3ShrinkGuardRef.current += 1;
 
-    if (page2CitationCount < citations.length - 1) {
+    // Page 3 full: move one citation back to page 2 only if page 2 still has room.
+    const page2CanTakeMore =
+      page2El &&
+      page2CitationCount < citations.length - 1 &&
+      !sourcesSectionOverflowsPage(page2El);
+
+    if (page2CanTakeMore && page2CitationCount < citations.length - 1) {
       setPage2CitationCount((prev) =>
         prev < citations.length - 1 ? prev + 1 : prev
+      );
+      return;
+    }
+
+    // Deep dive below sources on page 3 — drop deep dive from page 3 so sources can use the page.
+    if (deepDiveContinuesOnPage3 && page3DeepDive.length > 0) {
+      const removed = page3DeepDive[page3DeepDive.length - 1];
+      setPage3DeepDive((prev) => {
+        const next = prev.slice(0, -1);
+        return deepDiveSectionsEqual(prev, next) ? prev : next;
+      });
+      setPage2DeepDive((prev) =>
+        prev.length > 0 && prev[prev.length - 1] === removed ? prev : [...prev, removed]
       );
     }
   }, [
@@ -547,6 +664,8 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     citations.length,
     page3DeepDiveKey,
     deepDiveContinuesOnPage3,
+    page2DeepDiveKey,
+    page2Citations.length,
   ]);
 
   useLayoutEffect(() => {
@@ -581,6 +700,11 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     yourDetails.length,
     reportedSymptoms.length,
     overviewParagraphs.length,
+    postOverviewSections.length,
+    page1PostSections.length,
+    page2PostSections.length,
+    hasPostOnPage1,
+    hasPostOnPage2,
     deepDiveSections.length,
     citations.length,
     showSourcesOnPage2,
@@ -648,8 +772,10 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
               />
 
               {insightsOnPage1 && page1Overview.length > 0 ? (
-                <TailoredInsightsSection overviewParagraphs={page1Overview} />
+                <InsightBulletsSection title="Overview" paragraphs={page1Overview} />
               ) : null}
+
+              {hasPostOnPage1 ? <PostOverviewSections sections={page1PostSections} /> : null}
             </main>
           </ReportPageShell>
         </div>
@@ -673,11 +799,14 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
                 />
 
                 {page2InsightsParagraphs.length > 0 ? (
-                  <TailoredInsightsSection
-                    overviewParagraphs={page2InsightsParagraphs}
+                  <InsightBulletsSection
+                    title="Overview"
+                    paragraphs={page2InsightsParagraphs}
                     showTitle={!(insightsOnPage1 && page1Overview.length > 0)}
                   />
                 ) : null}
+
+                {hasPostOnPage2 ? <PostOverviewSections sections={page2PostSections} /> : null}
 
                 <DeepDiveSection
                   sections={page2DeepDive}
@@ -698,30 +827,32 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
       ) : null}
 
       {showPage3 ? (
-        <div ref={page3Ref}>
-          <ReportPageShell
-            timestamp={timestamp}
-            reportId={reportId}
-            pageNum={3}
-            totalPages={totalPages}
-          >
-            <main className={styles.content} data-page-content>
-              {deepDiveContinuesOnPage3 ? (
-                <DeepDiveSection
-                  sections={page3DeepDive}
-                  showTitle={page2DeepDive.length === 0 && page3DeepDive.length > 0}
-                />
-              ) : null}
-              {page3Citations.length > 0 ? (
-                <SourcesSection
-                  citations={page3Citations}
-                  cardClassName={styles.sourcesCardFull}
-                  startIndex={page2CitationCount}
-                  showHeading={page2CitationCount === 0}
-                />
-              ) : null}
-            </main>
-          </ReportPageShell>
+        <div className={styles.pageBreak}>
+          <div ref={page3Ref}>
+            <ReportPageShell
+              timestamp={timestamp}
+              reportId={reportId}
+              pageNum={3}
+              totalPages={totalPages}
+            >
+              <main className={styles.content} data-page-content>
+                {page3Citations.length > 0 ? (
+                  <SourcesSection
+                    citations={page3Citations}
+                    cardClassName={styles.sourcesCardFull}
+                    startIndex={page2CitationCount}
+                    showHeading
+                  />
+                ) : null}
+                {deepDiveContinuesOnPage3 ? (
+                  <DeepDiveSection
+                    sections={page3DeepDive}
+                    showTitle={page2DeepDive.length === 0 && page3DeepDive.length > 0}
+                  />
+                ) : null}
+              </main>
+            </ReportPageShell>
+          </div>
         </div>
       ) : null}
     </div>
