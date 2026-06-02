@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDeviceFrame } from "../../components/Layout/DeviceFrame/DeviceFrame";
 
@@ -14,6 +15,11 @@ import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
 import StarsIcon from "../../assets/icons/StarsIcon";
 import CitationsIcon from "../../assets/icons/CitationsIcon";
 import ArrowUpLink from "../../assets/icons/ArrowUpLink";
+import CheckBold from "../../assets/icons/CheckBold";
+import ArrowUpRightIcon from "../../assets/icons/ArrowUpRightIcon";
+import ArrowUp_14 from "../../assets/icons/ArrowUp_14";
+import InfoCircle_14 from "../../assets/icons/InfoCircle_14";
+import PhonendoscopeIcon from "../../assets/icons/PhonendoscopeIcon";
 import PhBadge from "../../components/PhBadge/PhBadge";
 
 import { getInterpretationParts } from "../../shared/utils/getInterpretation";
@@ -29,9 +35,12 @@ import {
     PH_SCALE_MIN,
     SCALE_GRADIENT,
     clampPhScale,
+    formatPhOneDecimal,
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
+import { completePageImg } from "../../shared/utils/flowImages";
+import { preloadImage } from "../../shared/utils/preloadImage";
 import styles from "./ResultWithDetailsPage.module.css";
 import phInfoStyles from "../ResultPageTest/ResultPageTest.module.css";
 
@@ -198,11 +207,157 @@ const splitIntoSentences = (rawText) => {
     if (!text) return [];
 
     // Basic sentence splitting for UI bullets.
-    // Keeps punctuation, splits on space after . ! ? when the next chunk looks like a new sentence.
-    return text
-        .split(/(?<=[.!?])\s+(?=[A-Z0-9(])/)
-        .map((s) => s.trim())
+    // Split after `. ! ?` when followed by whitespace/end.
+    // Important: do NOT split inside decimals like `6.1`.
+    const out = [];
+    let start = 0;
+
+    const isDigit = (ch) => ch >= "0" && ch <= "9";
+
+    const pushChunk = (endExclusive) => {
+        const chunk = text.slice(start, endExclusive).trim();
+        if (chunk) out.push(chunk);
+    };
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch !== "." && ch !== "!" && ch !== "?") continue;
+
+        const next = text[i + 1];
+        const followedBySpaceOrEnd = next === " " || next === undefined;
+        if (!followedBySpaceOrEnd) continue;
+
+        if (ch === ".") {
+            const prev = text[i - 1];
+            // Find next non-space char
+            let j = i + 1;
+            while (j < text.length && text[j] === " ") j++;
+            const nextNonSpace = text[j];
+            // Skip decimals (digit . digit)
+            if (isDigit(prev) && isDigit(nextNonSpace)) continue;
+        }
+
+        pushChunk(i + 1);
+        let k = i + 1;
+        while (k < text.length && text[k] === " ") k++;
+        start = k;
+        i = k - 1;
+    }
+
+    pushChunk(text.length);
+    return out;
+};
+
+/**
+ * Split text into chunks that each start with a bold section label.
+ * Supports `**Label:**` (backend) and `**Label** -` (overview normalization).
+ */
+const splitByBoldLabels = (rawText) => {
+    const s = String(rawText ?? "").trim();
+    if (!s) return [];
+
+    const labelRe = /\*\*[^*]+:\*\*|\*\*[^*]+\*\*\s*-\s*/g;
+    const matches = [...s.matchAll(labelRe)];
+    if (matches.length === 0) return [s];
+
+    const chunks = [];
+
+    // Preserve any leading text before the first bold label.
+    const firstIdx = matches[0]?.index ?? 0;
+    if (firstIdx > 0) {
+        const leading = s.slice(0, firstIdx).trim();
+        if (leading) chunks.push(leading);
+    }
+
+    for (let i = 0; i < matches.length; i++) {
+        const start = matches[i].index ?? 0;
+        const end = i + 1 < matches.length ? (matches[i + 1].index ?? s.length) : s.length;
+        const chunk = s.slice(start, end).trim();
+        if (chunk) chunks.push(chunk);
+    }
+    return chunks.length > 0 ? chunks : [s];
+};
+
+/** pH result card (Figma) — static until backend provides card copy. */
+const PH_RESULT_CARD_MOCK = {
+    cardTitle: "Your pH is in the healthy range.",
+    cardBody: "4.5 is balanced for your profile - your vaginal environment looks healthy.",
+};
+
+const toDeepDiveBulletItems = (raw) => {
+    if (raw == null) return [];
+
+    // Backend can send either a string or an array of strings.
+    const parts = Array.isArray(raw) ? raw : [raw];
+
+    // Requirements: split into bullets by sentences (not by paragraphs).
+    // Keep `**bold**` + `[n]` patterns intact for `formatInsightHtml`.
+    const sentences = parts
+        .flatMap((p) => splitByBoldLabels(p))
+        .flatMap((p) => splitIntoSentences(p))
+        .map((s) => String(s ?? "").trim())
         .filter(Boolean);
+
+    return sentences;
+};
+
+const toOverviewBulletItems = (raw) => {
+    if (raw == null) return [];
+    const parts = Array.isArray(raw) ? raw : [raw];
+    return parts
+        .flatMap((p) => splitByBoldLabels(p))
+        .flatMap((p) => splitIntoSentences(p))
+        .map((s) => stripTrailingDash(s))
+        .filter(Boolean);
+};
+
+const withTrailingPeriod = (text) => {
+    const t = String(text ?? "").trim();
+    if (!t) return t;
+    if (/[.!?]$/.test(t)) return t;
+    return `${t}.`;
+};
+
+/** Strip trailing dash from overview bullet text (keeps `**Label** -` mid-line). */
+const stripTrailingDash = (text) =>
+    String(text ?? "")
+        .trim()
+        .replace(/[\s-–—]+$/, "")
+        .trim();
+
+const parseOverviewForUi = (raw) => {
+    const text = Array.isArray(raw) ? raw.join(" ") : String(raw ?? "");
+    const s = text.replace(/\s+/g, " ").trim();
+    if (!s) return null;
+
+    // First bold fragment becomes card title. Next text until next bold becomes body.
+    const firstBold = s.match(/\*\*([^*]+)\*\*/);
+    if (!firstBold?.index && firstBold?.index !== 0) return null;
+
+    const title = (firstBold[1] ?? "").trim();
+    if (!title) return null;
+
+    const afterTitle = s.slice(firstBold.index + firstBold[0].length).trim();
+    // Body ends where the next bold starts (if any).
+    const nextBoldIdx = afterTitle.search(/\*\*[^*]+\*\*/);
+    const bodyRaw =
+        nextBoldIdx >= 0 ? afterTitle.slice(0, nextBoldIdx).trim() : afterTitle;
+
+    // Remove dash between title and body (leading/trailing, e.g. "**Title** - body -")
+    const body = bodyRaw
+        .replace(/^[\s-–—]+/, "")
+        .replace(/[\s-–—]+$/, "")
+        .trim();
+
+    const restRaw = nextBoldIdx >= 0 ? afterTitle.slice(nextBoldIdx).trim() : "";
+
+    // In the remaining text, convert "**Label:**" into "**Label** -"
+    // so UI shows dash after the highlighted label.
+    const restNormalized = restRaw.replace(/\*\*([^*]+):\*\*/g, "**$1** -");
+
+    const bullets = toOverviewBulletItems(restNormalized).map(formatInsightHtml);
+
+    return { title: withTrailingPeriod(title), body, bullets };
 };
 
 const ResultWithDetailsPage = () => {
@@ -211,10 +366,44 @@ const ResultWithDetailsPage = () => {
     const [infoOpen, setInfoOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const { state } = useLocation();
-    const phValue = state?.phValue;
+    const phValue = state?.phValue ?? state?.ph_value;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
     const backendInterpretation = state?.interpretation;
+
+    const badgeBgByPhLevel = {
+        Normal: "#F1F6F4",
+        "Slightly Elevated": "#E6F2F4",
+        Elevated: "#EFF1FA",
+        "Slightly Low": "#E9EAEB",
+    };
+
+    const resultThemeByPhLevel = {
+        Normal: {
+            backgroundColor: "rgba(198, 201, 85, 0.12)",
+            borderColor: "#C6C955",
+        },
+        "Slightly Elevated": {
+            backgroundColor: "rgba(82, 99, 56, 0.12)",
+            borderColor: "#526338",
+        },
+        Elevated: {
+            backgroundColor: "rgba(12, 20, 70, 0.12)",
+            borderColor: "#0C1446",
+        },
+    };
+
+    const resultTheme = phLevel ? resultThemeByPhLevel[phLevel] : null;
+    const levelPhBackground =
+        resultTheme?.backgroundColor ?? (phLevel ? badgeBgByPhLevel[phLevel] : null) ?? "#F1F6F4";
+    const levelPhBorderColor = resultTheme?.borderColor ?? "#263E3A";
+
+    const PhResultCardIcon =
+        phLevel === "Slightly Elevated"
+            ? ArrowUpRightIcon
+            : phLevel === "Elevated"
+                ? ArrowUp_14
+                : CheckBold;
     const { lead: computedLead, suffix: computedSuffix } = getInterpretationParts(
         phLevel,
         Number(phValue).toFixed(2)
@@ -224,21 +413,123 @@ const ResultWithDetailsPage = () => {
     const interpretation = backendInterpretation ? String(backendInterpretation) : `${computedLead}${computedSuffix}`;
     const backendOverview = state?.overview;
     const currentRecommendations = state?.recommendations;
+    const deepDiveRaw = {
+        your_ph: state?.your_ph,
+        your_symptoms: state?.your_symptoms,
+        your_personal_baseline: state?.your_personal_baseline,
+        your_health_context: state?.your_health_context,
+        next_steps: state?.next_steps,
+    };
     const rawCitations = state?.citations ?? [];
     const { handleExport } = useExportResults();
     const scaleRef = useRef(null);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
     const pageRef = useRef(null);
     const insightsHeadingRef = useRef(null);
+    const insightsStickyHeaderRef = useRef(null);
+    const tabPanelsRef = useRef(null);
+    const tabScrollStabilizerRef = useRef(null);
+    const insightsPinScrollTopRef = useRef(0);
+    const tabSwitchScrollStateRef = useRef(null);
     const citationsContentRef = useRef(null);
-    const overviewPanelRef = useRef(null);
-    const deepDivePanelRef = useRef(null);
-    const sourcesPanelRef = useRef(null);
     const pendingCitationRef = useRef(null);
-    const [activePanelHeight, setActivePanelHeight] = useState(0);
     const [highlightedCitationRef, setHighlightedCitationRef] = useState(null);
 
     const getScrollOffset = () => (window.matchMedia("(max-width: 767px)").matches ? 80 : 140);
+
+    const getInsightsStickyTop = () => (window.matchMedia("(max-width: 767px)").matches ? 56 : 0);
+
+    const getScrollerClientTop = (scroller) => {
+        if (!scroller || scroller === window) return 0;
+        return scroller.getBoundingClientRect().top;
+    };
+
+    const getPageScroller = () => {
+        const host = pageRef.current ?? document.body;
+        return findScrollableAncestor(host) || window;
+    };
+
+    const getScrollTop = (scroller) => {
+        if (!scroller || scroller === window) return window.scrollY || 0;
+        return scroller.scrollTop || 0;
+    };
+
+    const setScrollTop = (scroller, top) => {
+        const t = Math.max(0, top);
+        if (!scroller || scroller === window) {
+            window.scrollTo({ top: t, behavior: "auto" });
+            return;
+        }
+        scroller.scrollTo({ top: t, behavior: "auto" });
+    };
+
+    const getMaxScrollTop = (scroller) => {
+        if (!scroller || scroller === window) {
+            const root = document.scrollingElement;
+            if (!root) return 0;
+            return Math.max(0, root.scrollHeight - root.clientHeight);
+        }
+        return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    };
+
+    const measureInsightsPinScrollTop = () => {
+        const header = insightsStickyHeaderRef.current;
+        const panels = tabPanelsRef.current;
+        if (!header || !panels) return insightsPinScrollTopRef.current ?? 0;
+
+        const scroller = getPageScroller();
+        const stickyTop = getInsightsStickyTop();
+        const scrollerTop = getScrollerClientTop(scroller);
+        const currentScroll = getScrollTop(scroller);
+        const headerHeight = header.getBoundingClientRect().height;
+        const panelsRect = panels.getBoundingClientRect();
+        const panelsDocTop = currentScroll + panelsRect.top - scrollerTop;
+
+        return Math.max(0, panelsDocTop - headerHeight - stickyTop);
+    };
+
+    const updateInsightsPinScrollTopCache = () => {
+        insightsPinScrollTopRef.current = measureInsightsPinScrollTop();
+    };
+
+    const setStabilizerHeight = (px) => {
+        const el = tabScrollStabilizerRef.current;
+        if (!el) return;
+        el.style.height = px > 0 ? `${Math.ceil(px)}px` : "0px";
+    };
+
+    const applyPinnedTabView = (savedPinScrollTop) => {
+        const header = insightsStickyHeaderRef.current;
+        const panels = tabPanelsRef.current;
+        if (!header || !panels) return;
+
+        const scroller = getPageScroller();
+        const currentScroll = getScrollTop(scroller);
+        const pinScrollTop =
+            savedPinScrollTop ?? measureInsightsPinScrollTop();
+
+        if (pinScrollTop <= 0) {
+            setStabilizerHeight(0);
+            return;
+        }
+
+        // User hasn't reached insights yet — keep their scroll position.
+        if (currentScroll + 4 < pinScrollTop) {
+            setStabilizerHeight(0);
+            return;
+        }
+
+        let maxScroll = getMaxScrollTop(scroller);
+        const neededStabilizer = Math.max(0, Math.ceil(pinScrollTop - maxScroll + 4));
+        if (neededStabilizer > 0) {
+            setStabilizerHeight(neededStabilizer);
+            maxScroll = getMaxScrollTop(scroller);
+        } else {
+            setStabilizerHeight(0);
+        }
+
+        setScrollTop(scroller, Math.min(Math.max(0, pinScrollTop), maxScroll));
+    };
 
     const scrollElementIntoView = (el) => {
         if (!el) return;
@@ -275,22 +566,8 @@ const ResultWithDetailsPage = () => {
     const scheduleScrollToCitation = (refNum) => {
         const run = () => scrollToCitation(refNum);
         requestAnimationFrame(() => requestAnimationFrame(run));
-
-        const tabPanels = sourcesPanelRef.current?.parentElement;
-        const timeoutId = window.setTimeout(run, 320);
-
-        const onTransitionEnd = (e) => {
-            if (e.target === tabPanels && e.propertyName === "height") {
-                window.clearTimeout(timeoutId);
-                run();
-            }
-        };
-        tabPanels?.addEventListener("transitionend", onTransitionEnd);
-
-        return () => {
-            window.clearTimeout(timeoutId);
-            tabPanels?.removeEventListener("transitionend", onTransitionEnd);
-        };
+        const timeoutId = window.setTimeout(run, 100);
+        return () => window.clearTimeout(timeoutId);
     };
 
     const goToSource = (refNum) => {
@@ -312,17 +589,20 @@ const ResultWithDetailsPage = () => {
         goToSource(refNum);
     };
 
-    const scrollToInsightsIfNeeded = () => {
-        const el = insightsHeadingRef.current;
-        if (!el) return;
+    const onTabClick = (nextTab) => {
+        if (nextTab === activeTab) return;
 
-        scrollElementIntoView(el);
-    };
+        const shouldScrollToPanelTop = pendingCitationRef.current == null;
+        if (!shouldScrollToPanelTop) {
+            tabSwitchScrollStateRef.current = { scrollToPanelTop: false };
+            setActiveTab(nextTab);
+            return;
+        }
 
-    const activateTab = (nextTab) => {
-        setActiveTab(nextTab);
-        // 2 RAFs: let React paint the new panel before measuring/scrolling
-        requestAnimationFrame(() => requestAnimationFrame(scrollToInsightsIfNeeded));
+        const pinScrollTop = measureInsightsPinScrollTop();
+        tabSwitchScrollStateRef.current = { scrollToPanelTop: true, pinScrollTop };
+        flushSync(() => setActiveTab(nextTab));
+        requestAnimationFrame(() => applyPinnedTabView(pinScrollTop));
     };
 
     const handleImportedData = (data) => {
@@ -354,6 +634,10 @@ const ResultWithDetailsPage = () => {
         console.log("[ResultWithDetailsPage] `citations`:", state?.citations);
     }, [state]);
 
+    useEffect(() => {
+        preloadImage(completePageImg);
+    }, []);
+
     const detailOptions = useDetailsFromState(state);
     const detailsList = detailOptions.map((item, idx) => (
         <div key={`${item}-${idx}`} className={styles.item}>{item}</div>
@@ -378,8 +662,22 @@ const ResultWithDetailsPage = () => {
         .map(p => p.trim())
         .filter(Boolean);
 
-    const overviewParagraphs = splitIntoSentences(backendOverview).map(formatInsightHtml);
-
+    const parsedOverview = parseOverviewForUi(backendOverview);
+    const overviewParagraphs =
+        parsedOverview?.bullets ??
+        toOverviewBulletItems(backendOverview).map(formatInsightHtml);
+    const deepDiveSections = [
+        { title: "Your ph", raw: deepDiveRaw.your_ph },
+        { title: "Your symptoms", raw: deepDiveRaw.your_symptoms },
+        { title: "Your personal baseline", raw: deepDiveRaw.your_personal_baseline },
+        { title: "Your health context", raw: deepDiveRaw.your_health_context },
+        { title: "Next steps", raw: deepDiveRaw.next_steps },
+    ]
+        .map((s) => ({
+            title: s.title,
+            items: toDeepDiveBulletItems(s.raw).map((text) => ({ text })),
+        }))
+        .filter((s) => s.items.length > 0);
     const citations = Array.isArray(rawCitations)
         ? rawCitations
             .map((c) => {
@@ -412,22 +710,33 @@ const ResultWithDetailsPage = () => {
         : [];
 
     useLayoutEffect(() => {
-        const panelEl =
-            activeTab === "overview"
-                ? overviewPanelRef.current
-                : activeTab === "deepDive"
-                    ? deepDivePanelRef.current
-                    : sourcesPanelRef.current;
+        updateInsightsPinScrollTopCache();
+        window.addEventListener("resize", updateInsightsPinScrollTopCache);
+        return () => window.removeEventListener("resize", updateInsightsPinScrollTopCache);
+    }, [infoOpen, overviewParagraphs.length, deepDiveSections.length, citations.length]);
 
-        if (!panelEl) return;
+    useEffect(() => {
+        const onScroll = () => updateInsightsPinScrollTopCache();
+        const scroller = getPageScroller();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        scroller?.addEventListener?.("scroll", onScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            scroller?.removeEventListener?.("scroll", onScroll);
+        };
+    }, []);
 
-        const measure = () => setActivePanelHeight(panelEl.scrollHeight);
-        measure();
+    useLayoutEffect(() => {
+        const saved = tabSwitchScrollStateRef.current;
+        if (!saved?.scrollToPanelTop) return undefined;
 
-        const ro = new ResizeObserver(() => measure());
-        ro.observe(panelEl);
-        return () => ro.disconnect();
-    }, [activeTab, overviewParagraphs.length, paragraphs.length, citations.length]);
+        const pinScrollTop = saved.pinScrollTop;
+        tabSwitchScrollStateRef.current = null;
+
+        applyPinnedTabView(pinScrollTop);
+        const frameId = requestAnimationFrame(() => applyPinnedTabView(pinScrollTop));
+        return () => window.cancelAnimationFrame(frameId);
+    }, [activeTab, overviewParagraphs.length, deepDiveSections.length, citations.length]);
 
     useLayoutEffect(() => {
         if (activeTab !== "sources" || !pendingCitationRef.current) return;
@@ -464,7 +773,7 @@ const ResultWithDetailsPage = () => {
                         <h1 className={styles.title}>Your full pH result</h1>
                         <div className={styles.visualBlock}>
                             <div className={styles.visualBlockTop}>
-                                <PhBadge level={phLevel} />
+                                <PhBadge level={phLevel} variant="result" />
                                 <div className={styles.actions}>
                                     <button
                                         type="button"
@@ -496,7 +805,7 @@ const ResultWithDetailsPage = () => {
                                     />
                                 </div>
                             </div>
-                            <div className={styles.num}>{Number(phValue).toFixed(2)}</div>
+                            <div className={styles.num}>{formatPhOneDecimal(phValue, MIN_PH, MAX_PH)}</div>
                             <div className={styles.date}>{timestamp}</div>
                             <div ref={scaleRef} className={styles.scale} role="presentation">
                                 <div
@@ -560,10 +869,6 @@ const ResultWithDetailsPage = () => {
                             </div>
                         </div>
                         <div className={styles.infoBlock}>
-                            <p className={styles.textResult}>
-                                <strong>{interpretationLead}</strong>
-                                {interpretationSuffix}
-                            </p>
                             <div className={styles.details}>
                                 <div className={styles.wrapHeading}>
                                     <h4 className={styles.heading}>Details for this result</h4>
@@ -580,122 +885,230 @@ const ResultWithDetailsPage = () => {
                                 </div>
                             </div>
                             <div className={styles.data}>
-                                <div
-                                    ref={insightsHeadingRef}
-                                    className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
-                                >
-                                    <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
-                                </div>
-                                <div className={styles.SectionTabs}>
-                                    <div className={styles.tabList}>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => activateTab("overview")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("overview");
-                                            }}
-                                        >
-                                            Overview
-                                        </div>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => activateTab("deepDive")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("deepDive");
-                                            }}
-                                        >
-                                            Deep Dive
-                                        </div>
-                                        <div
-                                            className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => activateTab("sources")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") activateTab("sources");
-                                            }}
-                                        >
-                                            Sources
+                                <div ref={insightsStickyHeaderRef} className={styles.insightsStickyHeader}>
+                                    <div
+                                        ref={insightsHeadingRef}
+                                        className={`${styles.wrapHeading} ${styles.insightsHeadingScrollTarget}`}
+                                    >
+                                        <h3 className={styles.heading}><StarsIcon className={styles.recommendationsIcon} />Your personalized insights</h3>
+                                    </div>
+                                    <div className={styles.SectionTabs}>
+                                        <div className={styles.tabList}>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "overview" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("overview")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("overview");
+                                                }}
+                                            >
+                                                Overview
+                                            </div>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "deepDive" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("deepDive")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("deepDive");
+                                                }}
+                                            >
+                                                Deep Dive
+                                            </div>
+                                            <div
+                                                className={`${styles.tab} ${activeTab === "sources" ? styles.active : ""}`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={() => onTabClick("sources")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") onTabClick("sources");
+                                                }}
+                                            >
+                                                Sources
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div
-                                    className={styles.tabPanels}
-                                    style={{ height: activePanelHeight ? `${activePanelHeight}px` : undefined }}
-                                >
+                                <div ref={tabPanelsRef} className={styles.tabPanels}>
                                     <div
-                                        ref={overviewPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "overview" ? styles.tabPanelActive : ""}`}
                                     >
-                                        {overviewParagraphs.length > 0 ? (
-                                            <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                                {overviewParagraphs.map((t, index) => (
-                                                    <div key={index} className={styles.text}>
-                                                        <div className={styles.point}></div>
-                                                        <p
-                                                            className={styles.innerText}
-                                                            dangerouslySetInnerHTML={{ __html: t }}
-                                                        />
-                                                    </div>
-                                                ))}
+                                        <div
+                                            className={styles.phResultCard}
+                                            style={{
+                                                backgroundColor: levelPhBackground,
+                                                "--ph-result-card-border": levelPhBorderColor,
+                                                borderColor: levelPhBorderColor,
+                                            }}
+                                        >
+                                            <div
+                                                className={styles.phResultCardSign}
+                                                style={{ backgroundColor: levelPhBorderColor }}
+                                            >
+                                                <PhResultCardIcon />
                                             </div>
+                                            <div className={styles.phResultCardText}>
+                                                <p className={styles.phResultCardTitle}>
+                                                    {withTrailingPeriod(
+                                                        parsedOverview?.title ?? PH_RESULT_CARD_MOCK.cardTitle
+                                                    )}
+                                                </p>
+                                                <p className={styles.phResultCardBody}>
+                                                    {parsedOverview?.body ?? PH_RESULT_CARD_MOCK.cardBody}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {overviewParagraphs.length > 0 ? (
+                                            <>
+                                                <div className={styles.wrapText} onClick={handleInsightContentClick}>
+                                                    {overviewParagraphs.map((t, index) => (
+                                                        <div key={index} className={styles.text}>
+                                                            <div className={styles.point} />
+                                                            <p
+                                                                className={styles.innerText}
+                                                                dangerouslySetInnerHTML={{ __html: t }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {phLevel === "Slightly Elevated" || phLevel === "Elevated" ? (
+                                                    <div
+                                                        className={styles.phResultCardLevelNote}
+                                                        style={{
+                                                            "--ph-level-note-bg": levelPhBackground,
+                                                            "--ph-level-note-border": levelPhBorderColor,
+                                                        }}
+                                                    >
+                                                        <div
+                                                            className={styles.phResultCardLevelNoteSign}
+                                                            style={{ backgroundColor: levelPhBorderColor }}
+                                                        >
+                                                            {phLevel === "Elevated" ? <PhonendoscopeIcon /> : <InfoCircle_14 />}
+                                                        </div>
+                                                        <div className={styles.phResultCardLevelNoteText}>
+                                                            <p className={styles.phResultCardLevelNoteTitle}>
+                                                                {phLevel === "Elevated"
+                                                                    ? "Speaking with a doctor is a good next step."
+                                                                    : "Worth keeping an eye on."}
+                                                            </p>
+                                                            <p className={styles.phResultCardLevelNoteBody}>
+                                                                {phLevel === "Elevated"
+                                                                    ? "An elevated pH alone is not a diagnosis. A brief consultation can confirm what's happening and rule out conditions like bacterial vaginosis. Most are highly treatable."
+                                                                    : "A single slightly elevated reading often has a temporary cause. If this level repeats in your next test, mentioning it to your doctor is a sensible step - there's no need to rush."}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+                                            </>
                                         ) : (
                                             <>
                                                 <h4 className={styles.overviewTitle}>Your microbiome looks balanced.</h4>
-                                                <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                                    {[
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                        "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
-                                                    ].map((t, index) => (
-                                                        <div key={index} className={styles.text}>
-                                                            <div className={styles.point}></div>
-                                                            <p className={styles.innerText}>
-                                                                {t}{" "}
-                                                                <button
-                                                                    type="button"
-                                                                    className={styles.bracketRefLink}
-                                                                    data-citation-ref="2"
-                                                                    aria-label="View source 2"
-                                                                >
-                                                                    [2]
-                                                                </button>
-                                                                .
-                                                            </p>
+                                                <>
+                                                    <div className={styles.wrapText} onClick={handleInsightContentClick}>
+                                                        {[
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                            "Your pH is maintained by Lactobacillus - good bacteria that produce lactic acid to fight off infections",
+                                                        ].map((t, index) => (
+                                                            <div key={index} className={styles.text}>
+                                                                <div className={styles.point} />
+                                                                <p className={styles.innerText}>
+                                                                    {t}{" "}
+                                                                    <button
+                                                                        type="button"
+                                                                        className={styles.bracketRefLink}
+                                                                        data-citation-ref="2"
+                                                                        aria-label="View source 2"
+                                                                    >
+                                                                        [2]
+                                                                    </button>
+                                                                    .
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                        <p className={styles.overviewNote}>
+                                                            Consult your healthcare provider can help ensure everything is as it should be.
+                                                        </p>
+                                                    </div>
+                                                    {phLevel === "Slightly Elevated" || phLevel === "Elevated" ? (
+                                                        <div
+                                                            className={styles.phResultCardLevelNote}
+                                                            style={{
+                                                                "--ph-level-note-bg": levelPhBackground,
+                                                                "--ph-level-note-border": levelPhBorderColor,
+                                                            }}
+                                                        >
+                                                            <div
+                                                                className={styles.phResultCardLevelNoteSign}
+                                                                style={{ backgroundColor: levelPhBorderColor }}
+                                                            >
+                                                                {phLevel === "Elevated" ? <PhonendoscopeIcon /> : <InfoCircle_14 />}
+                                                            </div>
+                                                            <div className={styles.phResultCardLevelNoteText}>
+                                                                <p className={styles.phResultCardLevelNoteTitle}>
+                                                                    {phLevel === "Elevated"
+                                                                        ? "Speaking with a doctor is a good next step."
+                                                                        : "Worth keeping an eye on."}
+                                                                </p>
+                                                                <p className={styles.phResultCardLevelNoteBody}>
+                                                                    {phLevel === "Elevated"
+                                                                        ? "An elevated pH alone is not a diagnosis. A brief consultation can confirm what's happening and rule out conditions like bacterial vaginosis. Most are highly treatable."
+                                                                        : "A single slightly elevated reading often has a temporary cause. If this level repeats in your next test, mentioning it to your doctor is a sensible step - there's no need to rush."}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    ))}
-                                                    <p className={styles.overviewNote}>
-                                                        Consult your healthcare provider can help ensure everything is as it should be.
-                                                    </p>
-                                                </div>
+                                                    ) : null}
+                                                </>
                                             </>
                                         )}
                                     </div>
 
                                     <div
-                                        ref={deepDivePanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "deepDive" ? styles.tabPanelActive : ""}`}
                                     >
-                                        <div className={styles.wrapText} onClick={handleInsightContentClick}>
-                                            {paragraphs.map((rec, index) => (
-                                                <div key={index} className={styles.text}>
-                                                    <div className={styles.point}></div>
-                                                    <p
-                                                        className={styles.innerText}
-                                                        dangerouslySetInnerHTML={{ __html: rec }}
-                                                    />
-                                                </div>
+                                        <div
+                                            className={styles.deepDiveResearch}
+                                            onClick={handleInsightContentClick}
+                                        >
+                                            {deepDiveSections.map((section) => (
+                                                <section
+                                                    key={section.title}
+                                                    className={styles.deepDiveCard}
+                                                >
+                                                    <div className={styles.deepDiveCardTitleRow}>
+                                                        <h4 className={styles.deepDiveCardTitle}>
+                                                            {section.title}
+                                                        </h4>
+                                                        <hr
+                                                            className={styles.deepDiveCardDivider}
+                                                            aria-hidden
+                                                        />
+                                                    </div>
+                                                    {section.items.map((item, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={styles.deepDiveBulletRow}
+                                                        >
+                                                            <div
+                                                                className={styles.deepDiveBullet}
+                                                                aria-hidden
+                                                            />
+                                                            <p
+                                                                className={styles.deepDiveBulletText}
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: formatInsightHtml(item.text),
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </section>
                                             ))}
                                         </div>
                                     </div>
 
                                     <div
-                                        ref={sourcesPanelRef}
                                         className={`${styles.tabPanel} ${activeTab === "sources" ? styles.tabPanelActive : ""}`}
                                     >
                                         <div className={`${styles.source} ${styles.sourceNoGapFromRecommendations}`}>
@@ -774,6 +1187,11 @@ const ResultWithDetailsPage = () => {
                                         </div>
                                     </div>
                                 </div>
+                                <div
+                                    ref={tabScrollStabilizerRef}
+                                    className={styles.tabScrollStabilizer}
+                                    aria-hidden
+                                />
                             </div>
                         </div>
                     </div>
@@ -802,7 +1220,7 @@ const ResultWithDetailsPage = () => {
                 </BottomBlock>
             </div>
         </>
-    )
+    );
 };
 
 export default ResultWithDetailsPage;

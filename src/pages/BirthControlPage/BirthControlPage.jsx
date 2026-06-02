@@ -13,6 +13,7 @@ import {
     writeAddDetailsDraft,
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { readActiveResultMeta, writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
+import { goToAnalyzingData } from "../../shared/utils/flowImages";
 import { writePendingAnalysis } from "../../shared/utils/pendingAnalysisSessionStorage";
 
 const BirthControlPage = () => {
@@ -76,7 +77,7 @@ const BirthControlPage = () => {
             alert("Missing pH result. Please go back and complete the test.");
             return;
         }
-        navigate("/analyzing-data", { state: nextState });
+        goToAnalyzingData(navigate, nextState);
     };
 
     const handleGoBack = () => {

@@ -25,6 +25,8 @@ import {
 } from "../../shared/utils/addDetailsSkipStorage";
 import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
+import { analyzingDataPageImg, goToAnalyzingData } from "../../shared/utils/flowImages";
+import { preloadImage } from "../../shared/utils/preloadImage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 
 const computeSymptomsSectionIssues = (
@@ -308,19 +310,24 @@ const SymptomsPage = () => {
                 return "/analyzing-data";
             })();
 
-            navigate(nextPath, {
-                state: {
-                    ...state,
-                    discharge: [],
-                    vulvaCondition: [],
-                    smell: [],
-                    urination: [],
-                    notes: "",
-                    lifeStage,
-                    hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
-                    currentMedications,
-                },
-            });
+            const nextState = {
+                ...state,
+                discharge: [],
+                vulvaCondition: [],
+                smell: [],
+                urination: [],
+                notes: "",
+                lifeStage,
+                hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
+                currentMedications,
+            };
+
+            if (nextPath === "/analyzing-data") {
+                goToAnalyzingData(navigate, nextState);
+                return;
+            }
+
+            navigate(nextPath, { state: nextState });
             return;
         }
 
@@ -373,19 +380,24 @@ const SymptomsPage = () => {
             return "/analyzing-data";
         })();
 
-        navigate(nextPath, {
-            state: {
-                ...state,
-                discharge: stripUiTokens(discharge),
-                vulvaCondition: stripUiTokens(vulvaCondition),
-                smell: stripUiTokens(smell),
-                urination: stripUiTokens(urination),
-                notes,
-                lifeStage,
-                hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
-                currentMedications,
-            },
-        });
+        const nextState = {
+            ...state,
+            discharge: stripUiTokens(discharge),
+            vulvaCondition: stripUiTokens(vulvaCondition),
+            smell: stripUiTokens(smell),
+            urination: stripUiTokens(urination),
+            notes,
+            lifeStage,
+            hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
+            currentMedications,
+        };
+
+        if (nextPath === "/analyzing-data") {
+            goToAnalyzingData(navigate, nextState);
+            return;
+        }
+
+        navigate(nextPath, { state: nextState });
     };
 
     const handleGoBack = () => {
@@ -413,6 +425,10 @@ const SymptomsPage = () => {
         const hasFertilityTreatment = meds.includes("Fertility treatment");
         return !hasBirthControl && !hasFertilityTreatment;
     })();
+
+    useEffect(() => {
+        preloadImage(analyzingDataPageImg);
+    }, []);
 
     return (
         <>

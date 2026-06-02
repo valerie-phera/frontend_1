@@ -1,85 +1,124 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import homePageImg from "../../assets/images/homePageImg.webp"
+import homePageImg from "../../assets/images/homePageImg.webp";
 
 import Button from "../../components/Button/Button";
 import Container from "../../components/Container/Container";
 import ImageWrapper from "../../components/ImageWrapper/ImageWrapper";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 
+import ShieldIcon from "../../assets/icons/ShieldIcon";
+import ClockIcon from "../../assets/icons/ClockIcon";
+import StarsIcon from "../../assets/icons/StarsIcon";
+import EditIcon from "../../assets/icons/EditIcon";
+
 import styles from "./HomePageTest.module.css";
 
 const CONSENT_STORAGE_KEY = "phera_privacy_and_consent";
 
 const HomePageTest = () => {
-    const navigate = useNavigate();
-    const [isConfirmed, setIsConfirmed] = useState(false);
+  const navigate = useNavigate();
 
-    const checkboxId = useMemo(() => "home-age-confirm", []);
+  useEffect(() => {
+    // Returning to the start (incl. via logo) should reset the flow.
+    try {
+      sessionStorage.removeItem(CONSENT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
 
-    useEffect(() => {
-        // Coming back to the start means a new flow — reset any previously stored consents.
-        try {
-            sessionStorage.removeItem(CONSENT_STORAGE_KEY);
-        } catch {
-            // ignore
-        }
-    }, []);
-
-    const handleContinue = () => {
-        if (!isConfirmed) return;
-        navigate("/privacy-and-consent", { state: { resetConsent: true } });
-    };
-
-    return (
-        <>
-            <div className={styles.content}>
-                <Container>
-                    <div className={styles.imgWrap}>
-                        <div className={styles.img}>
-                            <ImageWrapper src={homePageImg} alt="Home page img"/>
-                        </div>
-                    </div>
-                    <div className={styles.textBlock}>
-                        <div className={styles.greeting}>PRIVACY & SECURITY</div>
-                        <h1 className={styles.heading}>Before we begin</h1>
-                        <p className={styles.text}>
-                            This service processes health-related information and is intended only for users aged 18 and over.
-                        </p>
-                        <label className={styles.checkBlock} htmlFor={checkboxId}>
-                            <div className={styles.input}>
-                                <input
-                                    id={checkboxId}
-                                    type="checkbox"
-                                    checked={isConfirmed}
-                                    onChange={(e) => setIsConfirmed(e.target.checked)}
-                                />
-                            </div>
-                            <div className={styles.checkBlockText}>I confirm that I am <span>at least 18 years old.</span></div>
-                        </label>
-                        <div className={styles.infoBox}>
-                            <div className={styles.infoItem}>
-                                <div className={styles.infoPunkt}></div>
-                                <div className={styles.infoText}>By continuing you agree to pHera processing your health data as described in the next screen.</div>
-                            </div>
-                            <div className={styles.infoItem}>
-                                <div className={styles.infoPunkt}></div>
-                                <div className={styles.infoText}>You may use this service anonymously. No account is required.</div>
-                            </div>
-                        </div>
-                    </div>
-                </Container>
-                <BottomBlock>
-                    <div className={styles.btnsBlock}>
-                        <Button onClick={handleContinue} disabled={!isConfirmed}>
-                            Continue
-                        </Button>
-                        <div className={styles.bottomText}><p>You must confirm your age before proceeding.</p> </div>
-                    </div>
-                </BottomBlock>
+  return (
+    <>
+      <div className={styles.content}>
+        <Container>
+          <div className={styles.section}>
+            <div className={styles.topImage}>
+              <ImageWrapper src={homePageImg} alt="Home page" />
             </div>
-        </>
-    )
+
+            <div className={styles.textBlock}>
+              <h1 className={styles.heading}>Before we begin</h1>
+              <p className={styles.subheading}>
+                A few things we want you to know before you start.
+              </p>
+            </div>
+
+            <div className={styles.card}>
+              <div className={styles.cardRow}>
+                <div className={styles.icon}>
+                  <ShieldIcon />
+                </div>
+                <div className={styles.rowText}>
+                  <div className={styles.rowTitle}>Completely anonymous</div>
+                  <div className={styles.rowBody}>
+                    You can use this service without an account. We do not collect
+                    or store information that identifies you.
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.cardRow}>
+                <div className={styles.icon}>
+                  <ClockIcon />
+                </div>
+                <div className={styles.rowText}>
+                  <div className={styles.rowTitle}>Session data is temporary</div>
+                  <div className={styles.rowBody}>
+                    Without an account, your session data is not stored between
+                    sessions and is not used to identify you across visits.
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.cardRow}>
+                <div className={styles.icon}>
+                  <StarsIcon />
+                </div>
+                <div className={styles.rowText}>
+                  <div className={styles.rowTitle}>Personalized health insights</div>
+                  <div className={styles.rowBody}>
+                    Insights are generated with the help of AI based on published
+                    scientific research and your inputs. They are for informational
+                    purposes only and do not constitute medical advice.
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.cardRowLast}>
+                <div className={styles.icon}>
+                  <EditIcon />
+                </div>
+                <div className={styles.rowText}>
+                  <div className={styles.rowTitle}>You choose what to share</div>
+                  <div className={styles.rowBody}>
+                    All additional inputs are optional. They are used only to improve
+                    the relevance of your results. Please avoid sharing names, contact
+                    details, or addresses.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+
+        <BottomBlock>
+          <div className={styles.btnsBlock}>
+            <Button
+              onClick={() =>
+                navigate("/privacy-and-consent", { state: { resetConsent: true } })
+              }
+            >
+              Continue
+            </Button>
+            <div className={styles.bottomText}>
+              <p>We respect your privacy. Only you can save and see your results. </p>
+            </div>
+          </div>
+        </BottomBlock>
+      </div>
+    </>
+  );
 };
 
 export default HomePageTest

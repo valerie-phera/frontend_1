@@ -2,7 +2,9 @@ export const PH_SCALE_MIN = 3.5;
 export const PH_SCALE_MAX = 7.0;
 
 export const SCALE_SEGMENT_COLORS = ["#C6C955", "#60866E", "#526338", "#33372D", "#0C1446"];
-export const SCALE_GRADIENT = `linear-gradient(90deg, ${SCALE_SEGMENT_COLORS.join(", ")})`;
+/** Same stops as Figma pH scale — marker samples must match `.scale` background */
+export const SCALE_GRADIENT =
+    "linear-gradient(90deg, #C6C955 0%, #526338 25%, #526338 50%, #33372D 75%, #0C1446 100%)";
 
 /** Must match `.scaleMarker` width/height in result page CSS modules */
 export const MARKER_PX = 24;
@@ -17,6 +19,13 @@ export const clampPhScale = (n, min = PH_SCALE_MIN, max = PH_SCALE_MAX) => {
     const x = Number(n);
     if (Number.isNaN(x)) return min;
     return Math.min(max, Math.max(min, x));
+};
+
+/** Display pH with exactly one decimal (4 → "4.0", 4.3 → "4.3"). */
+export const formatPhOneDecimal = (value, min = PH_SCALE_MIN, max = PH_SCALE_MAX) => {
+    const raw = Number(value);
+    if (!Number.isFinite(raw)) return "";
+    return clampPhScale(raw, min, max).toFixed(1);
 };
 
 const phToTravelT = (ph, min, max) => (clampPhScale(ph, min, max) - min) / (max - min);

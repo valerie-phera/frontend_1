@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppLayout from "./Layout/AppLayout";
 
 import ScrollToTop from "./ScrollToTop/ScrollToTop";
+import { preloadAnalyzingFlowImages } from "../shared/utils/flowImages";
 import HomePageTest from "../pages/HomePageTest/HomePageTest";
 import PrivacyAndConsentPage from "../pages/PrivacyAndConsentPage/PrivacyAndConsentPage";
 import HowItWorksPage from "../pages/HowItWorksPage/HowItWorksPage";
@@ -31,6 +33,18 @@ import ReportPrintPage from "../pages/ReportPrintPage/ReportPrintPage";
 import "../shared/styles/style.css";
 
 function App() {
+  useEffect(() => {
+    const run = () => {
+      preloadAnalyzingFlowImages();
+    };
+    const idle = window.requestIdleCallback?.(run, { timeout: 1500 });
+    if (idle === undefined) {
+      const t = window.setTimeout(run, 200);
+      return () => window.clearTimeout(t);
+    }
+    return () => window.cancelIdleCallback?.(idle);
+  }, []);
+
   return (
     <>
       <ScrollToTop />

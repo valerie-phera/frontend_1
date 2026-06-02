@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { goToAnalyzingData } from "../../../shared/utils/flowImages";
 import NextStepsPage from "../NextStepsPage";
 
 import BottomBlock from "../../../components/BottomBlock/BottomBlock";
@@ -19,7 +20,7 @@ const NextStepsFertilityTreatmentPage = () => {
                     Add fertility treatment
                 </Button>
                 <ButtonReverse
-                    onClick={() => navigate("/analyzing-data", { state })}
+                    onClick={() => goToAnalyzingData(navigate, state)}
                 >
                     View report now
                 </ButtonReverse>

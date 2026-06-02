@@ -5,6 +5,8 @@ import logo from "../../../assets/logo.svg";
 import TryAgainIcon from "../../../assets/icons/TryAgainIcon";
 import styles from "./DeviceFrame.module.css";
 import StatusBar from "./StatusBar.jsx";
+import { completePageImg } from "../../../shared/utils/flowImages";
+import { preloadImage } from "../../../shared/utils/preloadImage";
 
 const DeviceFrameContext = createContext({
   isDesktop: false,
@@ -38,6 +40,7 @@ const DeviceFrame = ({ children }) => {
     const { _desktopCompletion: _removed, ...rest } = location.state ?? {};
     // Persist latest results so `/test-complete` can be refreshed / resized safely.
     try { sessionStorage.setItem(RESULT_STATE_KEY, JSON.stringify(rest ?? null)); } catch { /* ignore */ }
+    preloadImage(completePageImg);
     navigate("/test-complete", { state: rest });
   }, [navigate, location.state]);
 

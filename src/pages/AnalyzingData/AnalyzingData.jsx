@@ -190,6 +190,13 @@ const AnalyzingData = () => {
                         interpretation: nextInterpretation,
                         overview: backendResponse?.overview ?? state?.overview,
                         recommendations: backendResponse?.agent_reply ?? state?.recommendations,
+                        your_ph: backendResponse?.your_ph ?? state?.your_ph,
+                        your_symptoms: backendResponse?.your_symptoms ?? state?.your_symptoms,
+                        your_personal_baseline:
+                            backendResponse?.your_personal_baseline ?? state?.your_personal_baseline,
+                        your_health_context:
+                            backendResponse?.your_health_context ?? state?.your_health_context,
+                        next_steps: backendResponse?.next_steps ?? state?.next_steps,
                         citations: backendResponse?.citations ?? state?.citations ?? [],
                         age: draft?.age ?? state?.age,
                         lifeStage: stripDetailOptions(
@@ -304,7 +311,13 @@ const AnalyzingData = () => {
                 <Container>
                     <div className={styles.imgWrap}>
                         <div className={styles.img}>
-                            <ImageWrapper src={analyzingDataPageImg} alt="Analyzing Data Img" width={243} height={235} />
+                            <ImageWrapper
+                                src={analyzingDataPageImg}
+                                alt="Analyzing Data Img"
+                                width={243}
+                                height={235}
+                                priority
+                            />
                         </div>
                     </div>
                     <div className={styles.textBlock}>

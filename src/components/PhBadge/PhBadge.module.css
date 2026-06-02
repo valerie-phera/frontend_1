@@ -12,6 +12,13 @@
 
 .levelPhText {
     font-size: 12px;
-    color: #263E3A;
+    font-weight: 600;
+    line-height: 16px;
+    color: inherit;
     white-space: nowrap;
+}
+
+.levelPhResult {
+    border-width: 1px;
+    border-style: solid;
 }

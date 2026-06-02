@@ -38,9 +38,8 @@ const AppLayout = ({
                 />
             )}
 
-            {/* wrapper for animation */}
             <main key={pageKey} className={styles.page}>
-                {children}
+                <div className={styles.pageContent}>{children}</div>
             </main>
         </>
     );

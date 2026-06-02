@@ -13,6 +13,25 @@ function findFirstScrollableAncestor(el) {
     return null;
 }
 
+function getAppScrollRoot() {
+    const root = document.getElementById("root");
+    if (!(root instanceof HTMLElement)) return null;
+    const { overflowY } = getComputedStyle(root);
+    const scrolls =
+        overflowY === "auto" ||
+        overflowY === "scroll" ||
+        overflowY === "overlay";
+    return scrolls ? root : null;
+}
+
+function scrollToTop(el) {
+    try {
+        el.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+    } catch {
+        el.scrollTop = 0;
+    }
+}
+
 const ScrollToTop = () => {
     const { pathname } = useLocation();
 
@@ -21,8 +40,13 @@ const ScrollToTop = () => {
             const marked = document.querySelector("[data-scroll-container]");
             if (marked) {
                 const scrollable = findFirstScrollableAncestor(marked) || marked;
-                try { scrollable.scrollTo?.({ top: 0, left: 0, behavior: "auto" }); }
-                catch (e) { scrollable.scrollTop = 0; }
+                scrollToTop(scrollable);
+                return;
+            }
+
+            const appRoot = getAppScrollRoot();
+            if (appRoot) {
+                scrollToTop(appRoot);
                 return;
             }
 
@@ -35,13 +59,12 @@ const ScrollToTop = () => {
                 }
             }
             if (found) {
-                try { found.scrollTo?.({ top: 0, left: 0, behavior: "auto" }); }
-                catch (e) { found.scrollTop = 0; }
+                scrollToTop(found);
                 return;
             }
 
             const sc = document.scrollingElement || document.documentElement;
-            sc.scrollTop = 0;
+            scrollToTop(sc);
             window.scrollTo(0, 0);
         }, 0);
 

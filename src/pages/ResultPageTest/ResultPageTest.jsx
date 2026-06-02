@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
@@ -7,23 +7,26 @@ import PhBadge from "../../components/PhBadge/PhBadge";
 import DownloadIcon from "../../assets/icons/DownloadIcon";
 import InfoCircle_24 from "../../assets/icons/InfoCircle_24";
 import InfoCircleBlack from "../../assets/icons/InfoCircleBlack";
-
 import Minus from "../../assets/icons/Minus";
 import Plus from "../../assets/icons/Plus";
-import LockFill from "../../assets/icons/LockFill";
+import PersonIcon from "../../assets/icons/PersonIcon";
 import ClockFill from "../../assets/icons/ClockFill";
 
-import { getInterpretationParts } from "../../shared/utils/getInterpretation";
 import {
     consumePendingInterceptResultToBasic,
     resolveBasicFormState,
 } from "../../shared/utils/basicFormSessionStorage";
+import {
+    readActiveResultMeta,
+    writeActiveResultMeta,
+} from "../../shared/utils/activeResultSessionStorage";
 import useExportResults from "../../hooks/useExportResults";
 import {
     PH_SCALE_MAX,
     PH_SCALE_MIN,
     SCALE_GRADIENT,
     clientXToPhScale,
+    formatPhOneDecimal,
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
@@ -34,13 +37,67 @@ const MAX_PH = PH_SCALE_MAX;
 const DEFAULT_PH = 4.3;
 const PH_STEP = 0.1;
 
+const DETAIL_TAGS = ["Age", "Ethnicity", "Hormones", "Symptoms"];
+
+const LEVEL_CONFIG = {
+    Normal: {
+        unlockBg: "rgba(198, 201, 85, 0.12)",
+        bullets: [
+            "Ethnic background shifts what a healthy pH looks like.",
+            "Intimate washes or cosmetics can temporarily affect pH.",
+        ],
+    },
+    "Slightly Elevated": {
+        unlockBg: "rgba(82, 99, 56, 0.12)",
+        bullets: [
+            "Intimate wash, soap, or lubricant can raise pH temporarily.",
+            "Antibiotics raise pH by 1–2 points.",
+        ],
+    },
+    Elevated: {
+        unlockBg: "rgba(12, 20, 70, 0.12)",
+        bullets: [
+            "Ethnic background changes what elevated means.",
+            "Life stage - postpartum & perimenopause have higher baselines.",
+        ],
+    },
+};
+
 const clampPh = (n) => {
     const r = Math.round(n * 10) / 10;
     return Math.min(MAX_PH, Math.max(MIN_PH, r));
 };
 
+const getPhLevel = (ph) => {
+    if (ph < 4.5) return "Normal";
+    if (ph >= 4.5 && ph <= 4.9) return "Slightly Elevated";
+    return "Elevated";
+};
+
+const getCardCopy = (level, phValueFixed) => {
+    if (level === "Normal") {
+        return {
+            bold: `A vaginal pH of ${phValueFixed} is within the healthy range. `,
+            regular: "Personalize your result to confirm this is normal for your body.",
+        };
+    }
+    if (level === "Slightly Elevated") {
+        return {
+            bold: `A vaginal pH of ${phValueFixed} is slightly elevated. `,
+            regular:
+                "For many women this is completely normal - depending on your cycle, background, and hormones. Add your details to find out.",
+        };
+    }
+    return {
+        bold: `A vaginal pH of ${phValueFixed} is elevated and not considered within the usual range. `,
+        regular: "Add your details - the picture may be different than it looks.",
+    };
+};
+
 const ResultPageTest = () => {
     const navigate = useNavigate();
+    const { state } = useLocation();
+    const navigationType = useNavigationType();
     const { handleExport } = useExportResults();
 
     useLayoutEffect(() => {
@@ -62,52 +119,43 @@ const ResultPageTest = () => {
         });
     }, [navigate]);
 
-    const getPhLevel = (ph) => {
-        if (ph < 4.5) return "Normal";
-        if (ph >= 4.5 && ph <= 4.9) return "Slightly Elevated";
-        return "Elevated";
-    };
-
-    const getUnlockParagraphs = (level) => {
-        if (level === "Slightly Elevated") {
-            return [
-                "Slight elevation is common during your period, after sex, or with hormonal shifts.",
-                "Adding your details reveals what's likely going on.",
-            ];
-        }
-        if (level === "Elevated") {
-            return [
-                "Elevated pH can mean different things depending on your age, ethnicity, cycle, and hormones.",
-                "Tell us about you to find your personal baseline.",
-            ];
-        }
-        return [
-            "The same pH means something different depending on your biology.",
-            "Tell us about you to find your personal baseline.",
-        ];
-    };
-
     const formatDate = () => {
         const now = new Date();
-
         const day = String(now.getDate()).padStart(2, "0");
         const month = String(now.getMonth() + 1).padStart(2, "0");
         const year = String(now.getFullYear()).slice(-2);
-
         let hours = now.getHours();
         const minutes = String(now.getMinutes()).padStart(2, "0");
         const ampm = hours >= 12 ? "PM" : "AM";
         hours = hours % 12 || 12;
-
-        const date = `${day}.${month}.${year} | ${hours}:${minutes} ${ampm}`;
-        return date;
+        return `${day}.${month}.${year} | ${hours}:${minutes} ${ampm}`;
     };
 
-    const [phValue, setPhValue] = useState(DEFAULT_PH);
+    // Restore previous pH only when user navigates back/forward (POP).
+    // For a fresh entry to /result (PUSH), keep the default value.
+    const activeMeta = navigationType === "POP" ? readActiveResultMeta() : null;
+
+    const [phValue, setPhValue] = useState(() => {
+        const fromNav = state?.phValue;
+        const fromSession = activeMeta?.phValue;
+        const candidate = fromNav ?? fromSession ?? DEFAULT_PH;
+        const n = Number(candidate);
+        return Number.isFinite(n) ? clampPh(n) : DEFAULT_PH;
+    });
+
+    const [timestamp, setTimestamp] = useState(() => {
+        // Keep stable across renders and back/forward navigation.
+        return state?.timestamp ?? activeMeta?.timestamp ?? formatDate();
+    });
     const [isDragging, setIsDragging] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
     const [scaleWidthPx, setScaleWidthPx] = useState(0);
     const scaleRef = useRef(null);
+
+    useEffect(() => {
+        // Persist current result so browser back keeps user choice.
+        writeActiveResultMeta({ phValue, timestamp });
+    }, [phValue, timestamp]);
 
     useLayoutEffect(() => {
         const el = scaleRef.current;
@@ -156,8 +204,7 @@ const ResultPageTest = () => {
     };
 
     const phLevel = getPhLevel(phValue);
-    const unlockParagraphs = getUnlockParagraphs(phLevel);
-    const timestamp = formatDate();
+    const levelConfig = LEVEL_CONFIG[phLevel];
     const { leftPercent: markerLeftPercent, bgPosX: markerBgPosX } = getMarkerLayout(
         phValue,
         scaleWidthPx,
@@ -166,9 +213,9 @@ const ResultPageTest = () => {
     const atMax = phValue >= MAX_PH;
 
     const recommendations = [];
-    const { lead: interpretationLead, suffix: interpretationSuffix } =
-        getInterpretationParts(phLevel, phValue.toFixed(1));
-    const interpretation = `${interpretationLead}${interpretationSuffix}`;
+    const phValueFixed = phValue.toFixed(1);
+    const cardCopy = getCardCopy(phLevel, phValueFixed);
+    const interpretation = `${cardCopy.bold}${cardCopy.regular}`;
 
     const onExportClick = () => {
         handleExport({
@@ -184,161 +231,200 @@ const ResultPageTest = () => {
 
     return (
         <>
-            <div className={styles.content}>
+            <div className={styles.content} data-scroll-container>
                 <Container>
-                    <div className={styles.containerInner}>
-                        <div className={styles.title}>Enter your pH </div>
-                        <div className={styles.visualBlock}>
-                            <div className={styles.visualBlockTop}>
-                                <PhBadge level={phLevel} />
-                                <div className={styles.actions}>
-                                    <button
-                                        type="button"
-                                        className={styles.actionsInner}
-                                        aria-expanded={infoOpen}
-                                        aria-controls="result-ph-info"
-                                        onClick={() => setInfoOpen((v) => !v)}
-                                    >
-                                        <span
-                                            className={`${styles.infoIconWrap} ${infoOpen ? styles.infoIconWrapActive : ""}`}
+                    <div className={styles.section}>
+                        <h1 className={styles.title}>Enter your pH</h1>
+
+                        <div className={styles.container}>
+                            <div className={styles.resultCard}>
+                                <div className={styles.resultInner}>
+                                    <div className={styles.cardTop}>
+                                        <PhBadge level={phLevel} variant="result" />
+                                        <div className={styles.actions}>
+                                            <button
+                                                type="button"
+                                                className={styles.actionsInner}
+                                                aria-expanded={infoOpen}
+                                                aria-controls="result-ph-info"
+                                                onClick={() => setInfoOpen((v) => !v)}
+                                            >
+                                                <span
+                                                    className={`${styles.infoIconWrap} ${infoOpen ? styles.infoIconWrapActive : ""}`}
+                                                >
+                                                    <InfoCircle_24 />
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={styles.actionsInner}
+                                                onClick={onExportClick}
+                                                aria-label="Download results"
+                                            >
+                                                <DownloadIcon />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.numWrap}>
+                                        <button
+                                            type="button"
+                                            className={styles.minus}
+                                            disabled={atMin}
+                                            aria-label="Decrease pH"
+                                            onClick={() => bumpPh(-PH_STEP)}
                                         >
-                                            <InfoCircle_24 />
-                                        </span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={styles.actionsInner}
-                                        onClick={onExportClick}
-                                        aria-label="Download results"
+                                            <Minus />
+                                        </button>
+                                        <div className={styles.numberDate}>
+                                            <div className={styles.num}>{formatPhOneDecimal(phValue)}</div>
+                                            <div className={styles.date}>{timestamp}</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={styles.plus}
+                                            disabled={atMax}
+                                            aria-label="Increase pH"
+                                            onClick={() => bumpPh(PH_STEP)}
+                                        >
+                                            <Plus />
+                                        </button>
+                                    </div>
+
+                                    <div className={styles.scaleBlock}>
+                                        <div
+                                            ref={scaleRef}
+                                            className={styles.scale}
+                                            style={{ background: SCALE_GRADIENT }}
+                                            onPointerDown={onScalePointerDown}
+                                        >
+                                            <div
+                                                data-scale-marker
+                                                className={`${styles.scaleMarkerHit} ${isDragging ? styles.scaleMarkerDragging : ""}`}
+                                                style={{ left: `${markerLeftPercent}%` }}
+                                                onPointerDown={onMarkerPointerDown}
+                                            >
+                                                <div
+                                                    className={styles.scaleMarker}
+                                                    style={{
+                                                        backgroundImage: SCALE_GRADIENT,
+                                                        backgroundSize: `${scaleWidthPx}px 100%`,
+                                                        backgroundPosition: `${markerBgPosX}px 50%`,
+                                                        backgroundRepeat: "no-repeat",
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className={styles.scaleLabels}>
+                                            <span>{MIN_PH.toFixed(1)}</span>
+                                            <span>{MAX_PH.toFixed(1)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    id="result-ph-info"
+                                    className={`${styles.infoBlockWrap} ${infoOpen ? styles.infoBlockWrapOpen : ""}`}
+                                    aria-hidden={!infoOpen}
+                                    onClick={() => {
+                                        if (infoOpen) setInfoOpen(false);
+                                    }}
+                                >
+                                    <div className={styles.infoBlockInner}>
+                                        <div className={styles.infoBlock}>
+                                            <div className={styles.infoTilte}>
+                                                <div className={styles.infoIcon}>
+                                                    <InfoCircleBlack />
+                                                </div>
+                                                <h3>What does vaginal pH mean?</h3>
+                                            </div>
+                                            <div className={styles.infoItem}>
+                                                <div className={`${styles.infoPoint} ${styles.normal}`} />
+                                                <div className={styles.infoInner}>
+                                                    <h4>pH 3.5 to 4.4</h4>
+                                                    <div className={styles.valueNorm}>Normal</div>
+                                                    <p>
+                                                        Considered normal - protective acidity that keeps the microbiome balanced.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className={styles.infoItem}>
+                                                <div className={`${styles.infoPoint} ${styles.slightlyElevated}`} />
+                                                <div className={styles.infoInner}>
+                                                    <h4>pH 4.5 to 4.9</h4>
+                                                    <div className={styles.valueSlElev}>Slightly elevated</div>
+                                                    <p>
+                                                        Considered mildly elevated - can be normal around your period or hormonal shifts.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className={styles.infoItem}>
+                                                <div className={`${styles.infoPoint} ${styles.elevated}`} />
+                                                <div className={styles.infoInner}>
+                                                    <h4>pH 5.0 to 7.0</h4>
+                                                    <div className={styles.valueElev}>Elevated</div>
+                                                    <p>
+                                                        Considered elevated - outside the typical range. May reflect a microbiome change.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className={styles.cardText}>
+                                    <div className={styles.divider} />
+                                    <p
+                                        key={phLevel}
+                                        className={`${styles.interpretation} ${styles.phLevelContent}`}
                                     >
-                                        <DownloadIcon />
-                                    </button>
+                                        <span className={styles.bold}>{cardCopy.bold}</span>
+                                        <br />
+                                        {cardCopy.regular}
+                                    </p>
                                 </div>
                             </div>
-                            <div className={styles.numWrap}>
-                                <button
-                                    type="button"
-                                    className={styles.minus}
-                                    disabled={atMin}
-                                    aria-label="Decrease pH"
-                                    onClick={() => bumpPh(-PH_STEP)}
-                                >
-                                    <Minus />
-                                </button>
-                                <div className={styles.num}>{phValue.toFixed(1)}</div>
-                                <button
-                                    type="button"
-                                    className={styles.plus}
-                                    disabled={atMax}
-                                    aria-label="Increase pH"
-                                    onClick={() => bumpPh(PH_STEP)}
-                                >
-                                    <Plus />
-                                </button>
-                            </div>
-                            <div className={styles.date}>{timestamp}</div>
+
                             <div
-                                ref={scaleRef}
-                                className={styles.scale}
-                                onPointerDown={onScalePointerDown}
+                                className={styles.unlockCard}
+                                style={{ backgroundColor: levelConfig.unlockBg }}
                             >
-                                <div
-                                    data-scale-marker
-                                    className={`${styles.scaleMarkerHit} ${isDragging ? styles.scaleMarkerDragging : ""}`}
-                                    style={{ left: `${markerLeftPercent}%` }}
-                                    onPointerDown={onMarkerPointerDown}
-                                >
-                                    <div
-                                        className={styles.scaleMarker}
-                                        style={{
-                                            backgroundImage: SCALE_GRADIENT,
-                                            backgroundSize: `${scaleWidthPx}px 100%`,
-                                            backgroundPosition: `${markerBgPosX}px 50%`,
-                                            backgroundRepeat: "no-repeat",
-                                        }}
-                                    />
+                                <div className={styles.unlockHeader}>
+                                    <span className={styles.unlockHeaderIcon}>
+                                        <PersonIcon />
+                                    </span>
+                                    <h3>Get personalized insights</h3>
                                 </div>
-                            </div>
-                            <div className={styles.meaning}>
-                                <p>{MIN_PH.toFixed(1)}</p>
-                                <p>{MAX_PH.toFixed(1)}</p>
-                            </div>
-                        </div>
-                        <div
-                            id="result-ph-info"
-                            className={`${styles.infoBlockWrap} ${infoOpen ? styles.infoBlockWrapOpen : ""}`}
-                            aria-hidden={!infoOpen}
-                            onClick={() => setInfoOpen((v) => !v)}
-                        >
-                            <div className={styles.infoBlockInner}>
-                                <div className={styles.infoBlock}>
-                                    <div className={styles.infoTilte}>
-                                        <div className={styles.infoIcon}><InfoCircleBlack /></div>
-                                        <h3>What does vaginal pH mean?</h3>
-                                    </div>
-                                    <div className={styles.infoItem}>
-                                        <div className={`${styles.infoPoint} ${styles.normal}`}></div>
-                                        <div className={styles.infoInner}>
-                                            <h4>pH 3.5 to 4.4</h4>
-                                            <div className={styles.valueNorm}>Normal</div>
-                                            <p>Considered normal - protective acidity that keeps the microbiome balanced.</p>
-                                        </div>
-                                    </div>
-                                    <div className={styles.infoItem}>
-                                        <div className={`${styles.infoPoint} ${styles.slightlyElevated}`}></div>
-                                        <div className={styles.infoInner}>
-                                            <h4>pH 4.5 to 4.9</h4>
-                                            <div className={styles.valueSlElev}>Slightly elevated</div>
-                                            <p>Considered mildly elevated - can be normal around your period or hormonal shifts.</p>
-                                        </div>
-                                    </div>
-                                    <div className={styles.infoItem}>
-                                        <div className={`${styles.infoPoint} ${styles.elevated}`}></div>
-                                        <div className={styles.infoInner}>
-                                            <h4>pH 5.0 to 7.0</h4>
-                                            <div className={styles.valueElev}>Elevated</div>
-                                            <p>Considered elevated - outside the typical range. May reflect a microbiome change.</p>
+
+                                <div className={styles.unlockBody}>
+                                    <ul key={phLevel} className={`${styles.bullets} ${styles.phLevelContent}`}>
+                                        {levelConfig.bullets.map((text) => (
+                                            <li key={text} className={styles.bulletItem}>
+                                                <span className={styles.bulletDot} aria-hidden="true" />
+                                                <span>{text}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <div className={styles.detailsRow}>
+                                        <p className={styles.timeRow}>
+                                            <ClockFill className={styles.timeIcon} />
+                                            Takes about 2 minutes.
+                                        </p>
+                                        <div className={styles.tags}>
+                                            {DETAIL_TAGS.map((tag) => (
+                                                <span key={tag} className={styles.tag}>
+                                                    {tag}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className={styles.textBlock}>
-                            <div className={styles.advice}>
-                                <p
-                                    key={phLevel}
-                                    className={`${styles.text} ${styles.phLevelContent}`}
-                                >
-                                    <span className={styles.bold}>{interpretationLead}</span>
-                                    {interpretationSuffix}
-                                </p>
-                            </div>
-                        </div>
-                        <div className={styles.unlockBlock}>
-                            <div className={styles.unlockTilte}>
-                                <div className={styles.unlockIcon}><LockFill /></div>
-                                <h3>Unlock personalized insights</h3>
-                            </div>
-                            <div className={styles.unlockText}>
-                                <div
-                                    key={phLevel}
-                                    className={`${styles.unlockTextBody} ${styles.phLevelContent}`}
-                                >
-                                    {unlockParagraphs.map((text) => (
-                                        <p key={text}>{text}</p>
-                                    ))}
-                                </div>
-                                <p className={styles.unlockItem}><ClockFill className={styles.unlockIcon} /> Takes about<span> 2 minutes.</span></p>
-                            </div>
-                            <div className={styles.elements}>
-                                <div className={styles.item}>Age</div>
-                                <div className={styles.item}>Ethnicity</div>
-                                <div className={styles.item}>Hormones</div>
-                                <div className={styles.item}>Symptoms</div>
                             </div>
                         </div>
                     </div>
                 </Container>
+
                 <BottomBlock>
                     <Button
                         onClick={() =>
@@ -355,12 +441,14 @@ const ResultPageTest = () => {
                         Add my details
                     </Button>
                     <div className={styles.notifWrap}>
-                        <p className={styles.notif}>Your data stays private and is never shared without your consent</p>
+                        <p className={styles.notif}>
+                            Your data stays private and is never shared without your consent
+                        </p>
                     </div>
                 </BottomBlock>
             </div>
         </>
-    )
+    );
 };
 
 export default ResultPageTest;

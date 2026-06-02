@@ -23,6 +23,17 @@ export function findScrollableAncestor(startEl) {
 
   if (overflowHost) return overflowHost;
 
+  const appRoot = document.getElementById("root");
+  if (appRoot instanceof HTMLElement) {
+    const { overflowY } = window.getComputedStyle(appRoot);
+    if (
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      appRoot.scrollHeight > appRoot.clientHeight + 1
+    ) {
+      return appRoot;
+    }
+  }
+
   const body = document.body;
   if (body instanceof HTMLElement) {
     const { overflowY } = window.getComputedStyle(body);
