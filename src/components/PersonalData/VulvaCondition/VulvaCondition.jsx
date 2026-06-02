@@ -3,6 +3,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import FlowerIcom from "../../../assets/AddDetailsIcons/FlowerIcom";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
 import styles from "./VulvaCondition.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -13,6 +14,8 @@ const VulvaCondition = ({
     onChange,
     showHeadingError = false,
     skipped = false,
+    embedded = false,
+    infoSlot = null,
 }) => {
     const selected = Array.isArray(vulvaCondition) ? vulvaCondition : [];
 
@@ -55,6 +58,18 @@ const VulvaCondition = ({
             </div>
         );
     });
+
+    if (embedded) {
+        return (
+            <SymptomsChipSection
+                options={options}
+                selected={selected}
+                onChange={onChange}
+                skipped={skipped}
+                infoSlot={infoSlot}
+            />
+        );
+    }
 
     return (
         <div

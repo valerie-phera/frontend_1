@@ -59,6 +59,9 @@ export const REPORT_PRINT_MOCK_STATE = {
   vulvaCondition: ["Mild irritation"],
   smell: ["None"],
   urination: ["Normal"],
+  vaginalProducts: ["Lubricant"],
+  sexFluids: ["Sex with a condom / barrier"],
+  spotting: ["Period just ended"],
   notes:
     "Mild itching for two days after period ended. No pain. Using new cotton underwear.",
 };

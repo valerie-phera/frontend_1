@@ -12,7 +12,7 @@ import styles from "./Notes.module.css";
 const FOOTER_CLEARANCE_PX = 12;
 const MIN_SCROLL_DELTA_PX = 2;
 
-const Notes = ({ notes, setNotes, skipped = false }) => {
+const Notes = ({ notes, setNotes, skipped = false, embedded = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const containerRef = useRef(null);
   const editAreaRef = useRef(null);
@@ -138,6 +138,43 @@ const Notes = ({ notes, setNotes, skipped = false }) => {
   useEffect(() => {
     if (skipped) setIsEditing(false);
   }, [skipped]);
+
+  if (embedded) {
+    return (
+      <div
+        className={`${styles.wrapEmbedded} ${skipped ? styles.wrapSkipped : ""}`.trim()}
+        ref={containerRef}
+        onClick={() => {
+          if (skipped) return;
+          if (!isEditing) setIsEditing(true);
+        }}
+        style={{
+          cursor: skipped ? "default" : isEditing ? "auto" : "pointer",
+          pointerEvents: skipped ? "none" : undefined,
+        }}
+      >
+        {isEditing ? (
+          <div ref={editAreaRef} className={styles.editArea}>
+            <textarea
+              ref={textareaRef}
+              className={styles.textarea}
+              value={notes}
+              maxLength={NOTES_INPUT_MAX_LENGTH}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setNotes(sanitizeNotes(e.target.value))}
+            />
+            <p ref={charCountRef} className={styles.charCount} aria-live="polite">
+              {String(notes ?? "").length}/{NOTES_INPUT_MAX_LENGTH}
+            </p>
+          </div>
+        ) : (
+          <p className={styles.text}>
+            {notes || "Add notes, any extra symptoms, or how you've been feeling"}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

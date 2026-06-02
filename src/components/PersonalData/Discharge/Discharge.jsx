@@ -3,6 +3,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import GroupIcon from "../../../assets/AddDetailsIcons/GroupIcon";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
 import styles from "./Discharge.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -22,6 +23,8 @@ const Discharge = ({
     onChange,
     showHeadingError = false,
     skipped = false,
+    embedded = false,
+    infoSlot = null,
 }) => {
     const selected = Array.isArray(discharge) ? discharge : [];
 
@@ -64,6 +67,18 @@ const Discharge = ({
             </div>
         );
     });
+
+    if (embedded) {
+        return (
+            <SymptomsChipSection
+                options={options}
+                selected={selected}
+                onChange={onChange}
+                skipped={skipped}
+                infoSlot={infoSlot}
+            />
+        );
+    }
 
     return (
         <div

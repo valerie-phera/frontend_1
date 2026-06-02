@@ -11,6 +11,19 @@ import VulvaCondition from "../../components/PersonalData/VulvaCondition/VulvaCo
 import Smell from "../../components/PersonalData/Smell/Smell";
 import Urination from "../../components/PersonalData/Urination/Urination";
 import Notes from "../../components/PersonalData/Notes/Notes";
+import VaginalProducts from "../../components/PersonalData/VaginalProducts/VaginalProducts";
+import SexFluids from "../../components/PersonalData/SexFluids/SexFluids";
+import Spotting from "../../components/PersonalData/Spotting/Spotting";
+import SymptomsAccordion from "../../components/SymptomsAccordion/SymptomsAccordion";
+
+import GroupIcon from "../../assets/AddDetailsIcons/GroupIcon";
+import FlowerIcom from "../../assets/AddDetailsIcons/FlowerIcom";
+import WavesIcon from "../../assets/AddDetailsIcons/WavesIcon";
+import ToiletIcon from "../../assets/AddDetailsIcons/ToiletIcon";
+import ShowerIcon from "../../assets/AddDetailsIcons/ShowerIcon";
+import HeartIcon from "../../assets/AddDetailsIcons/HeartIcon";
+import DropHalfIcon from "../../assets/AddDetailsIcons/DropHalfIcon";
+import Edit2Icon from "../../assets/AddDetailsIcons/Edit2Icon";
 
 import {
     readAddDetailsDraft,
@@ -24,10 +37,34 @@ import {
     readPreSkipSnapshot,
 } from "../../shared/utils/addDetailsSkipStorage";
 import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
+import { createSymptomsChipChangeHandler, getSymptomsHeaderSelection } from "../../shared/utils/symptomsChipSelection";
 import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 import { analyzingDataPageImg, goToAnalyzingData } from "../../shared/utils/flowImages";
 import { preloadImage } from "../../shared/utils/preloadImage";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
+import styles from "./SymptomsPage.module.css";
+
+const SECTION_KEYS = {
+    discharge: "discharge",
+    vulva: "vulva",
+    smell: "smell",
+    urine: "urine",
+    vaginalProducts: "vaginalProducts",
+    sexFluids: "sexFluids",
+    spotting: "spotting",
+    notes: "notes",
+};
+
+const DEFAULT_OPEN_SECTIONS = {
+    [SECTION_KEYS.discharge]: false,
+    [SECTION_KEYS.vulva]: false,
+    [SECTION_KEYS.smell]: false,
+    [SECTION_KEYS.urine]: false,
+    [SECTION_KEYS.vaginalProducts]: false,
+    [SECTION_KEYS.sexFluids]: false,
+    [SECTION_KEYS.spotting]: false,
+    [SECTION_KEYS.notes]: false,
+};
 
 const computeSymptomsSectionIssues = (
     discharge,
@@ -35,25 +72,14 @@ const computeSymptomsSectionIssues = (
     smell,
     urination
 ) => {
-    const dischargeMissing =
-        !Array.isArray(discharge) || discharge.length === 0;
-    const vulvaMissing =
-        !Array.isArray(vulvaCondition) || vulvaCondition.length === 0;
-    const smellMissing = !Array.isArray(smell) || smell.length === 0;
-    const urinationMissing =
-        !Array.isArray(urination) || urination.length === 0;
-    const count =
-        (dischargeMissing ? 1 : 0) +
-        (vulvaMissing ? 1 : 0) +
-        (smellMissing ? 1 : 0) +
-        (urinationMissing ? 1 : 0);
-    return {
-        dischargeMissing,
-        vulvaMissing,
-        smellMissing,
-        urinationMissing,
-        count,
-    };
+    const missing = [
+        discharge,
+        vulvaCondition,
+        smell,
+        urination,
+    ].filter((value) => !Array.isArray(value) || value.length === 0).length;
+
+    return { count: missing };
 };
 
 const SymptomsPage = () => {
@@ -101,6 +127,25 @@ const SymptomsPage = () => {
         }
         return draft?.notes ?? "";
     });
+    const [vaginalProducts, setVaginalProducts] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.vaginalProducts || [];
+        }
+        return draft?.vaginalProducts || [];
+    });
+    const [sexFluids, setSexFluids] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.sexFluids || [];
+        }
+        return draft?.sexFluids || [];
+    });
+    const [spotting, setSpotting] = useState(() => {
+        if (initialSkipped && initialPreSkipSnapshot) {
+            return initialPreSkipSnapshot.spotting || [];
+        }
+        return draft?.spotting || [];
+    });
+    const [openSections, setOpenSections] = useState(DEFAULT_OPEN_SECTIONS);
 
     useEffect(() => {
         const skipped = isStepSkipped(draft, "symptoms");
@@ -115,12 +160,18 @@ const SymptomsPage = () => {
             setSmell(snap.smell || []);
             setUrination(snap.urination || []);
             setNotes(snap.notes ?? "");
+            setVaginalProducts(snap.vaginalProducts || []);
+            setSexFluids(snap.sexFluids || []);
+            setSpotting(snap.spotting || []);
         } else {
             setDischarge(draft?.discharge || []);
             setVulvaCondition(draft?.vulvaCondition || []);
             setSmell(draft?.smell || []);
             setUrination(draft?.urination || []);
             setNotes(draft?.notes ?? "");
+            setVaginalProducts(draft?.vaginalProducts || []);
+            setSexFluids(draft?.sexFluids || []);
+            setSpotting(draft?.spotting || []);
         }
     }, [
         draft?.discharge,
@@ -128,6 +179,9 @@ const SymptomsPage = () => {
         draft?.smell,
         draft?.urination,
         draft?.notes,
+        draft?.vaginalProducts,
+        draft?.sexFluids,
+        draft?.spotting,
         draft?.symptomsSkipped,
         draft?.symptomsPreSkipSnapshot,
     ]);
@@ -177,29 +231,28 @@ const SymptomsPage = () => {
         };
     }, [errorBannerScrollToken]);
 
-    const toggleInList = (setter) => (value) => {
-        setter((prev) => {
-            const arr = Array.isArray(prev) ? prev : [];
-            const cleaned = arr.filter((x) => x !== "None");
-            return cleaned.includes(value)
-                ? cleaned.filter((x) => x !== value)
-                : [...cleaned, value];
-        });
-    };
+    const handleDischargeChange = createSymptomsChipChangeHandler(setDischarge, {
+        exclusiveOption: "No discharge",
+    });
+    const handleVulvaConditionChange =
+        createSymptomsChipChangeHandler(setVulvaCondition);
+    const handleSmellChange = createSymptomsChipChangeHandler(setSmell);
+    const handleUrinationChange = createSymptomsChipChangeHandler(setUrination);
+    const handleVaginalProductsChange =
+        createSymptomsChipChangeHandler(setVaginalProducts);
+    const handleSexFluidsChange = createSymptomsChipChangeHandler(setSexFluids);
+    const handleSpottingChange = createSymptomsChipChangeHandler(setSpotting);
 
-    const handleDischargeChange = (value) => {
-        setDischarge((prev) => {
-            const NONE = "No discharge";
-            const arr = Array.isArray(prev) ? prev : [];
-
-            if (value === NONE) {
-                return arr.includes(NONE) ? [] : [NONE];
+    const toggleSection = (key) => {
+        setOpenSections((prev) => {
+            const willOpen = !prev[key];
+            if (!willOpen) {
+                return { ...DEFAULT_OPEN_SECTIONS };
             }
-
-            const withoutNone = arr.filter((x) => x !== NONE);
-            return withoutNone.includes(value)
-                ? withoutNone.filter((x) => x !== value)
-                : [...withoutNone, value];
+            return {
+                ...DEFAULT_OPEN_SECTIONS,
+                [key]: true,
+            };
         });
     };
 
@@ -220,6 +273,17 @@ const SymptomsPage = () => {
                     Array.isArray(restored.urination) ? restored.urination : []
                 );
                 setNotes(restored.notes ?? "");
+                setVaginalProducts(
+                    Array.isArray(restored.vaginalProducts)
+                        ? restored.vaginalProducts
+                        : []
+                );
+                setSexFluids(
+                    Array.isArray(restored.sexFluids) ? restored.sexFluids : []
+                );
+                setSpotting(
+                    Array.isArray(restored.spotting) ? restored.spotting : []
+                );
             }
             setPreSkipSnapshot(null);
             setIsSkipped(false);
@@ -244,6 +308,17 @@ const SymptomsPage = () => {
                                   ? restored.urination
                                   : [],
                               notes: restored.notes ?? "",
+                              vaginalProducts: Array.isArray(
+                                  restored.vaginalProducts
+                              )
+                                  ? restored.vaginalProducts
+                                  : [],
+                              sexFluids: Array.isArray(restored.sexFluids)
+                                  ? restored.sexFluids
+                                  : [],
+                              spotting: Array.isArray(restored.spotting)
+                                  ? restored.spotting
+                                  : [],
                           }
                         : {},
                 });
@@ -259,6 +334,11 @@ const SymptomsPage = () => {
             smell: Array.isArray(smell) ? [...smell] : [],
             urination: Array.isArray(urination) ? [...urination] : [],
             notes,
+            vaginalProducts: Array.isArray(vaginalProducts)
+                ? [...vaginalProducts]
+                : [],
+            sexFluids: Array.isArray(sexFluids) ? [...sexFluids] : [],
+            spotting: Array.isArray(spotting) ? [...spotting] : [],
         };
         setPreSkipSnapshot(snapshot);
         setValidationVisible(false);
@@ -317,6 +397,9 @@ const SymptomsPage = () => {
                 smell: [],
                 urination: [],
                 notes: "",
+                vaginalProducts: [],
+                sexFluids: [],
+                spotting: [],
                 lifeStage,
                 hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
                 currentMedications,
@@ -347,6 +430,9 @@ const SymptomsPage = () => {
                 smell,
                 urination,
                 notes,
+                vaginalProducts,
+                sexFluids,
+                spotting,
             },
         });
         writeActiveResultMeta({ phValue, timestamp });
@@ -387,6 +473,9 @@ const SymptomsPage = () => {
             smell: stripUiTokens(smell),
             urination: stripUiTokens(urination),
             notes,
+            vaginalProducts: stripUiTokens(vaginalProducts),
+            sexFluids: stripUiTokens(sexFluids),
+            spotting: stripUiTokens(spotting),
             lifeStage,
             hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
             currentMedications,
@@ -413,6 +502,9 @@ const SymptomsPage = () => {
                           smell,
                           urination,
                           notes,
+                          vaginalProducts,
+                          sexFluids,
+                          spotting,
                       },
             });
         }
@@ -441,61 +533,166 @@ const SymptomsPage = () => {
                             <div className={basicStyles.itemColored}></div>
                         </div>
                         <div className={basicStyles.step}>
-                            Step 3 of 3 - Symptoms
+                            Step 3 of 3 - Symptoms & context
                         </div>
-                        <div className={basicStyles.heading}>
-                            <h1 className={basicStyles.title}>Last step - your symptoms</h1>
+                        <div className={styles.mainIntro}>
+                            <div className={`${basicStyles.heading} ${styles.heading}`}>
+                                <h1 className={`${basicStyles.title} ${styles.title}`}>
+                                    Last step - symptoms & recent context
+                                </h1>
+                            </div>
+                            <p className={`${basicStyles.subtitle} ${styles.subtitle}`}>
+                                Select what applies in the last 48 hours.
+                            </p>
                         </div>
-                        <p className={basicStyles.subtitle}>
-                            Select what you're experiencing right now.
-                        </p>
 
-                        <div className={basicStyles.personalData}>
-                            <Discharge
-                                discharge={discharge}
-                                onChange={handleDischargeChange}
+                        <div className={styles.personalData}>
+                            <SymptomsAccordion
                                 skipped={isSkipped}
-                                showHeadingError={
-                                    !isSkipped &&
-                                    validationVisible &&
-                                    sectionIssues.dischargeMissing
+                                title="Discharge"
+                                icon={<GroupIcon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.discharge]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.discharge)
                                 }
-                            />
-                            <VulvaCondition
-                                vulvaCondition={vulvaCondition}
-                                onChange={toggleInList(setVulvaCondition)}
+                                selectionLabel={getSymptomsHeaderSelection(discharge)}
+                                infoText="Discharge varies from person to person. It is influenced by your cycle, hygiene products, medications, stress, and a lot of other factors. Look out for discharge of unusual colour and texture."
+                            >
+                                <Discharge
+                                    discharge={discharge}
+                                    onChange={handleDischargeChange}
+                                    skipped={isSkipped}
+                                    embedded
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
                                 skipped={isSkipped}
-                                showHeadingError={
-                                    !isSkipped &&
-                                    validationVisible &&
-                                    sectionIssues.vulvaMissing
+                                title="Vulva & Vagina"
+                                icon={<FlowerIcom aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.vulva]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.vulva)
                                 }
-                            />
-                            <Smell
-                                smell={smell}
-                                onChange={toggleInList(setSmell)}
+                                selectionLabel={getSymptomsHeaderSelection(vulvaCondition)}
+                                infoText="It is normal to experience occasional dryness or itchiness - after shaving, using a new hygiene product, or wearing tight clothes. If such sensations become uncomfortable and appear along with other symptoms, they may signal an infection."
+                            >
+                                <VulvaCondition
+                                    vulvaCondition={vulvaCondition}
+                                    onChange={handleVulvaConditionChange}
+                                    skipped={isSkipped}
+                                    embedded
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
                                 skipped={isSkipped}
-                                showHeadingError={
-                                    !isSkipped &&
-                                    validationVisible &&
-                                    sectionIssues.smellMissing
+                                title="Smell"
+                                icon={<WavesIcon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.smell]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.smell)
                                 }
-                            />
-                            <Urination
-                                urination={urination}
-                                onChange={toggleInList(setUrination)}
+                                selectionLabel={getSymptomsHeaderSelection(smell)}
+                                infoText="A healthy vagina can have a natural scent that is metallic, musky, earthy, or tangy - all of these are normal! If you notice any of the unusual odors, such as those listed below, it might be helpful to mention them to your clinician."
+                            >
+                                <Smell
+                                    smell={smell}
+                                    onChange={handleSmellChange}
+                                    skipped={isSkipped}
+                                    embedded
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
                                 skipped={isSkipped}
-                                showHeadingError={
-                                    !isSkipped &&
-                                    validationVisible &&
-                                    sectionIssues.urinationMissing
+                                title="Urine"
+                                icon={<ToiletIcon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.urine]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.urine)
                                 }
-                            />
-                            <Notes
-                                notes={notes}
-                                setNotes={setNotes}
+                                selectionLabel={getSymptomsHeaderSelection(urination)}
+                                infoText="It is normal to urinate more often after drinking more fluids, coffee, or during periods of stress. More trips to the bathroom than is normal for you. A brief burning sensation can happen after using a new product or after sex. If such sensations last a long time or appear with other symptoms, they may signal an infection."
+                            >
+                                <Urination
+                                    urination={urination}
+                                    onChange={handleUrinationChange}
+                                    skipped={isSkipped}
+                                    embedded
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
                                 skipped={isSkipped}
-                            />
+                                title="Vaginal products"
+                                icon={<ShowerIcon aria-hidden />}
+                                isOpen={
+                                    openSections[SECTION_KEYS.vaginalProducts]
+                                }
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.vaginalProducts)
+                                }
+                                selectionLabel={getSymptomsHeaderSelection(vaginalProducts)}
+                                infoText="Products used in or near the vagina can affect your pH and symptoms. Select anything you have used in the last 48 hours."
+                            >
+                                <VaginalProducts
+                                    selected={vaginalProducts}
+                                    onChange={handleVaginalProductsChange}
+                                    skipped={isSkipped}
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
+                                skipped={isSkipped}
+                                title="Sex & fluids"
+                                icon={<HeartIcon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.sexFluids]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.sexFluids)
+                                }
+                                selectionLabel={getSymptomsHeaderSelection(sexFluids)}
+                            >
+                                <SexFluids
+                                    selected={sexFluids}
+                                    onChange={handleSexFluidsChange}
+                                    skipped={isSkipped}
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
+                                skipped={isSkipped}
+                                title="Spotting"
+                                icon={<DropHalfIcon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.spotting]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.spotting)
+                                }
+                                selectionLabel={getSymptomsHeaderSelection(spotting)}
+                            >
+                                <Spotting
+                                    selected={spotting}
+                                    onChange={handleSpottingChange}
+                                    skipped={isSkipped}
+                                />
+                            </SymptomsAccordion>
+
+                            <SymptomsAccordion
+                                skipped={isSkipped}
+                                title="Notes"
+                                icon={<Edit2Icon aria-hidden />}
+                                isOpen={openSections[SECTION_KEYS.notes]}
+                                onToggle={() =>
+                                    toggleSection(SECTION_KEYS.notes)
+                                }
+                            >
+                                <Notes
+                                    notes={notes}
+                                    setNotes={setNotes}
+                                    skipped={isSkipped}
+                                    embedded
+                                />
+                            </SymptomsAccordion>
                         </div>
                     </div>
                 </Container>

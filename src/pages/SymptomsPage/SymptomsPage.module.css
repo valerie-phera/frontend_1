@@ -1,0 +1,32 @@
+.personalData {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.heading {
+    gap: 4px;
+    margin-bottom: 0;
+}
+
+.title {
+    font-weight: 711;
+    letter-spacing: 0.01em;
+    line-height: 29px;
+}
+
+.subtitle {
+    margin-bottom: 0;
+    font-size: 16px;
+    line-height: 22px;
+    max-width: 343px;
+}
+
+.mainIntro {
+    display: flex;
+    flex-direction: column;
+    gap: 29px;
+    margin-bottom: 10px;
+}

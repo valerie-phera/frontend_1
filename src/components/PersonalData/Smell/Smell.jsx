@@ -3,6 +3,7 @@ import { memo } from "react";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import WavesIcon from "../../../assets/AddDetailsIcons/WavesIcon";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
 import styles from "./Smell.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -13,7 +14,7 @@ const options = [
     "Very strong or rotten",
 ];
 
-const Smell = ({ smell, onChange, showHeadingError = false, skipped = false }) => {
+const Smell = ({ smell, onChange, showHeadingError = false, skipped = false, embedded = false, infoSlot = null }) => {
     const selected = Array.isArray(smell) ? smell : [];
 
     const list = options.map((item) => {
@@ -55,6 +56,18 @@ const Smell = ({ smell, onChange, showHeadingError = false, skipped = false }) =
             </div>
         );
     });
+
+    if (embedded) {
+        return (
+            <SymptomsChipSection
+                options={options}
+                selected={selected}
+                onChange={onChange}
+                skipped={skipped}
+                infoSlot={infoSlot}
+            />
+        );
+    }
 
     return (
         <div

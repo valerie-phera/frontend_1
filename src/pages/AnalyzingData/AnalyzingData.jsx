@@ -131,6 +131,13 @@ const AnalyzingData = () => {
                     ),
                     smell: toArrayForApi(draft?.smell ?? state?.smell),
                     urine: toArrayForApi(draft?.urination ?? state?.urination),
+                    vaginal_products: toArrayForApi(
+                        draft?.vaginalProducts ?? state?.vaginalProducts
+                    ),
+                    sex_fluids: toArrayForApi(
+                        draft?.sexFluids ?? state?.sexFluids
+                    ),
+                    spotting: toArrayForApi(draft?.spotting ?? state?.spotting),
                     notes: String((draft?.notes ?? state?.notes) ?? ""),
                 },
             };
@@ -249,6 +256,18 @@ const AnalyzingData = () => {
                         ),
                         urination: stripDetailOptions(
                             stripTokens(draft?.urination ?? state?.urination, ["None"])
+                        ),
+                        vaginalProducts: stripDetailOptions(
+                            stripTokens(
+                                draft?.vaginalProducts ?? state?.vaginalProducts,
+                                ["None"]
+                            )
+                        ),
+                        sexFluids: stripDetailOptions(
+                            stripTokens(draft?.sexFluids ?? state?.sexFluids, ["None"])
+                        ),
+                        spotting: stripDetailOptions(
+                            stripTokens(draft?.spotting ?? state?.spotting, ["None"])
                         ),
                         notes: draft?.notes ?? state?.notes,
                     },

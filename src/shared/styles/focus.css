@@ -1,0 +1,16 @@
+/*
+ * Imported last so it overrides component-level :focus-visible rules.
+ * Hides the ring that appears when a control keeps :focus after click + ESC.
+ */
+:focus {
+    outline: none !important;
+}
+
+:focus-visible {
+    outline: none !important;
+}
+
+:focus-visible::before,
+:focus-visible::after {
+    outline: none !important;
+}

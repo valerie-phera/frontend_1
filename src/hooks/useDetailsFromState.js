@@ -51,6 +51,11 @@ const useDetailsFromState = (state) => {
     ...(state?.vulvaCondition?.length ? stripUi(state.vulvaCondition, ["None"]) : []),
     ...(state?.smell?.length ? stripUi(state.smell, ["None"]) : []),
     ...(state?.urination?.length ? stripUi(state.urination, ["None"]) : []),
+    ...(state?.vaginalProducts?.length
+      ? stripUi(state.vaginalProducts, ["None"])
+      : []),
+    ...(state?.sexFluids?.length ? stripUi(state.sexFluids, ["None"]) : []),
+    ...(state?.spotting?.length ? stripUi(state.spotting, ["None"]) : []),
     ...(notesDisplay ? [notesDisplay] : []),
   ].filter(Boolean);
 

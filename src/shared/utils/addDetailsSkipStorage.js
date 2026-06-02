@@ -38,6 +38,9 @@ export const EMPTY_STEP_FORM_PATCH = {
         smell: [],
         urination: [],
         notes: "",
+        vaginalProducts: [],
+        sexFluids: [],
+        spotting: [],
     },
 };
 

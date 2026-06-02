@@ -81,6 +81,19 @@ export function getPdfDetailSections(state) {
   const urine = joinList(strip(state.urination, ["None"]));
   if (urine) reportedSymptoms.push({ label: "Urine", value: urine });
 
+  const vaginalProducts = joinList(strip(state.vaginalProducts, ["None"]));
+  if (vaginalProducts) {
+    reportedSymptoms.push({ label: "Vaginal products", value: vaginalProducts });
+  }
+
+  const sexFluids = joinList(strip(state.sexFluids, ["None"]));
+  if (sexFluids) {
+    reportedSymptoms.push({ label: "Sex & fluids", value: sexFluids });
+  }
+
+  const spotting = joinList(strip(state.spotting, ["None"]));
+  if (spotting) reportedSymptoms.push({ label: "Spotting", value: spotting });
+
   const notes = formatNotesForPdf(state.notes);
   if (notes) reportedSymptoms.push({ label: "Notes", value: notes });
 
