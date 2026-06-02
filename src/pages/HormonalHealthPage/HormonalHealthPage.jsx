@@ -52,7 +52,9 @@ const HormonalHealthPage = () => {
 
     const phValue = state?.phValue;
     const timestamp = state?.timestamp;
-    const lifeStage = Array.isArray(state?.lifeStage) ? state.lifeStage : [];
+    const lifeStage = stripDetailOptions(
+        Array.isArray(state?.lifeStage) ? state.lifeStage : []
+    );
 
     const draft = useMemo(
         () => readAddDetailsDraft(phValue, timestamp),
@@ -357,8 +359,8 @@ const HormonalHealthPage = () => {
             state: {
                 ...state,
                 menstrualCycle,
-                hormoneDiagnoses: diagnosesForNext,
-                currentMedications: medicationsForNext,
+                hormoneDiagnoses: stripDetailOptions(diagnosesForNext),
+                currentMedications: stripDetailOptions(medicationsForNext),
             },
         });
     };

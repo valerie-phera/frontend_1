@@ -23,6 +23,7 @@ import {
     persistStepSkip,
     readPreSkipSnapshot,
 } from "../../shared/utils/addDetailsSkipStorage";
+import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
 
@@ -283,10 +284,12 @@ const SymptomsPage = () => {
             });
             writeActiveResultMeta({ phValue, timestamp });
 
-            const stripNone = (v) =>
-                Array.isArray(v) ? v.filter((x) => x !== "None") : [];
-            const lifeStage = stripNone(state?.lifeStage);
-            const currentMedications = stripNone(state?.currentMedications);
+            const stripUiTokens = (v) =>
+                stripDetailOptions(
+                    Array.isArray(v) ? v.filter((x) => x !== "None") : []
+                );
+            const lifeStage = stripUiTokens(state?.lifeStage);
+            const currentMedications = stripUiTokens(state?.currentMedications);
 
             const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
             const hasBirthControl = has(currentMedications, "Birth control");
@@ -314,7 +317,7 @@ const SymptomsPage = () => {
                     urination: [],
                     notes: "",
                     lifeStage,
-                    hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
+                    hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
                     currentMedications,
                 },
             });
@@ -341,11 +344,13 @@ const SymptomsPage = () => {
         });
         writeActiveResultMeta({ phValue, timestamp });
 
-        const stripNone = (v) =>
-            Array.isArray(v) ? v.filter((x) => x !== "None") : [];
+        const stripUiTokens = (v) =>
+            stripDetailOptions(
+                Array.isArray(v) ? v.filter((x) => x !== "None") : []
+            );
 
-        const lifeStage = stripNone(state?.lifeStage);
-        const currentMedications = stripNone(state?.currentMedications);
+        const lifeStage = stripUiTokens(state?.lifeStage);
+        const currentMedications = stripUiTokens(state?.currentMedications);
 
         const has = (arr, v) => Array.isArray(arr) && arr.includes(v);
         const hasBirthControl = has(currentMedications, "Birth control");
@@ -371,13 +376,13 @@ const SymptomsPage = () => {
         navigate(nextPath, {
             state: {
                 ...state,
-                discharge: stripNone(discharge),
-                vulvaCondition: stripNone(vulvaCondition),
-                smell: stripNone(smell),
-                urination: stripNone(urination),
+                discharge: stripUiTokens(discharge),
+                vulvaCondition: stripUiTokens(vulvaCondition),
+                smell: stripUiTokens(smell),
+                urination: stripUiTokens(urination),
                 notes,
                 lifeStage,
-                hormoneDiagnoses: stripNone(state?.hormoneDiagnoses),
+                hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
                 currentMedications,
             },
         });

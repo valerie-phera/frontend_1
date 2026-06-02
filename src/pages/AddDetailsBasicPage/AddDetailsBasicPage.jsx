@@ -8,6 +8,7 @@ import {
 } from "../../components/PersonalData/EthnicBackground/ethnicOptions";
 import { FORM_PREFER_NOT_TO_SAY } from "../../shared/constants/formDetailOptions";
 import { stripNoneToken } from "../../shared/utils/toggleListItem";
+import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 import BottomBlock from "../../components/BottomBlock/BottomBlock";
 import Button from "../../components/Button/Button";
 import ButtonReverse from "../../components/ButtonReverse/ButtonReverse";
@@ -367,7 +368,7 @@ const AddDetailsBasicPage = () => {
                 timestamp,
                 recommendations,
                 age,
-                lifeStage,
+                lifeStage: stripDetailOptions(lifeStage),
                 ethnicBackground: ethnicForApi,
                 ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
             },
