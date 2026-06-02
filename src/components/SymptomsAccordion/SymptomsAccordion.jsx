@@ -1,7 +1,10 @@
-import { cloneElement, isValidElement } from "react";
+import { cloneElement, isValidElement, useEffect, useRef } from "react";
 import ArrowDown from "../../assets/icons/ArrowDown";
 import InfoTooltip from "../InfoTooltip/InfoTooltip";
+import { scrollOpenedSectionIntoView } from "../../shared/utils/scrollAncestor";
 import styles from "./SymptomsAccordion.module.css";
+
+const OPEN_ANIMATION_MS = 440;
 
 const SymptomsAccordion = ({
     title,
@@ -14,6 +17,10 @@ const SymptomsAccordion = ({
     hasBody = true,
     skipped = false,
 }) => {
+    const rootRef = useRef(null);
+    const bodyWrapperRef = useRef(null);
+    const prevOpenRef = useRef(isOpen);
+
     const showSelectionLabel = Boolean(selectionLabel);
 
     const infoSlot = infoText ? (
@@ -27,8 +34,46 @@ const SymptomsAccordion = ({
             ? cloneElement(children, { infoSlot })
             : children;
 
+    useEffect(() => {
+        const wasOpen = prevOpenRef.current;
+        prevOpenRef.current = isOpen;
+
+        if (!isOpen || wasOpen || !hasBody) return undefined;
+
+        const rootEl = rootRef.current;
+        if (!rootEl) return undefined;
+
+        let cancelled = false;
+        let didScroll = false;
+        let cancelScroll = null;
+
+        const revealSection = () => {
+            if (cancelled || didScroll) return;
+            didScroll = true;
+            cancelScroll = scrollOpenedSectionIntoView(rootEl);
+        };
+
+        const wrapperEl = bodyWrapperRef.current;
+        const onTransitionEnd = (event) => {
+            if (event.target !== wrapperEl) return;
+            if (event.propertyName !== "grid-template-rows") return;
+            revealSection();
+        };
+
+        wrapperEl?.addEventListener("transitionend", onTransitionEnd);
+        const fallbackTimer = window.setTimeout(revealSection, OPEN_ANIMATION_MS);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(fallbackTimer);
+            wrapperEl?.removeEventListener("transitionend", onTransitionEnd);
+            cancelScroll?.();
+        };
+    }, [isOpen, hasBody]);
+
     return (
         <div
+            ref={rootRef}
             className={`${styles.accordion} ${
                 skipped ? styles.accordionSkipped : ""
             } ${isOpen && hasBody ? styles.accordionExpanded : ""}`.trim()}
@@ -68,6 +113,7 @@ const SymptomsAccordion = ({
 
             {hasBody ? (
                 <div
+                    ref={bodyWrapperRef}
                     className={`${styles.bodyWrapper} ${
                         isOpen ? styles.bodyWrapperOpen : ""
                     }`.trim()}
