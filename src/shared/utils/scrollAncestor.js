@@ -78,6 +78,31 @@ export function getScrollportClipBottom(scroller, fromEl) {
   return clipBottom;
 }
 
+/** Horizontal clip bounds for portaled popovers (viewport + page column). */
+export function getPopoverHorizontalBounds(fromEl, padding = 16) {
+  const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+  let minX = padding;
+  let maxX = viewportWidth - padding;
+
+  const pageRoot =
+    fromEl instanceof Element
+      ? fromEl.closest("[data-scroll-container]")
+      : null;
+
+  if (pageRoot instanceof HTMLElement) {
+    const rect = pageRoot.getBoundingClientRect();
+    minX = Math.max(minX, rect.left + padding);
+    maxX = Math.min(maxX, rect.right - padding);
+  }
+
+  if (maxX <= minX) {
+    minX = padding;
+    maxX = viewportWidth - padding;
+  }
+
+  return { minX, maxX, viewportWidth };
+}
+
 const DEFAULT_CLEARANCE_TOP = 8;
 const DEFAULT_CLEARANCE_BOTTOM = 12;
 const MIN_SCROLL_DELTA_PX = 2;

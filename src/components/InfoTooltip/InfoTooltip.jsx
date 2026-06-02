@@ -8,7 +8,7 @@ import {
 import { createPortal } from "react-dom";
 import InfoCircle from "../../assets/icons/InfoCircle";
 import ArrowDown from "../../assets/icons/ArrowDown";
-import { findScrollableAncestor } from "../../shared/utils/scrollAncestor";
+import { findScrollableAncestor, getPopoverHorizontalBounds } from "../../shared/utils/scrollAncestor";
 import styles from "./InfoTooltip.module.css";
 
 const VIEWPORT_PADDING_PX = 16;
@@ -25,22 +25,30 @@ const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
         const rect = anchor.getBoundingClientRect();
         const popoverEl = popoverRef.current;
 
-        const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+        const { minX, maxX, viewportWidth } = getPopoverHorizontalBounds(
+            root,
+            VIEWPORT_PADDING_PX
+        );
+        const availableWidth = Math.max(0, maxX - minX);
         const popoverWidth =
             popoverEl?.offsetWidth ??
-            Math.min(215, Math.max(180, viewportWidth * 0.8), viewportWidth - VIEWPORT_PADDING_PX * 2);
+            Math.min(215, Math.max(180, availableWidth), viewportWidth - VIEWPORT_PADDING_PX * 2);
 
         const anchorCenterX = rect.left + rect.width / 2;
         const halfWidth = popoverWidth / 2;
-        const minLeft = VIEWPORT_PADDING_PX + halfWidth;
-        const maxLeft = viewportWidth - VIEWPORT_PADDING_PX - halfWidth;
-        const left = Math.max(minLeft, Math.min(maxLeft, anchorCenterX));
+        const minLeft = minX + halfWidth;
+        const maxLeft = maxX - halfWidth;
+        const left =
+            maxLeft >= minLeft
+                ? Math.max(minLeft, Math.min(maxLeft, anchorCenterX))
+                : minX + availableWidth / 2;
         const arrowOffset = anchorCenterX - left;
         const maxArrowOffset = Math.max(0, halfWidth - 14);
 
         setStyle({
             top: rect.top,
             left,
+            maxWidth: availableWidth > 0 ? availableWidth : undefined,
             arrowOffset: Math.max(
                 -maxArrowOffset,
                 Math.min(maxArrowOffset, arrowOffset)
@@ -116,6 +124,7 @@ const InfoTooltip = ({
                 style={{
                     top: popoverStyle?.top ?? 0,
                     left: popoverStyle?.left ?? 0,
+                    maxWidth: popoverStyle?.maxWidth,
                     visibility: popoverStyle ? "visible" : "hidden",
                     pointerEvents: popoverStyle ? undefined : "none",
                     ["--popover-arrow-offset"]: popoverStyle
