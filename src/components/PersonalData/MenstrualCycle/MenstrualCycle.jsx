@@ -81,7 +81,9 @@ const MenstrualCycle = ({
                 }
                 showArrow={false}
                 showErrorCircle={showHeadingError && !skipped}
-            />
+            >
+                pH naturally fluctuates throughout your cycle - knowing where you are helps us give you a more personalized reading.
+            </InfoTooltip>
             <div className={styles.list}>{list}</div>
             {showDetailOptions && (
                 <DetailChipRow

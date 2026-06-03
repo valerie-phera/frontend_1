@@ -651,7 +651,7 @@ const SymptomsPage = () => {
                                     toggleSection(SECTION_KEYS.vaginalProducts)
                                 }
                                 selectionLabel={getSymptomsHeaderSelection(vaginalProducts)}
-                                infoText="Products used in or near the vagina can affect your pH and symptoms. Select anything you have used in the last 48 hours."
+                                infoText="Soaps, washes, and lubricants can raise or lower pH - we factor them in so they don't skew your result."
                             >
                                 <VaginalProducts
                                     selected={vaginalProducts}
@@ -669,6 +669,7 @@ const SymptomsPage = () => {
                                     toggleSection(SECTION_KEYS.sexFluids)
                                 }
                                 selectionLabel={getSymptomsHeaderSelection(sexFluids)}
+                                infoText="Semen and saliva temporarily affect pH - knowing this makes your result more accurate."
                             >
                                 <SexFluids
                                     selected={sexFluids}
@@ -686,6 +687,7 @@ const SymptomsPage = () => {
                                     toggleSection(SECTION_KEYS.spotting)
                                 }
                                 selectionLabel={getSymptomsHeaderSelection(spotting)}
+                                infoText="This temporarily changes vaginal pH - telling us about it helps us interpret your result correctly."
                             >
                                 <Spotting
                                     selected={spotting}

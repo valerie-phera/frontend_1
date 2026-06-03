@@ -6,12 +6,18 @@ import {
     useCallback,
 } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 import InfoCircle from "../../assets/icons/InfoCircle";
 import ArrowDown from "../../assets/icons/ArrowDown";
 import { findScrollableAncestor, getPopoverHorizontalBounds } from "../../shared/utils/scrollAncestor";
 import styles from "./InfoTooltip.module.css";
 
 const VIEWPORT_PADDING_PX = 16;
+
+const ADD_DETAILS_HEADER_ICON_ALIGN_PATHS = new Set([
+    "/add-details/basic",
+    "/add-details/hormonal-health",
+]);
 
 const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
     const [style, setStyle] = useState(null);
@@ -99,6 +105,15 @@ const InfoTooltip = ({
     const ref = useRef(null);
     const popoverRef = useRef(null);
     const popoverStyle = useAnchoredPopoverStyle(open, ref, popoverRef);
+    const { pathname } = useLocation();
+    const alignInfoIconEnd =
+        !iconOnly && ADD_DETAILS_HEADER_ICON_ALIGN_PATHS.has(pathname);
+    const wrapClassName = [
+        styles.wrap,
+        alignInfoIconEnd ? styles.wrapHeaderFullWidth : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
     const titleInteractive = typeof onToggle === "function";
 
     useEffect(() => {
@@ -141,7 +156,7 @@ const InfoTooltip = ({
 
     if (iconOnly) {
         return (
-            <div className={styles.wrap} ref={ref}>
+            <div className={wrapClassName} ref={ref}>
                 <button
                     type="button"
                     className={styles.infoCircle}
@@ -157,7 +172,7 @@ const InfoTooltip = ({
     }
 
     return (
-        <div className={styles.wrap} ref={ref}>
+        <div className={wrapClassName} ref={ref}>
             <div
                 className={`${styles.wrapTitle} ${titleInteractive ? styles.wrapTitleInteractive : ""}`}
                 {...(titleInteractive

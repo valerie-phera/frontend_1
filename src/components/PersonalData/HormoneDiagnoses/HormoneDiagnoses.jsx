@@ -81,7 +81,9 @@ const HormoneDiagnoses = ({
                 }
                 showArrow={false}
                 showErrorCircle={showHeadingError && !skipped}
-            />
+            >
+                Conditions like PCOS or endometriosis affect your hormonal baseline - this helps us put your pH in context, not judge it.
+            </InfoTooltip>
             <div className={styles.list}>{list}</div>
             {showDetailOptions && (
                 <DetailChipRow

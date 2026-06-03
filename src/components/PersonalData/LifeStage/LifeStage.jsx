@@ -84,7 +84,9 @@ const LifeStage = ({
         }
         showArrow={false}
         showErrorCircle={showHeadingError && !skipped}
-      />
+      >
+        Your hormones shift across life stages - this helps us read your pH in the right context.
+      </InfoTooltip>
       <div className={styles.list}>{mainList}</div>
       {showDetailOptions && (
         <DetailChipRow

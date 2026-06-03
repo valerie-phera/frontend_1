@@ -101,7 +101,9 @@ const CurrentMedications = ({
                 }
                 showArrow={false}
                 showErrorCircle={showHeadingError && !skipped}
-            />
+            >
+                Antibiotics, antifungals, and hormonal treatments all affect pH - we'll note what you're taking in your result.
+            </InfoTooltip>
             <div className={styles.list}>{list}</div>
             {showDetailOptions && (
                 <DetailChipRow
