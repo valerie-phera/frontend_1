@@ -5,7 +5,7 @@
     background: #ffffff;
     border-radius: 10px;
     box-sizing: border-box;
-    padding: 10px 16px;
+    padding: 12px 16px;
     gap: 0;
     transition:
         padding 0.42s cubic-bezier(0.4, 0, 0.2, 1),
@@ -24,12 +24,26 @@
     align-items: center;
     gap: 8px;
     width: 100%;
+    position: relative;
     border: none;
     background: transparent;
     padding: 0;
+    margin: 0;
     cursor: pointer;
     text-align: left;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* 43px tap target without changing visual layout (icon + title height). */
+.header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 48px;
+    transform: translateY(-50%);
+    z-index: 0;
 }
 
 .header:focus-visible {
@@ -39,6 +53,8 @@
 }
 
 .headerLeft {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -73,6 +89,8 @@
 }
 
 .headerTrailing {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: row;
     align-items: center;

@@ -9,13 +9,13 @@ import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 const options = [
     "Adenomyosis",
     "Amenorhea",
-    "Cushing’s syndrome",
     "Diabetes",
+    "Cushing’s syndrome",
     "Endometriosis",
     "Intersex",
     "Thyroid disorder",
-    "Uterine fibroids",
     "Premature ovarian insufficiency (POI)",
+    "Uterine fibroids",
 ];
 
 const HormoneDiagnoses = ({
@@ -69,9 +69,8 @@ const HormoneDiagnoses = ({
 
     return (
         <div
-            className={`${styles.wrap} ${
-                skipped ? skippedStyles.wrapSkipped : ""
-            }`.trim()}
+            className={`${styles.wrap} ${skipped ? skippedStyles.wrapSkipped : ""
+                }`.trim()}
         >
             <InfoTooltip
                 title={

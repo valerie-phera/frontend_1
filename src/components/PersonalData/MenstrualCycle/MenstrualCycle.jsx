@@ -11,6 +11,7 @@ const options = [
     "No period for 12+ months",
     "Regular",
     "Irregular",
+    "Currently pregnant",
     "Postpartum",
     "Never had a period",
     "Polycystic ovary syndrome (PCOS)",

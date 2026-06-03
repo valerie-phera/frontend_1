@@ -7,7 +7,7 @@ import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
 import styles from "./Urination.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
-const options = ["Frequent urination", "Burning sensation"];
+const options = ["More frequent than usual", "Burning sensation"];
 
 const Urination = ({
     urination,

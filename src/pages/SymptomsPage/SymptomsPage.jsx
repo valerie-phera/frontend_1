@@ -70,13 +70,19 @@ const computeSymptomsSectionIssues = (
     discharge,
     vulvaCondition,
     smell,
-    urination
+    urination,
+    vaginalProducts,
+    sexFluids,
+    spotting
 ) => {
     const missing = [
         discharge,
         vulvaCondition,
         smell,
         urination,
+        vaginalProducts,
+        sexFluids,
+        spotting,
     ].filter((value) => !Array.isArray(value) || value.length === 0).length;
 
     return { count: missing };
@@ -202,9 +208,20 @@ const SymptomsPage = () => {
                 discharge,
                 vulvaCondition,
                 smell,
-                urination
+                urination,
+                vaginalProducts,
+                sexFluids,
+                spotting
             ),
-        [discharge, vulvaCondition, smell, urination]
+        [
+            discharge,
+            vulvaCondition,
+            smell,
+            urination,
+            vaginalProducts,
+            sexFluids,
+            spotting,
+        ]
     );
 
     useEffect(() => {

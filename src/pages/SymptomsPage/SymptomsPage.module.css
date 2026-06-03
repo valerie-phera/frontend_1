@@ -12,7 +12,7 @@
 }
 
 .title {
-    font-weight: 711;
+    font-weight: 700;
     letter-spacing: 0.01em;
     line-height: 29px;
 }
@@ -27,6 +27,6 @@
 .mainIntro {
     display: flex;
     flex-direction: column;
-    gap: 29px;
+    gap: 4px;
     margin-bottom: 10px;
 }
