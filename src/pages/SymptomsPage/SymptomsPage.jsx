@@ -31,10 +31,10 @@ import {
 } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
 import {
-    getEmptyStepFormPatch,
     isStepSkipped,
     persistStepSkip,
     readPreSkipSnapshot,
+    snapshotToStepFormPatch,
 } from "../../shared/utils/addDetailsSkipStorage";
 import { stripDetailOptions } from "../../shared/utils/detailChipSelection";
 import { createSymptomsChipChangeHandler, getSymptomsHeaderSelection } from "../../shared/utils/symptomsChipSelection";
@@ -87,6 +87,51 @@ const computeSymptomsSectionIssues = (
 
     return { count: missing };
 };
+
+const buildSymptomsFormPatch = (
+    discharge,
+    vulvaCondition,
+    smell,
+    urination,
+    notes,
+    vaginalProducts,
+    sexFluids,
+    spotting
+) => ({
+    discharge: Array.isArray(discharge) ? discharge : [],
+    vulvaCondition: Array.isArray(vulvaCondition) ? vulvaCondition : [],
+    smell: Array.isArray(smell) ? smell : [],
+    urination: Array.isArray(urination) ? urination : [],
+    notes: notes ?? "",
+    vaginalProducts: Array.isArray(vaginalProducts) ? vaginalProducts : [],
+    sexFluids: Array.isArray(sexFluids) ? sexFluids : [],
+    spotting: Array.isArray(spotting) ? spotting : [],
+});
+
+const stripSymptomsForRoute = (values) =>
+    stripDetailOptions(
+        Array.isArray(values) ? values.filter((x) => x !== "None") : []
+    );
+
+const buildSymptomsRoutePatch = (
+    discharge,
+    vulvaCondition,
+    smell,
+    urination,
+    notes,
+    vaginalProducts,
+    sexFluids,
+    spotting
+) => ({
+    discharge: stripSymptomsForRoute(discharge),
+    vulvaCondition: stripSymptomsForRoute(vulvaCondition),
+    smell: stripSymptomsForRoute(smell),
+    urination: stripSymptomsForRoute(urination),
+    notes: notes ?? "",
+    vaginalProducts: stripSymptomsForRoute(vaginalProducts),
+    sexFluids: stripSymptomsForRoute(sexFluids),
+    spotting: stripSymptomsForRoute(spotting),
+});
 
 const SymptomsPage = () => {
     const navigate = useNavigate();
@@ -364,7 +409,7 @@ const SymptomsPage = () => {
             persistStepSkip(phValue, timestamp, "symptoms", {
                 skipped: true,
                 preSkipSnapshot: snapshot,
-                formPatch: getEmptyStepFormPatch("symptoms"),
+                formPatch: snapshotToStepFormPatch("symptoms", snapshot),
             });
         }
     };
@@ -379,14 +424,20 @@ const SymptomsPage = () => {
             persistStepSkip(phValue, timestamp, "symptoms", {
                 skipped: true,
                 preSkipSnapshot,
-                formPatch: getEmptyStepFormPatch("symptoms"),
+                formPatch: buildSymptomsFormPatch(
+                    discharge,
+                    vulvaCondition,
+                    smell,
+                    urination,
+                    notes,
+                    vaginalProducts,
+                    sexFluids,
+                    spotting
+                ),
             });
             writeActiveResultMeta({ phValue, timestamp });
 
-            const stripUiTokens = (v) =>
-                stripDetailOptions(
-                    Array.isArray(v) ? v.filter((x) => x !== "None") : []
-                );
+            const stripUiTokens = stripSymptomsForRoute;
             const lifeStage = stripUiTokens(state?.lifeStage);
             const currentMedications = stripUiTokens(state?.currentMedications);
 
@@ -409,14 +460,16 @@ const SymptomsPage = () => {
 
             const nextState = {
                 ...state,
-                discharge: [],
-                vulvaCondition: [],
-                smell: [],
-                urination: [],
-                notes: "",
-                vaginalProducts: [],
-                sexFluids: [],
-                spotting: [],
+                ...buildSymptomsRoutePatch(
+                    discharge,
+                    vulvaCondition,
+                    smell,
+                    urination,
+                    notes,
+                    vaginalProducts,
+                    sexFluids,
+                    spotting
+                ),
                 lifeStage,
                 hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
                 currentMedications,
@@ -441,7 +494,7 @@ const SymptomsPage = () => {
         persistStepSkip(phValue, timestamp, "symptoms", {
             skipped: false,
             preSkipSnapshot: null,
-            formPatch: {
+            formPatch: buildSymptomsFormPatch(
                 discharge,
                 vulvaCondition,
                 smell,
@@ -449,15 +502,12 @@ const SymptomsPage = () => {
                 notes,
                 vaginalProducts,
                 sexFluids,
-                spotting,
-            },
+                spotting
+            ),
         });
         writeActiveResultMeta({ phValue, timestamp });
 
-        const stripUiTokens = (v) =>
-            stripDetailOptions(
-                Array.isArray(v) ? v.filter((x) => x !== "None") : []
-            );
+        const stripUiTokens = stripSymptomsForRoute;
 
         const lifeStage = stripUiTokens(state?.lifeStage);
         const currentMedications = stripUiTokens(state?.currentMedications);
@@ -485,14 +535,16 @@ const SymptomsPage = () => {
 
         const nextState = {
             ...state,
-            discharge: stripUiTokens(discharge),
-            vulvaCondition: stripUiTokens(vulvaCondition),
-            smell: stripUiTokens(smell),
-            urination: stripUiTokens(urination),
-            notes,
-            vaginalProducts: stripUiTokens(vaginalProducts),
-            sexFluids: stripUiTokens(sexFluids),
-            spotting: stripUiTokens(spotting),
+            ...buildSymptomsRoutePatch(
+                discharge,
+                vulvaCondition,
+                smell,
+                urination,
+                notes,
+                vaginalProducts,
+                sexFluids,
+                spotting
+            ),
             lifeStage,
             hormoneDiagnoses: stripUiTokens(state?.hormoneDiagnoses),
             currentMedications,
@@ -511,18 +563,16 @@ const SymptomsPage = () => {
             persistStepSkip(phValue, timestamp, "symptoms", {
                 skipped: isSkipped,
                 preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
-                formPatch: isSkipped
-                    ? getEmptyStepFormPatch("symptoms")
-                    : {
-                          discharge,
-                          vulvaCondition,
-                          smell,
-                          urination,
-                          notes,
-                          vaginalProducts,
-                          sexFluids,
-                          spotting,
-                      },
+                formPatch: buildSymptomsFormPatch(
+                    discharge,
+                    vulvaCondition,
+                    smell,
+                    urination,
+                    notes,
+                    vaginalProducts,
+                    sexFluids,
+                    spotting
+                ),
             });
         }
         navigate(-1);

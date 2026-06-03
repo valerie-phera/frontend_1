@@ -20,7 +20,6 @@ import {
 import { readAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
 import { writeAddDetailsDraft } from "../../shared/utils/addDetailsDraftSessionStorage";
 import {
-    getEmptyStepFormPatch,
     isStepSkipped,
     persistBasicSkip,
     readPreSkipSnapshot,
@@ -46,6 +45,60 @@ const buildEthnicBackgroundsForSubmit = (backgrounds, otherText) => {
         return mainOrdered;
     }
     return [...mainOrdered, trimmed];
+};
+
+const buildBasicFormPatch = (
+    age,
+    lifeStage,
+    ethnicBackground,
+    ethnicOtherText
+) => {
+    const trimmedOtherForState = String(ethnicOtherText ?? "")
+        .trim()
+        .slice(0, 50);
+    const hasOtherChip = Array.isArray(ethnicBackground)
+        ? ethnicBackground.includes(ETHNIC_OTHER_OPTION)
+        : false;
+    const ethnicForApi = Array.isArray(ethnicBackground)
+        ? buildEthnicBackgroundsForSubmit(ethnicBackground, ethnicOtherText)
+        : [];
+
+    return {
+        age: age ?? "",
+        lifeStage: stripNoneToken(lifeStage),
+        ethnicBackground: ethnicForApi,
+        ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+    };
+};
+
+const buildBasicRouteState = (
+    phValue,
+    timestamp,
+    recommendations,
+    age,
+    lifeStage,
+    ethnicBackground,
+    ethnicOtherText
+) => {
+    const trimmedOtherForState = String(ethnicOtherText ?? "")
+        .trim()
+        .slice(0, 50);
+    const hasOtherChip = Array.isArray(ethnicBackground)
+        ? ethnicBackground.includes(ETHNIC_OTHER_OPTION)
+        : false;
+    const ethnicForApi = Array.isArray(ethnicBackground)
+        ? buildEthnicBackgroundsForSubmit(ethnicBackground, ethnicOtherText)
+        : [];
+
+    return {
+        phValue,
+        timestamp,
+        recommendations,
+        age: age ?? "",
+        lifeStage: stripDetailOptions(stripNoneToken(lifeStage)),
+        ethnicBackground: stripDetailOptions(ethnicForApi),
+        ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+    };
 };
 
 const computeBasicSectionIssues = (
@@ -283,7 +336,12 @@ const AddDetailsBasicPage = () => {
             persistBasicSkip(phValue, timestamp, {
                 skipped: true,
                 preSkipSnapshot: snapshot,
-                formPatch: getEmptyStepFormPatch("basic"),
+                formPatch: buildBasicFormPatch(
+                    age,
+                    lifeStage,
+                    ethnicBackground,
+                    ethnicOtherText
+                ),
             });
         }
     };
@@ -298,20 +356,25 @@ const AddDetailsBasicPage = () => {
             persistBasicSkip(phValue, timestamp, {
                 skipped: true,
                 preSkipSnapshot,
-                formPatch: getEmptyStepFormPatch("basic"),
+                formPatch: buildBasicFormPatch(
+                    age,
+                    lifeStage,
+                    ethnicBackground,
+                    ethnicOtherText
+                ),
             });
             writeActiveResultMeta({ phValue, timestamp });
 
             navigate("/add-details/hormonal-health", {
-                state: {
+                state: buildBasicRouteState(
                     phValue,
                     timestamp,
                     recommendations,
-                    age: "",
-                    lifeStage: [],
-                    ethnicBackground: [],
-                    ethnicOtherText: "",
-                },
+                    age,
+                    lifeStage,
+                    ethnicBackground,
+                    ethnicOtherText
+                ),
             });
             return;
         }
@@ -340,66 +403,42 @@ const AddDetailsBasicPage = () => {
             }
         }
 
-        const ethnicForApi = buildEthnicBackgroundsForSubmit(
-            ethnicBackground,
-            ethnicOtherText
-        );
-
-        const trimmedOtherForState = String(ethnicOtherText ?? "")
-            .trim()
-            .slice(0, 50);
-        const hasOtherChip = ethnicBackground.includes(ETHNIC_OTHER_OPTION);
-
         persistBasicSkip(phValue, timestamp, {
             skipped: false,
             preSkipSnapshot: null,
-            formPatch: {
+            formPatch: buildBasicFormPatch(
                 age,
                 lifeStage,
-                ethnicBackground: ethnicForApi,
-                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-            },
+                ethnicBackground,
+                ethnicOtherText
+            ),
         });
         writeActiveResultMeta({ phValue, timestamp });
 
         navigate("/add-details/hormonal-health", {
-            state: {
+            state: buildBasicRouteState(
                 phValue,
                 timestamp,
                 recommendations,
                 age,
-                lifeStage: stripDetailOptions(lifeStage),
-                ethnicBackground: stripDetailOptions(ethnicForApi),
-                ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
-            },
+                lifeStage,
+                ethnicBackground,
+                ethnicOtherText
+            ),
         });
     };
 
     const handleGoBack = () => {
         if (phValue !== undefined && phValue !== null) {
-            const trimmedOtherForState = String(ethnicOtherText ?? "")
-                .trim()
-                .slice(0, 50);
-            const hasOtherChip = Array.isArray(ethnicBackground)
-                ? ethnicBackground.includes(ETHNIC_OTHER_OPTION)
-                : false;
-            const ethnicForState = Array.isArray(ethnicBackground)
-                ? buildEthnicBackgroundsForSubmit(ethnicBackground, ethnicOtherText)
-                : [];
-
             persistBasicSkip(phValue, timestamp, {
                 skipped: isSkipped,
                 preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
-                formPatch: isSkipped
-                    ? getEmptyStepFormPatch("basic")
-                    : {
-                          age,
-                          lifeStage,
-                          ethnicBackground: ethnicForState,
-                          ethnicOtherText: hasOtherChip
-                              ? trimmedOtherForState
-                              : "",
-                      },
+                formPatch: buildBasicFormPatch(
+                    age,
+                    lifeStage,
+                    ethnicBackground,
+                    ethnicOtherText
+                ),
             });
             writeActiveResultMeta({ phValue, timestamp });
         }

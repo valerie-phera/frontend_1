@@ -20,10 +20,10 @@ import {
 } from "../../shared/utils/detailChipSelection";
 import { stripNoneToken, toggleListItem } from "../../shared/utils/toggleListItem";
 import {
-    getEmptyStepFormPatch,
     isStepSkipped,
     persistStepSkip,
     readPreSkipSnapshot,
+    snapshotToStepFormPatch,
 } from "../../shared/utils/addDetailsSkipStorage";
 import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 import basicStyles from "../AddDetailsBasicPage/AddDetailsBasicPage.module.css";
@@ -44,6 +44,37 @@ const computeHormonalSectionIssues = (
         (diagnosesMissing ? 1 : 0) +
         (medicationsMissing ? 1 : 0);
     return { menstrualMissing, diagnosesMissing, medicationsMissing, count };
+};
+
+const buildHormonalFormPatch = (
+    menstrualCycle,
+    hormoneDiagnoses,
+    currentMedications
+) => ({
+    menstrualCycle: Array.isArray(menstrualCycle) ? menstrualCycle : [],
+    hormoneDiagnoses: Array.isArray(hormoneDiagnoses) ? hormoneDiagnoses : [],
+    currentMedications: Array.isArray(currentMedications)
+        ? currentMedications
+        : [],
+});
+
+const buildHormonalRoutePatch = (
+    menstrualCycle,
+    hormoneDiagnoses,
+    currentMedications
+) => {
+    const medicationsForNext = Array.isArray(currentMedications)
+        ? currentMedications.filter((x) => x !== "None")
+        : [];
+    const diagnosesForNext = Array.isArray(hormoneDiagnoses)
+        ? hormoneDiagnoses.filter((x) => x !== "None")
+        : [];
+
+    return {
+        menstrualCycle: stripDetailOptions(menstrualCycle),
+        hormoneDiagnoses: stripDetailOptions(diagnosesForNext),
+        currentMedications: stripDetailOptions(medicationsForNext),
+    };
 };
 
 const HormonalHealthPage = () => {
@@ -302,7 +333,7 @@ const HormonalHealthPage = () => {
             persistStepSkip(phValue, timestamp, "hormonal", {
                 skipped: true,
                 preSkipSnapshot: snapshot,
-                formPatch: getEmptyStepFormPatch("hormonal"),
+                formPatch: snapshotToStepFormPatch("hormonal", snapshot),
             });
         }
     };
@@ -317,15 +348,21 @@ const HormonalHealthPage = () => {
             persistStepSkip(phValue, timestamp, "hormonal", {
                 skipped: true,
                 preSkipSnapshot,
-                formPatch: getEmptyStepFormPatch("hormonal"),
+                formPatch: buildHormonalFormPatch(
+                    menstrualCycle,
+                    hormoneDiagnoses,
+                    currentMedications
+                ),
             });
 
             navigate("/add-details/symptoms", {
                 state: {
                     ...state,
-                    menstrualCycle: [],
-                    hormoneDiagnoses: [],
-                    currentMedications: [],
+                    ...buildHormonalRoutePatch(
+                        menstrualCycle,
+                        hormoneDiagnoses,
+                        currentMedications
+                    ),
                 },
             });
             return;
@@ -338,29 +375,24 @@ const HormonalHealthPage = () => {
         }
         setValidationVisible(false);
 
-        const medicationsForNext = Array.isArray(currentMedications)
-            ? currentMedications.filter((x) => x !== "None")
-            : [];
-        const diagnosesForNext = Array.isArray(hormoneDiagnoses)
-            ? hormoneDiagnoses.filter((x) => x !== "None")
-            : [];
-
         persistStepSkip(phValue, timestamp, "hormonal", {
             skipped: false,
             preSkipSnapshot: null,
-            formPatch: {
+            formPatch: buildHormonalFormPatch(
                 menstrualCycle,
                 hormoneDiagnoses,
-                currentMedications,
-            },
+                currentMedications
+            ),
         });
 
         navigate("/add-details/symptoms", {
             state: {
                 ...state,
-                menstrualCycle: stripDetailOptions(menstrualCycle),
-                hormoneDiagnoses: stripDetailOptions(diagnosesForNext),
-                currentMedications: stripDetailOptions(medicationsForNext),
+                ...buildHormonalRoutePatch(
+                    menstrualCycle,
+                    hormoneDiagnoses,
+                    currentMedications
+                ),
             },
         });
     };
@@ -370,13 +402,11 @@ const HormonalHealthPage = () => {
             persistStepSkip(phValue, timestamp, "hormonal", {
                 skipped: isSkipped,
                 preSkipSnapshot: isSkipped ? preSkipSnapshot : null,
-                formPatch: isSkipped
-                    ? getEmptyStepFormPatch("hormonal")
-                    : {
-                          menstrualCycle,
-                          hormoneDiagnoses,
-                          currentMedications,
-                      },
+                formPatch: buildHormonalFormPatch(
+                    menstrualCycle,
+                    hormoneDiagnoses,
+                    currentMedications
+                ),
             });
         }
         navigate(-1);

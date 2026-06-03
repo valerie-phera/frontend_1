@@ -296,14 +296,58 @@ export function collectDeepDiveChunks(raw) {
   return [];
 }
 
+/** Same sentence splitting as ResultWithDetailsPage deep-dive bullets. */
 export const splitIntoSentences = (rawText) => {
   const text = String(rawText ?? "").replace(/\s+/g, " ").trim();
   if (!text) return [];
-  return text
-    .split(/(?<=[.!?])\s+(?=[A-Z0-9(])/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+
+  const out = [];
+  let start = 0;
+
+  const isDigit = (ch) => ch >= "0" && ch <= "9";
+
+  const pushChunk = (endExclusive) => {
+    const chunk = text.slice(start, endExclusive).trim();
+    if (chunk) out.push(chunk);
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+
+    const next = text[i + 1];
+    const followedBySpaceOrEnd = next === " " || next === undefined;
+    if (!followedBySpaceOrEnd) continue;
+
+    if (ch === ".") {
+      const prev = text[i - 1];
+      let j = i + 1;
+      while (j < text.length && text[j] === " ") j++;
+      const nextNonSpace = text[j];
+      if (isDigit(prev) && isDigit(nextNonSpace)) continue;
+    }
+
+    pushChunk(i + 1);
+    let k = i + 1;
+    while (k < text.length && text[k] === " ") k++;
+    start = k;
+    i = k - 1;
+  }
+
+  pushChunk(text.length);
+  return out;
 };
+
+/** @param {unknown} raw @returns {{ title: string|null, body: string }[]} */
+export function insightFieldToDeepDiveSubsections(title, raw) {
+  const paragraphs = getInsightSectionParagraphs(raw);
+  if (!paragraphs.length) return [];
+
+  return paragraphs.map((body, index) => ({
+    title: index === 0 ? title : null,
+    body,
+  }));
+}
 
 const DEFAULT_OVERVIEW = [
   "If your discharge changes suddenly, or you feel itching, burning, or unusual odor. This could alter your pH and signal an imbalance like bacterial vaginosis or yeast infections [4].",
@@ -350,24 +394,27 @@ export function deepDiveSectionsEqual(a, b) {
 
 /** @param {object} data @returns {DeepDiveSubsection[]} */
 export function getDeepDiveSections(data) {
-  const raw = data?.recommendations ?? data?.agent_reply;
+  const fromInsightFields = POST_OVERVIEW_SECTION_DEFS.flatMap(({ title, key }) =>
+    insightFieldToDeepDiveSubsections(title, resolveInsightField(data, key))
+  );
 
   let items = [];
 
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    items = Object.entries(raw)
-      .map(([title, value]) => {
-        const body = formatInsightRichText(
-          Array.isArray(value) ? value.join("\n\n") : String(value ?? "")
-        );
-        const label = String(title).trim();
-        if (!label && !body) return null;
-        return { title: label || null, body };
-      })
-      .filter(Boolean);
+  if (fromInsightFields.length > 0) {
+    items = fromInsightFields;
   } else {
-    const chunks = collectDeepDiveChunks(raw) ?? [];
-    items = chunks.map(parseDeepDiveItem).filter(Boolean);
+    const raw = data?.recommendations ?? data?.agent_reply;
+
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      items = Object.entries(raw).flatMap(([title, value]) => {
+        const label = String(title).trim();
+        const subsections = insightFieldToDeepDiveSubsections(label || null, value);
+        return subsections.length > 0 ? subsections : [];
+      });
+    } else {
+      const chunks = collectDeepDiveChunks(raw) ?? [];
+      items = chunks.map(parseDeepDiveItem).filter(Boolean);
+    }
   }
 
   if (!items.length) {
@@ -462,6 +509,17 @@ export function extractInsightTextParts(raw) {
 export function getInsightSectionParagraphs(raw) {
   const seen = new Set();
   return extractInsightTextParts(raw)
+    .flatMap((part) => {
+      const text = String(part ?? "").trim();
+      if (!text) return [];
+      if (/\n\s*\n/.test(text)) {
+        return text
+          .split(/\n\s*\n/)
+          .map((chunk) => chunk.trim())
+          .filter(Boolean);
+      }
+      return [text];
+    })
     .flatMap((part) => splitByBoldLabels(part))
     .flatMap((part) => splitIntoSentences(part))
     .map(formatOverviewParagraph)
@@ -839,7 +897,6 @@ export function continuationPagesEqual(a, b) {
 
 /** @param {{
  *   postOverviewSections: PostOverviewSection[],
- *   deepDiveSections: { title: string|null, body: string }[],
  *   citations: object[],
  *   insightsStartOnPage2: boolean,
  *   showYourDetails: boolean,
@@ -847,7 +904,6 @@ export function continuationPagesEqual(a, b) {
  * }} options @returns {ContinuationPage} */
 export function createInitialContinuationPage({
   postOverviewSections,
-  deepDiveSections,
   citations,
   insightsStartOnPage2,
   showYourDetails,
@@ -858,7 +914,7 @@ export function createInitialContinuationPage({
     showYourDetails,
     showSymptoms,
     postSections: insightsStartOnPage2 ? clonePostOverviewSections(postOverviewSections) : [],
-    deepDive: [...deepDiveSections],
+    deepDive: [],
     citations: [...citations],
   };
 }

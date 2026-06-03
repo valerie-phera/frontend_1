@@ -48,6 +48,20 @@ export const getEmptyStepFormPatch = (step) => ({
     ...(EMPTY_STEP_FORM_PATCH[step] ?? {}),
 });
 
+/** Map a pre-skip snapshot onto the draft fields for a step (keeps partial selections on skip). */
+export const snapshotToStepFormPatch = (step, snapshot) => {
+    if (!snapshot || typeof snapshot !== "object") {
+        return getEmptyStepFormPatch(step);
+    }
+
+    const template = EMPTY_STEP_FORM_PATCH[step] ?? {};
+    const patch = {};
+    for (const key of Object.keys(template)) {
+        patch[key] = snapshot[key] ?? template[key];
+    }
+    return patch;
+};
+
 export const persistStepSkip = (
     phValue,
     timestamp,

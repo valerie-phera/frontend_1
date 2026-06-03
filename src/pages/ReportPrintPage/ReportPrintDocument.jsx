@@ -18,7 +18,6 @@ import {
   createEmptyContinuationPage,
   createInitialContinuationPage,
   getContinuationPageCitationStartIndex,
-  getDeepDiveSections,
   getOverviewParagraphs,
   getPostOverviewSections,
   insightParagraphsEqual,
@@ -31,7 +30,6 @@ import {
   prependPostOverviewParagraph,
   removeLastPostOverviewParagraph,
   shrinkCitationOnContinuationPage,
-  shrinkDeepDiveOnContinuationPage,
   shrinkOverviewOnContinuationPage,
   shrinkPostOverviewOnContinuationPage,
   sourcesSectionOverflowsPage,
@@ -164,30 +162,6 @@ const PatientDetailsSections = ({
   </>
 );
 
-const DeepDiveSection = ({ sections, showTitle = true }) => {
-  if (!sections.length) return null;
-
-  return (
-    <section className={styles.deepDiveSection} data-flow-block data-deep-dive-section>
-      {showTitle ? <h2 className={styles.insightsTitle}>Deep dive</h2> : null}
-      <div className={styles.deepDiveCard}>
-        {sections.map((section, index) => (
-          <div key={`${section.title ?? "item"}-${index}`} className={styles.deepDiveSubsection}>
-            <div className={styles.bulletRow}>
-              <span className={`${styles.bullet} ${styles.bulletTeal}`} aria-hidden />
-              <p className={styles.deepDiveItemText}>
-                {section.title ? <strong>{section.title}</strong> : null}
-                {section.title && section.body ? " " : null}
-                {section.body ? <InsightInline text={section.body} /> : null}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
 const OverviewItems = ({ paragraphs }) =>
   paragraphs.map((text, index) => (
     <div key={index} className={styles.overviewItem} data-insight-para>
@@ -316,10 +290,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
       data?.next_steps,
     ]
   );
-  const deepDiveSections = useMemo(
-    () => getDeepDiveSections(data),
-    [data?.recommendations, data?.agent_reply]
-  );
   const citations = useMemo(() => buildReportCitations(data), [data?.citations]);
 
   const page1Ref = useRef(null);
@@ -360,7 +330,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
         postOverviewSections
           .map((s) => `${s.key}\x1f${s.paragraphs.join("\x1e")}`)
           .join("\x1e"),
-        deepDiveSections.map((s) => `${s.title ?? ""}\x1f${s.body}`).join("\x1e"),
         citations.length,
       ].join("\x1f"),
     [
@@ -371,7 +340,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
       reportedSymptoms.length,
       overviewParagraphs,
       postOverviewSections,
-      deepDiveSections,
       citations.length,
     ]
   );
@@ -380,9 +348,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   const totalPages = 1 + (showContinuationPages ? continuationPages.length : 0);
   const firstOverviewContinuationIndex = continuationPages.findIndex(
     (page) => page.overviewParagraphs.length > 0
-  );
-  const firstDeepDiveContinuationIndex = continuationPages.findIndex(
-    (page) => page.deepDive.length > 0
   );
   const firstSourcesContinuationIndex = continuationPages.findIndex(
     (page) => page.citations.length > 0
@@ -424,7 +389,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
 
     const initialContinuation = createInitialContinuationPage({
       postOverviewSections,
-      deepDiveSections,
       citations,
       insightsStartOnPage2,
       showYourDetails: insightsStartOnPage2 && showDetailsOnPage1,
@@ -440,7 +404,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     reportedSymptoms.length,
     citations.length,
     postOverviewSections,
-    deepDiveSections,
   ]);
 
   useLayoutEffect(() => {
@@ -728,20 +691,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
         return;
       }
 
-      const deepDiveEl = pageEl.querySelector("[data-deep-dive-section]");
-      const deepDiveOverflow =
-        continuationPages[pageIndex]?.deepDive.length > 0 &&
-        deepDiveEl &&
-        blockExtendsBelowFooter(pageEl, deepDiveEl);
-
-      if (deepDiveOverflow) {
-        continuationShrinkGuardRef.current += 1;
-        setContinuationPages((pages) => {
-          const next = shrinkDeepDiveOnContinuationPage(pages, pageIndex);
-          return next && !continuationPagesEqual(pages, next) ? next : pages;
-        });
-        return;
-      }
     }
 
     continuationShrinkGuardRef.current = 0;
@@ -783,7 +732,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     reportedSymptoms.length,
     overviewParagraphs.length,
     postOverviewSections.length,
-    deepDiveSections.length,
     citations.length,
   ]);
 
@@ -905,13 +853,6 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
                         <PostOverviewSections
                           sections={page.postSections}
                           titleVisibility={postSectionTitleVisibility[pageIndex + 1]}
-                        />
-                      ) : null}
-
-                      {page.deepDive.length > 0 ? (
-                        <DeepDiveSection
-                          sections={page.deepDive}
-                          showTitle={pageIndex === firstDeepDiveContinuationIndex}
                         />
                       ) : null}
 

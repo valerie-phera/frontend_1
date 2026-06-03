@@ -1211,7 +1211,6 @@ const ResultWithDetailsPage = () => {
                         className={`${styles.btns} ${isDesktopCompletionLayout ? styles.btnsDesktopCompletion : ""}`}
                     >
                         <ButtonReverse onClick={onExportClick} >Export results</ButtonReverse>
-                        {/* <Button onClick={handleImportClick}>Import results</Button> */}
                     </div>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
