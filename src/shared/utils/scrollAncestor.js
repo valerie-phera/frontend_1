@@ -108,6 +108,83 @@ export function getPopoverHorizontalBounds(fromEl, padding = 16) {
   return { minX, maxX, viewportWidth };
 }
 
+const POPOVER_ABOVE_ANCHOR_GAP_PX = 13;
+
+/** Visible vertical band for portaled popovers (viewport, scroller, phone screen, fixed header). */
+export function getPopoverVerticalClipBounds(fromEl, scroller, padding = 8) {
+  const vv = window.visualViewport;
+  const viewportTop = vv?.offsetTop ?? 0;
+  const viewportHeight = vv?.height ?? window.innerHeight;
+  let clipTop = viewportTop + padding;
+  let clipBottom = viewportTop + viewportHeight - padding;
+
+  if (scroller instanceof HTMLElement) {
+    const scrollerRect = scroller.getBoundingClientRect();
+    clipTop = Math.max(clipTop, scrollerRect.top + padding);
+    clipBottom = Math.min(
+      clipBottom,
+      getScrollportClipBottom(scroller, fromEl) - padding
+    );
+  }
+
+  const screenEl =
+    fromEl instanceof Element ? fromEl.closest("[data-device-screen]") : null;
+  if (screenEl instanceof HTMLElement) {
+    const screenRect = screenEl.getBoundingClientRect();
+    clipTop = Math.max(clipTop, screenRect.top + padding);
+    clipBottom = Math.min(clipBottom, screenRect.bottom - padding);
+  }
+
+  const header = document.querySelector("header");
+  if (header instanceof HTMLElement) {
+    const { position } = window.getComputedStyle(header);
+    if (position === "fixed") {
+      clipTop = Math.max(clipTop, header.getBoundingClientRect().bottom + padding);
+    }
+  }
+
+  if (clipBottom < clipTop) {
+    clipBottom = clipTop;
+  }
+
+  return { clipTop, clipBottom };
+}
+
+export function isPopoverAnchorVisible(
+  anchorEl,
+  fromEl,
+  scroller,
+  popoverEl,
+  padding = 8
+) {
+  if (!(anchorEl instanceof HTMLElement)) return false;
+
+  const { clipTop, clipBottom } = getPopoverVerticalClipBounds(
+    fromEl,
+    scroller,
+    padding
+  );
+  const anchorRect = anchorEl.getBoundingClientRect();
+
+  if (anchorRect.bottom <= clipTop || anchorRect.top >= clipBottom) {
+    return false;
+  }
+
+  if (popoverEl instanceof HTMLElement) {
+    const popoverHeight = popoverEl.offsetHeight;
+    if (popoverHeight > 0) {
+      const popoverTop =
+        anchorRect.top - POPOVER_ABOVE_ANCHOR_GAP_PX - popoverHeight;
+      const popoverBottom = anchorRect.top - POPOVER_ABOVE_ANCHOR_GAP_PX;
+      if (popoverBottom <= clipTop || popoverTop >= clipBottom) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 const DEFAULT_CLEARANCE_TOP = 8;
 const DEFAULT_CLEARANCE_BOTTOM = 12;
 const MIN_SCROLL_DELTA_PX = 2;

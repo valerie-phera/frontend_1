@@ -9,7 +9,11 @@ import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import InfoCircle from "../../assets/icons/InfoCircle";
 import ArrowDown from "../../assets/icons/ArrowDown";
-import { findScrollableAncestor, getPopoverHorizontalBounds } from "../../shared/utils/scrollAncestor";
+import {
+    findScrollableAncestor,
+    getPopoverHorizontalBounds,
+    isPopoverAnchorVisible,
+} from "../../shared/utils/scrollAncestor";
 import styles from "./InfoTooltip.module.css";
 
 const VIEWPORT_PADDING_PX = 16;
@@ -50,6 +54,13 @@ const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
                 : minX + availableWidth / 2;
         const arrowOffset = anchorCenterX - left;
         const maxArrowOffset = Math.max(0, halfWidth - 14);
+        const scroller = findScrollableAncestor(root);
+        const visible = isPopoverAnchorVisible(
+            anchor,
+            root,
+            scroller,
+            popoverEl
+        );
 
         setStyle({
             top: rect.top,
@@ -59,6 +70,7 @@ const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
                 -maxArrowOffset,
                 Math.min(maxArrowOffset, arrowOffset)
             ),
+            visible,
         });
     }, [anchorRef, popoverRef]);
 
@@ -71,20 +83,13 @@ const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
         update();
         const rafId = window.requestAnimationFrame(update);
 
-        const scroller = findScrollableAncestor(anchorRef.current);
         window.addEventListener("resize", update);
-        window.addEventListener("scroll", update, true);
-        scroller?.addEventListener?.("scroll", update, { passive: true });
         window.visualViewport?.addEventListener("resize", update);
-        window.visualViewport?.addEventListener("scroll", update);
 
         return () => {
             window.cancelAnimationFrame(rafId);
             window.removeEventListener("resize", update);
-            window.removeEventListener("scroll", update, true);
-            scroller?.removeEventListener?.("scroll", update);
             window.visualViewport?.removeEventListener("resize", update);
-            window.visualViewport?.removeEventListener("scroll", update);
         };
     }, [open, update, anchorRef]);
 
@@ -130,6 +135,29 @@ const InfoTooltip = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const dismiss = () => setOpen(false);
+        const scroller = findScrollableAncestor(ref.current);
+
+        window.addEventListener("scroll", dismiss, true);
+        scroller?.addEventListener("scroll", dismiss, { passive: true });
+        window.visualViewport?.addEventListener("scroll", dismiss, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", dismiss, true);
+            scroller?.removeEventListener("scroll", dismiss);
+            window.visualViewport?.removeEventListener("scroll", dismiss);
+        };
+    }, [open]);
+
+    useEffect(() => {
+        if (open && popoverStyle?.visible === false) {
+            setOpen(false);
+        }
+    }, [open, popoverStyle?.visible]);
+
     const popover =
         open &&
         createPortal(
@@ -140,8 +168,18 @@ const InfoTooltip = ({
                     top: popoverStyle?.top ?? 0,
                     left: popoverStyle?.left ?? 0,
                     maxWidth: popoverStyle?.maxWidth,
-                    visibility: popoverStyle ? "visible" : "hidden",
-                    pointerEvents: popoverStyle ? undefined : "none",
+                    visibility:
+                        popoverStyle?.visible === false
+                            ? "hidden"
+                            : popoverStyle
+                              ? "visible"
+                              : "hidden",
+                    pointerEvents:
+                        popoverStyle?.visible === false
+                            ? "none"
+                            : popoverStyle
+                              ? undefined
+                              : "none",
                     ["--popover-arrow-offset"]: popoverStyle
                         ? `${popoverStyle.arrowOffset}px`
                         : "0px",

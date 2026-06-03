@@ -143,7 +143,7 @@ const DeviceFrame = ({ children }) => {
                   <Frame className={styles.frame} />
                 </div>
 
-                <div className={styles.screen}>
+                <div className={styles.screen} data-device-screen>
                   <StatusBar />
                   <div className={styles.screenContent}>{children}</div>
                 </div>
