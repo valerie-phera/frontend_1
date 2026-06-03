@@ -366,7 +366,9 @@ const ResultWithDetailsPage = () => {
     const { isDesktopCompletionLayout, triggerDesktopCompletion } = useDeviceFrame();
     const [infoOpen, setInfoOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
-    const { state } = useLocation();
+    const location = useLocation();
+    const { state } = location;
+    const isTestCompleteRoute = location.pathname === "/test-complete";
     const phValue = state?.phValue ?? state?.ph_value;
     const phLevel = state?.phLevel;
     const timestamp = state?.timestamp;
@@ -1210,7 +1212,11 @@ const ResultWithDetailsPage = () => {
                     <div
                         className={`${styles.btns} ${isDesktopCompletionLayout ? styles.btnsDesktopCompletion : ""}`}
                     >
-                        <ButtonReverse onClick={onExportClick} >Export results</ButtonReverse>
+                        {isTestCompleteRoute ? (
+                            <Button onClick={onExportClick}>Export results</Button>
+                        ) : (
+                            <ButtonReverse onClick={onExportClick}>Export results</ButtonReverse>
+                        )}
                     </div>
                     <div className={styles.privacyPolicyWrap}>
                         <p className={styles.privacyPolicy}>
