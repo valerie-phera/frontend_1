@@ -8,20 +8,33 @@ import logoPdf from "../../assets/logo_PDF.png";
 import { getPdfDetailSections } from "../../shared/utils/pdfDetailSections";
 import {
   buildReportCitations,
-  deepDiveSectionsEqual,
+  blockExtendsBelowFooter,
+  blockExtendsBelowPatientLimit,
+  buildPostSectionTitleVisibility,
+  canPlaceInsightsOnPage1,
+  consolidatePostOverviewSections,
+  continuationPageHasContent,
+  continuationPagesEqual,
+  createEmptyContinuationPage,
+  createInitialContinuationPage,
+  getContinuationPageCitationStartIndex,
   getDeepDiveSections,
   getOverviewParagraphs,
   getPostOverviewSections,
-  postOverviewSectionsEqual,
-  prependPostOverviewParagraph,
-  removeLastPostOverviewParagraph,
-  blockExtendsBelowFooter,
-  sourcesSectionOverflowsPage,
-  canPlaceInsightsOnPage1,
   insightParagraphsEqual,
   mergeInsightParagraphs,
   paginateInsightParagraphs,
   parseCitationMeta,
+  patientSectionFitsAfterAnchor,
+  postOverviewSectionsEqual,
+  postOverviewSectionsHasParagraph,
+  prependPostOverviewParagraph,
+  removeLastPostOverviewParagraph,
+  shrinkCitationOnContinuationPage,
+  shrinkDeepDiveOnContinuationPage,
+  shrinkOverviewOnContinuationPage,
+  shrinkPostOverviewOnContinuationPage,
+  sourcesSectionOverflowsPage,
 } from "./reportPrintUtils";
 import styles from "./ReportPrintPage.module.css";
 
@@ -32,7 +45,6 @@ const pillClassByLevel = {
   "Slightly Low": styles.pillSlightlyLow,
 };
 
-/** Same icons as PhBadge on ResultWithDetailsPage */
 const pillIconByLevel = {
   Normal: CheckIcon,
   "Slightly Elevated": TrendUp,
@@ -85,37 +97,41 @@ const ReportPageShell = ({ children, timestamp, reportId, pageNum, totalPages })
   </article>
 );
 
-const BRACKET_REF_RE = /(\[[^\]]+\])/g;
 
-const BracketRefInline = ({ text }) => {
-  const parts = String(text ?? "").split(BRACKET_REF_RE).filter((part) => part !== "");
+const INSIGHT_INLINE_RE = /(\*\*[^*]+\*\*|\[[^\]]+\])/g;
 
-  return parts.map((part, index) =>
-    /^\[[^\]]+\]$/.test(part) ? (
-      <span key={`${index}-${part}`} className={styles.bracketRef}>
-        {part}
-      </span>
-    ) : (
-      <span key={`${index}-t`}>{part}</span>
-    )
-  );
+/** Overview / Deep dive inline: **bold** labels and [n] citation refs. */
+const InsightInline = ({ text }) => {
+  const parts = String(text ?? "").split(INSIGHT_INLINE_RE).filter((part) => part !== "");
+
+  return parts.map((part, index) => {
+    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+    if (boldMatch) {
+      return <strong key={`${index}-b`}>{boldMatch[1]}</strong>;
+    }
+    if (/^\[[^\]]+\]$/.test(part)) {
+      return (
+        <span key={`${index}-r`} className={styles.bracketRef}>
+          {part}
+        </span>
+      );
+    }
+    return <span key={`${index}-t`}>{part}</span>;
+  });
 };
 
-const TextWithBracketRefs = ({ text, className }) => (
+const TextWithInsightInline = ({ text, className }) => (
   <p className={className}>
-    <BracketRefInline text={text} />
+    <InsightInline text={text} />
   </p>
 );
 
-const BulletRow = ({ children, bulletClassName, textClassName }) => (
-  <div className={styles.bulletRow}>
-    <span className={`${styles.bullet} ${bulletClassName}`} aria-hidden />
-    <p className={textClassName}>{children}</p>
-  </div>
-);
-
-const DetailsTableCard = ({ title, rows }) => (
-  <section className={styles.tableCard} data-flow-block>
+const DetailsTableCard = ({ title, rows, sectionKey }) => (
+  <section
+    className={styles.tableCard}
+    data-flow-block
+    {...(sectionKey ? { "data-section": sectionKey } : {})}
+  >
     <h2 className={styles.tableTitle}>{title}</h2>
     <div className={styles.tableRows}>
       {rows.map((row) => (
@@ -128,7 +144,6 @@ const DetailsTableCard = ({ title, rows }) => (
   </section>
 );
 
-/** Your details always before Reported symptoms */
 const PatientDetailsSections = ({
   yourDetails,
   reportedSymptoms,
@@ -163,7 +178,7 @@ const DeepDiveSection = ({ sections, showTitle = true }) => {
               <p className={styles.deepDiveItemText}>
                 {section.title ? <strong>{section.title}</strong> : null}
                 {section.title && section.body ? " " : null}
-                {section.body ? <BracketRefInline text={section.body} /> : null}
+                {section.body ? <InsightInline text={section.body} /> : null}
               </p>
             </div>
           </div>
@@ -177,7 +192,7 @@ const OverviewItems = ({ paragraphs }) =>
   paragraphs.map((text, index) => (
     <div key={index} className={styles.overviewItem} data-insight-para>
       <span className={styles.bullet} aria-hidden />
-      <TextWithBracketRefs text={text} className={styles.bulletText} />
+      <TextWithInsightInline text={text} className={styles.bulletText} />
     </div>
   ));
 
@@ -208,15 +223,20 @@ const InsightBulletsSection = ({
   );
 };
 
-const PostOverviewSections = ({ sections }) =>
-  sections.map((section) => (
-    <InsightBulletsSection
-      key={section.key}
-      title={section.title}
-      paragraphs={section.paragraphs}
-      isPostOverview
-    />
-  ));
+const PostOverviewSections = ({ sections, titleVisibility }) =>
+  sections.map((section) => {
+    if (!section.paragraphs.length) return null;
+    const showTitle = titleVisibility?.get(section.key) ?? true;
+    return (
+      <InsightBulletsSection
+        key={section.key}
+        title={section.title}
+        paragraphs={section.paragraphs}
+        showTitle={showTitle}
+        isPostOverview
+      />
+    );
+  });
 
 const CitationList = ({ citations, startIndex = 0 }) =>
   citations.map((citation, index) => {
@@ -271,7 +291,7 @@ const SourcesSection = ({
 };
 
 /**
- * Three-page report body (same as /report-print, without toolbar).
+ * Multi-page report body (same as /report-print, without toolbar).
  * @param {{ data: object, captureMode?: boolean, onLayoutReady?: () => void }} props
  */
 const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
@@ -288,7 +308,13 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   );
   const postOverviewSections = useMemo(
     () => getPostOverviewSections(data),
-    [data?.your_ph, data?.your_symptoms, data?.next_steps]
+    [
+      data?.your_ph,
+      data?.your_symptoms,
+      data?.your_personal_baseline,
+      data?.your_health_context,
+      data?.next_steps,
+    ]
   );
   const deepDiveSections = useMemo(
     () => getDeepDiveSections(data),
@@ -297,41 +323,30 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   const citations = useMemo(() => buildReportCitations(data), [data?.citations]);
 
   const page1Ref = useRef(null);
-  const page2Ref = useRef(null);
-  const page3Ref = useRef(null);
+  const continuationPageRefs = useRef([]);
   const preInsightsProbeRef = useRef(null);
   const measureRef = useRef(null);
   const page1ShrinkGuardRef = useRef(0);
   const page1PostShrinkGuardRef = useRef(0);
-  const page2ShrinkGuardRef = useRef(0);
-  const page3ShrinkGuardRef = useRef(0);
+  const continuationShrinkGuardRef = useRef(0);
+  const postOverviewMigratedToPage2Ref = useRef(false);
 
   const [page1Overview, setPage1Overview] = useState([]);
-  const [page2Overview, setPage2Overview] = useState([]);
   const [page1ShowYourDetails, setPage1ShowYourDetails] = useState(true);
   const [page1ShowSymptoms, setPage1ShowSymptoms] = useState(true);
-  const [page2DeepDive, setPage2DeepDive] = useState([]);
-  const [page3DeepDive, setPage3DeepDive] = useState([]);
-  const [page2CitationCount, setPage2CitationCount] = useState(0);
   const [page1PostSections, setPage1PostSections] = useState([]);
-  const [page2PostSections, setPage2PostSections] = useState([]);
+  const [continuationPages, setContinuationPages] = useState(() => [
+    createEmptyContinuationPage(),
+  ]);
 
   const insightsOnPage1 = canPlaceInsightsOnPage1(
     reportedSymptoms,
     page1ShowSymptoms
   );
 
-  const page2InsightsParagraphs = useMemo(() => {
-    if (!insightsOnPage1 && page1Overview.length > 0) {
-      return mergeInsightParagraphs(page1Overview, page2Overview);
-    }
-    return page2Overview;
-  }, [insightsOnPage1, page1Overview, page2Overview]);
-
-  const postOverviewContinuesOnPage2 = page2InsightsParagraphs.length > 0;
+  const firstContinuationPage = continuationPages[0] ?? createEmptyContinuationPage();
+  const postOverviewContinuesOnPage2 = firstContinuationPage.overviewParagraphs.length > 0;
   const hasPostOnPage1 = page1PostSections.some((section) => section.paragraphs.length > 0);
-  const hasPostOnPage2 = page2PostSections.some((section) => section.paragraphs.length > 0);
-  const hasPostOverviewSections = postOverviewSections.length > 0;
 
   const reportContentKey = useMemo(
     () =>
@@ -361,39 +376,101 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     ]
   );
 
+  const showContinuationPages = continuationPages.some(continuationPageHasContent);
+  const totalPages = 1 + (showContinuationPages ? continuationPages.length : 0);
+  const firstOverviewContinuationIndex = continuationPages.findIndex(
+    (page) => page.overviewParagraphs.length > 0
+  );
+  const firstDeepDiveContinuationIndex = continuationPages.findIndex(
+    (page) => page.deepDive.length > 0
+  );
+  const firstSourcesContinuationIndex = continuationPages.findIndex(
+    (page) => page.citations.length > 0
+  );
+
+  const postSectionTitleVisibility = useMemo(
+    () =>
+      buildPostSectionTitleVisibility([
+        page1PostSections,
+        ...continuationPages.map((page) => page.postSections),
+      ]),
+    [page1PostSections, continuationPages]
+  );
+
   useLayoutEffect(() => {
     page1ShrinkGuardRef.current = 0;
     page1PostShrinkGuardRef.current = 0;
-    page2ShrinkGuardRef.current = 0;
+    continuationShrinkGuardRef.current = 0;
+    postOverviewMigratedToPage2Ref.current = false;
     setPage1Overview((prev) => (prev.length === 0 ? prev : []));
-    setPage2Overview((prev) => (prev.length === 0 ? prev : []));
-    setPage1ShowYourDetails(yourDetails.length > 0);
-    setPage1ShowSymptoms(reportedSymptoms.length > 0);
-    setPage2DeepDive((prev) =>
-      deepDiveSectionsEqual(prev, deepDiveSections) ? prev : deepDiveSections
+
+    const showDetailsOnPage1 = yourDetails.length > 0;
+    const showSymptomsOnPage1 = reportedSymptoms.length > 0;
+    setPage1ShowYourDetails(showDetailsOnPage1);
+    setPage1ShowSymptoms(showSymptomsOnPage1);
+
+    const insightsStartOnPage2 = !canPlaceInsightsOnPage1(
+      reportedSymptoms,
+      showSymptomsOnPage1
     );
-    setPage3DeepDive((prev) => (prev.length === 0 ? prev : []));
-    setPage2CitationCount((prev) =>
-      prev === citations.length ? prev : citations.length
-    );
-    if (postOverviewContinuesOnPage2) {
+
+    if (insightsStartOnPage2) {
       setPage1PostSections([]);
-      setPage2PostSections((prev) =>
-        postOverviewSectionsEqual(prev, postOverviewSections) ? prev : postOverviewSections
-      );
     } else {
       setPage1PostSections((prev) =>
         postOverviewSectionsEqual(prev, postOverviewSections) ? prev : postOverviewSections
       );
-      setPage2PostSections((prev) => (prev.length === 0 ? prev : []));
     }
+
+    const initialContinuation = createInitialContinuationPage({
+      postOverviewSections,
+      deepDiveSections,
+      citations,
+      insightsStartOnPage2,
+      showYourDetails: insightsStartOnPage2 && showDetailsOnPage1,
+      showSymptoms: insightsStartOnPage2 && showSymptomsOnPage1,
+    });
+
+    setContinuationPages((prev) =>
+      continuationPagesEqual(prev, [initialContinuation]) ? prev : [initialContinuation]
+    );
   }, [
     reportContentKey,
     yourDetails.length,
     reportedSymptoms.length,
     citations.length,
     postOverviewSections,
+    deepDiveSections,
+  ]);
+
+  useLayoutEffect(() => {
+    if (!postOverviewContinuesOnPage2) {
+      postOverviewMigratedToPage2Ref.current = false;
+      return;
+    }
+    if (!hasPostOnPage1 || postOverviewMigratedToPage2Ref.current) return;
+
+    postOverviewMigratedToPage2Ref.current = true;
+    setPage1PostSections((prev) => (prev.length === 0 ? prev : []));
+
+    setContinuationPages((pages) => {
+      const merged = consolidatePostOverviewSections(
+        [page1PostSections, ...pages.map((page) => page.postSections)],
+        postOverviewSections
+      );
+      const next = pages.map((page, index) =>
+        index === 0
+          ? { ...page, postSections: merged }
+          : { ...page, postSections: [] }
+      );
+      return continuationPagesEqual(pages, next) ? pages : next;
+    });
+  }, [
     postOverviewContinuesOnPage2,
+    hasPostOnPage1,
+    postOverviewSections,
+    page1PostSections,
+    continuationPages,
   ]);
 
   useLayoutEffect(() => {
@@ -407,9 +484,19 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
 
     if (!canPlaceInsightsOnPage1(reportedSymptoms, page1ShowSymptoms)) {
       setPage1Overview((prev) => (prev.length === 0 ? prev : []));
-      setPage2Overview((prev) =>
-        insightParagraphsEqual(prev, overviewParagraphs) ? prev : overviewParagraphs
-      );
+      setContinuationPages((pages) => {
+        const next = [...pages];
+        next[0] = {
+          ...next[0],
+          overviewParagraphs: insightParagraphsEqual(
+            next[0].overviewParagraphs,
+            overviewParagraphs
+          )
+            ? next[0].overviewParagraphs
+            : overviewParagraphs,
+        };
+        return continuationPagesEqual(pages, next) ? pages : next;
+      });
       return;
     }
 
@@ -423,7 +510,16 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     );
 
     setPage1Overview((prev) => (insightParagraphsEqual(prev, page1) ? prev : page1));
-    setPage2Overview((prev) => (insightParagraphsEqual(prev, page2) ? prev : page2));
+    setContinuationPages((pages) => {
+      const next = [...pages];
+      next[0] = {
+        ...next[0],
+        overviewParagraphs: insightParagraphsEqual(next[0].overviewParagraphs, page2)
+          ? next[0].overviewParagraphs
+          : page2,
+      };
+      return continuationPagesEqual(pages, next) ? pages : next;
+    });
   }, [
     interpretation,
     phLevel,
@@ -439,24 +535,31 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     const pageEl = page1Ref.current;
     if (!pageEl) return;
 
+    const probeEl = preInsightsProbeRef.current;
     const insightsEl = pageEl.querySelector("[data-insights-section]");
     const symptomsEl = pageEl.querySelector('[data-section="reported-symptoms"]');
     const detailsEl = pageEl.querySelector('[data-section="your-details"]');
+    const interpretationEl = pageEl.querySelector("[data-page-content] [data-flow-block]");
 
     const insightsOverflow =
       page1Overview.length > 0 &&
       insightsEl &&
       blockExtendsBelowFooter(pageEl, insightsEl);
-    const symptomsOverflow =
-      page1ShowSymptoms &&
-      reportedSymptoms.length > 0 &&
-      symptomsEl &&
-      blockExtendsBelowFooter(pageEl, symptomsEl);
     const detailsOverflow =
       page1ShowYourDetails &&
       yourDetails.length > 0 &&
       detailsEl &&
-      blockExtendsBelowFooter(pageEl, detailsEl);
+      blockExtendsBelowPatientLimit(pageEl, detailsEl, probeEl);
+    const symptomsOverflow =
+      page1ShowSymptoms &&
+      reportedSymptoms.length > 0 &&
+      symptomsEl &&
+      !patientSectionFitsAfterAnchor(
+        detailsEl || interpretationEl,
+        symptomsEl,
+        probeEl,
+        pageEl
+      );
 
     if (!insightsOverflow && !symptomsOverflow && !detailsOverflow) {
       page1ShrinkGuardRef.current = 0;
@@ -472,27 +575,52 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
         const next = prev.slice(0, -1);
         return insightParagraphsEqual(prev, next) ? prev : next;
       });
-      setPage2Overview((prev) =>
-        prev[0] === removed ? prev : [removed, ...prev]
-      );
-      return;
-    }
-
-    if (symptomsOverflow) {
-      if (page1Overview.length > 0) {
-        setPage2Overview((prev) => mergeInsightParagraphs(page1Overview, prev));
-        setPage1Overview([]);
-      }
-      setPage1ShowSymptoms(false);
+      setContinuationPages((pages) => {
+        const next = [...pages];
+        const first = next[0] ?? createEmptyContinuationPage();
+        if (first.overviewParagraphs[0] === removed) return pages;
+        next[0] = {
+          ...first,
+          overviewParagraphs: [removed, ...first.overviewParagraphs],
+        };
+        return continuationPagesEqual(pages, next) ? pages : next;
+      });
       return;
     }
 
     if (detailsOverflow) {
       setPage1ShowYourDetails(false);
+      setContinuationPages((pages) => {
+        const next = [...pages];
+        next[0] = { ...next[0], showYourDetails: true };
+        return continuationPagesEqual(pages, next) ? pages : next;
+      });
+      return;
+    }
+
+    if (symptomsOverflow) {
+      if (page1Overview.length > 0) {
+        setContinuationPages((pages) => {
+          const next = [...pages];
+          const first = next[0] ?? createEmptyContinuationPage();
+          next[0] = {
+            ...first,
+            overviewParagraphs: mergeInsightParagraphs(page1Overview, first.overviewParagraphs),
+          };
+          return continuationPagesEqual(pages, next) ? pages : next;
+        });
+        setPage1Overview([]);
+      }
+      setPage1ShowSymptoms(false);
+      setContinuationPages((pages) => {
+        const next = [...pages];
+        next[0] = { ...next[0], showSymptoms: true };
+        return continuationPagesEqual(pages, next) ? pages : next;
+      });
+      return;
     }
   }, [
     page1Overview,
-    page2Overview,
     page1ShowYourDetails,
     page1ShowSymptoms,
     yourDetails.length,
@@ -520,19 +648,26 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     page1PostShrinkGuardRef.current += 1;
 
     const removed = removeLastPostOverviewParagraph(page1PostSections);
-    if (!removed) return;
+    if (!removed || postOverviewSectionsEqual(page1PostSections, removed.sections)) return;
 
-    setPage1PostSections((prev) =>
-      postOverviewSectionsEqual(prev, removed.sections) ? prev : removed.sections
-    );
-    setPage2PostSections((prev) => prependPostOverviewParagraph(prev, removed.moved));
+    setPage1PostSections(removed.sections);
+
+    setContinuationPages((pages) => {
+      const first = pages[0] ?? createEmptyContinuationPage();
+      if (postOverviewSectionsHasParagraph(first.postSections, removed.moved)) return pages;
+      const next = [...pages];
+      next[0] = {
+        ...first,
+        postSections: prependPostOverviewParagraph(first.postSections, removed.moved),
+      };
+      return continuationPagesEqual(pages, next) ? pages : next;
+    });
   }, [
     page1PostSections,
-    page2PostSections,
+    continuationPages,
     postOverviewContinuesOnPage2,
     hasPostOnPage1,
     page1Overview,
-    page2Overview,
     page1ShowYourDetails,
     page1ShowSymptoms,
     interpretation,
@@ -540,133 +675,82 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     phValue,
   ]);
 
-  const deepDiveContinuesOnPage3 = page3DeepDive.length > 0;
-  const serializeDeepDive = (sections) =>
-    sections.map((s) => `${s.title ?? ""}\x1f${s.body}`).join("\x1e");
-  const page2DeepDiveKey = serializeDeepDive(page2DeepDive);
-  const page3DeepDiveKey = serializeDeepDive(page3DeepDive);
-  const page2Citations = useMemo(
-    () => citations.slice(0, page2CitationCount),
-    [citations, page2CitationCount]
-  );
-  const page3Citations = useMemo(
-    () => citations.slice(page2CitationCount),
-    [citations, page2CitationCount]
-  );
-  const showSourcesOnPage2 = page2Citations.length > 0;
-  const showPage3 = deepDiveContinuesOnPage3 || page3Citations.length > 0;
-  const hasPage2OverflowDetails =
-    (!page1ShowYourDetails && yourDetails.length > 0) ||
-    (!page1ShowSymptoms && reportedSymptoms.length > 0);
-  const showPage2Content =
-    hasPage2OverflowDetails ||
-    page2InsightsParagraphs.length > 0 ||
-    hasPostOnPage2 ||
-    page2DeepDive.length > 0 ||
-    showSourcesOnPage2;
-  const showPage2 = showPage2Content || showPage3;
-  const totalPages = 1 + (showPage2 ? 1 : 0) + (showPage3 ? 1 : 0);
-
   useLayoutEffect(() => {
-    const pageEl = page2Ref.current;
-    if (!pageEl) return;
+    if (continuationShrinkGuardRef.current > 500) return;
 
-    const deepDiveEl = pageEl.querySelector("[data-deep-dive-section]");
-    const sourcesOverflow =
-      page2Citations.length > 0 && sourcesSectionOverflowsPage(pageEl);
-    const deepDiveOverflow =
-      page2DeepDive.length > 0 &&
-      deepDiveEl &&
-      blockExtendsBelowFooter(pageEl, deepDiveEl);
+    for (let pageIndex = 0; pageIndex < continuationPages.length; pageIndex += 1) {
+      const pageEl = continuationPageRefs.current[pageIndex];
+      if (!pageEl) continue;
 
-    if (!sourcesOverflow && !deepDiveOverflow) {
-      page2ShrinkGuardRef.current = 0;
-      return;
+      if (postOverviewContinuesOnPage2 && pageIndex === 0 && hasPostOnPage1) {
+        continue;
+      }
+
+      const postNodes = pageEl.querySelectorAll("[data-post-overview-section]");
+      const lastPostSection = postNodes[postNodes.length - 1];
+      const postOverflow =
+        lastPostSection && blockExtendsBelowFooter(pageEl, lastPostSection);
+
+      if (postOverflow) {
+        continuationShrinkGuardRef.current += 1;
+        setContinuationPages((pages) => {
+          const next = shrinkPostOverviewOnContinuationPage(pages, pageIndex);
+          return next && !continuationPagesEqual(pages, next) ? next : pages;
+        });
+        return;
+      }
+
+      const insightsEl = pageEl.querySelector("[data-insights-section]");
+      const overviewOverflow =
+        continuationPages[pageIndex]?.overviewParagraphs.length > 0 &&
+        insightsEl &&
+        blockExtendsBelowFooter(pageEl, insightsEl);
+
+      if (overviewOverflow) {
+        continuationShrinkGuardRef.current += 1;
+        setContinuationPages((pages) => {
+          const next = shrinkOverviewOnContinuationPage(pages, pageIndex);
+          return next && !continuationPagesEqual(pages, next) ? next : pages;
+        });
+        return;
+      }
+
+      const sourcesOverflow =
+        continuationPages[pageIndex]?.citations.length > 0 &&
+        sourcesSectionOverflowsPage(pageEl);
+
+      if (sourcesOverflow) {
+        continuationShrinkGuardRef.current += 1;
+        setContinuationPages((pages) => {
+          const next = shrinkCitationOnContinuationPage(pages, pageIndex);
+          return next && !continuationPagesEqual(pages, next) ? next : pages;
+        });
+        return;
+      }
+
+      const deepDiveEl = pageEl.querySelector("[data-deep-dive-section]");
+      const deepDiveOverflow =
+        continuationPages[pageIndex]?.deepDive.length > 0 &&
+        deepDiveEl &&
+        blockExtendsBelowFooter(pageEl, deepDiveEl);
+
+      if (deepDiveOverflow) {
+        continuationShrinkGuardRef.current += 1;
+        setContinuationPages((pages) => {
+          const next = shrinkDeepDiveOnContinuationPage(pages, pageIndex);
+          return next && !continuationPagesEqual(pages, next) ? next : pages;
+        });
+        return;
+      }
     }
 
-    if (page2ShrinkGuardRef.current > 120) return;
-    page2ShrinkGuardRef.current += 1;
-
-    if (sourcesOverflow && page2CitationCount > 0) {
-      setPage2CitationCount((prev) => (prev > 1 ? prev - 1 : 0));
-      return;
-    }
-
-    if (deepDiveOverflow && page2DeepDive.length > 0) {
-      const removed = page2DeepDive[page2DeepDive.length - 1];
-      setPage2DeepDive((prev) => {
-        const next = prev.slice(0, -1);
-        return deepDiveSectionsEqual(prev, next) ? prev : next;
-      });
-      setPage3DeepDive((prev) =>
-        prev.length > 0 && prev[0] === removed ? prev : [removed, ...prev]
-      );
-    }
-  }, [
-    page2Overview.length,
-    page2DeepDiveKey,
-    page3DeepDiveKey,
-    page2InsightsParagraphs.length,
-    page1ShowYourDetails,
-    page1ShowSymptoms,
-    page2CitationCount,
-    citations.length,
-    hasPostOnPage2,
-    page2PostSections,
-    page2DeepDive.length,
-  ]);
-
-  useLayoutEffect(() => {
-    const pageEl = page3Ref.current;
-    const page2El = page2Ref.current;
-    if (!pageEl || page3Citations.length === 0) {
-      page3ShrinkGuardRef.current = 0;
-      return;
-    }
-
-    const sourcesOverflow = sourcesSectionOverflowsPage(pageEl);
-
-    if (!sourcesOverflow) {
-      page3ShrinkGuardRef.current = 0;
-      return;
-    }
-
-    if (page3ShrinkGuardRef.current > 120) return;
-    page3ShrinkGuardRef.current += 1;
-
-    // Page 3 full: move one citation back to page 2 only if page 2 still has room.
-    const page2CanTakeMore =
-      page2El &&
-      page2CitationCount < citations.length - 1 &&
-      !sourcesSectionOverflowsPage(page2El);
-
-    if (page2CanTakeMore && page2CitationCount < citations.length - 1) {
-      setPage2CitationCount((prev) =>
-        prev < citations.length - 1 ? prev + 1 : prev
-      );
-      return;
-    }
-
-    // Deep dive below sources on page 3 — drop deep dive from page 3 so sources can use the page.
-    if (deepDiveContinuesOnPage3 && page3DeepDive.length > 0) {
-      const removed = page3DeepDive[page3DeepDive.length - 1];
-      setPage3DeepDive((prev) => {
-        const next = prev.slice(0, -1);
-        return deepDiveSectionsEqual(prev, next) ? prev : next;
-      });
-      setPage2DeepDive((prev) =>
-        prev.length > 0 && prev[prev.length - 1] === removed ? prev : [...prev, removed]
-      );
-    }
-  }, [
-    page2CitationCount,
-    page3Citations.length,
-    citations.length,
-    page3DeepDiveKey,
-    deepDiveContinuesOnPage3,
-    page2DeepDiveKey,
-    page2Citations.length,
-  ]);
+    continuationShrinkGuardRef.current = 0;
+    setContinuationPages((pages) => {
+      const compacted = pages.filter(continuationPageHasContent);
+      if (compacted.length === 0 || continuationPagesEqual(pages, compacted)) return pages;
+      return compacted;
+    });
+  }, [continuationPages, postOverviewContinuesOnPage2, hasPostOnPage1]);
 
   useLayoutEffect(() => {
     if (!onLayoutReady) return undefined;
@@ -687,13 +771,11 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
   }, [
     onLayoutReady,
     page1Overview.length,
-    page2Overview.length,
-    page2InsightsParagraphs.length,
-    insightsOnPage1,
     page1ShowYourDetails,
     page1ShowSymptoms,
-    page2DeepDiveKey,
-    page3DeepDiveKey,
+    page1PostSections.length,
+    continuationPages,
+    totalPages,
     interpretation,
     phLevel,
     phValue,
@@ -701,18 +783,8 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
     reportedSymptoms.length,
     overviewParagraphs.length,
     postOverviewSections.length,
-    page1PostSections.length,
-    page2PostSections.length,
-    hasPostOnPage1,
-    hasPostOnPage2,
     deepDiveSections.length,
     citations.length,
-    showSourcesOnPage2,
-    showPage2,
-    showPage3,
-    totalPages,
-    page2CitationCount,
-    page3Citations.length,
   ]);
 
   const wrapClass = captureMode
@@ -768,6 +840,7 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
               <div
                 ref={preInsightsProbeRef}
                 className={styles.preInsightsProbe}
+                data-pre-insights-probe
                 aria-hidden
               />
 
@@ -775,86 +848,88 @@ const ReportPrintDocument = ({ data, captureMode = false, onLayoutReady }) => {
                 <InsightBulletsSection title="Overview" paragraphs={page1Overview} />
               ) : null}
 
-              {hasPostOnPage1 ? <PostOverviewSections sections={page1PostSections} /> : null}
+              {hasPostOnPage1 ? (
+                <PostOverviewSections
+                  sections={page1PostSections}
+                  titleVisibility={postSectionTitleVisibility[0]}
+                />
+              ) : null}
             </main>
           </ReportPageShell>
         </div>
       </div>
 
-      {showPage2 ? (
-        <div className={styles.pageBreak}>
-          <div ref={page2Ref}>
-            <ReportPageShell
-              timestamp={timestamp}
-              reportId={reportId}
-              pageNum={2}
-              totalPages={totalPages}
-            >
-              <main className={styles.content} data-page-content>
-                <PatientDetailsSections
-                  yourDetails={yourDetails}
-                  reportedSymptoms={reportedSymptoms}
-                  showYourDetails={!page1ShowYourDetails}
-                  showSymptoms={!page1ShowSymptoms}
-                />
+      {showContinuationPages
+        ? continuationPages.map((page, pageIndex) => {
+            const pageNum = pageIndex + 2;
+            const citationStartIndex = getContinuationPageCitationStartIndex(
+              continuationPages,
+              pageIndex
+            );
 
-                {page2InsightsParagraphs.length > 0 ? (
-                  <InsightBulletsSection
-                    title="Overview"
-                    paragraphs={page2InsightsParagraphs}
-                    showTitle={!(insightsOnPage1 && page1Overview.length > 0)}
-                  />
-                ) : null}
+            return (
+              <div key={`continuation-${pageIndex}`} className={styles.pageBreak}>
+                <div
+                  ref={(node) => {
+                    continuationPageRefs.current[pageIndex] = node;
+                  }}
+                >
+                  <ReportPageShell
+                    timestamp={timestamp}
+                    reportId={reportId}
+                    pageNum={pageNum}
+                    totalPages={totalPages}
+                  >
+                    <main className={styles.content} data-page-content>
+                      {pageIndex === 0 ? (
+                        <PatientDetailsSections
+                          yourDetails={yourDetails}
+                          reportedSymptoms={reportedSymptoms}
+                          showYourDetails={page.showYourDetails}
+                          showSymptoms={page.showSymptoms}
+                        />
+                      ) : null}
 
-                {hasPostOnPage2 ? <PostOverviewSections sections={page2PostSections} /> : null}
+                      {page.overviewParagraphs.length > 0 ? (
+                        <InsightBulletsSection
+                          title="Overview"
+                          paragraphs={page.overviewParagraphs}
+                          showTitle={
+                            pageIndex === firstOverviewContinuationIndex &&
+                            !(insightsOnPage1 && page1Overview.length > 0)
+                          }
+                        />
+                      ) : null}
 
-                <DeepDiveSection
-                  sections={page2DeepDive}
-                  showTitle={page2DeepDive.length > 0}
-                />
+                      {page.postSections.some((section) => section.paragraphs.length > 0) ? (
+                        <PostOverviewSections
+                          sections={page.postSections}
+                          titleVisibility={postSectionTitleVisibility[pageIndex + 1]}
+                        />
+                      ) : null}
 
-                {showSourcesOnPage2 ? (
-                  <SourcesSection
-                    citations={page2Citations}
-                    cardClassName={styles.sourcesCardFull}
-                    startIndex={0}
-                  />
-                ) : null}
-              </main>
-            </ReportPageShell>
-          </div>
-        </div>
-      ) : null}
+                      {page.deepDive.length > 0 ? (
+                        <DeepDiveSection
+                          sections={page.deepDive}
+                          showTitle={pageIndex === firstDeepDiveContinuationIndex}
+                        />
+                      ) : null}
 
-      {showPage3 ? (
-        <div className={styles.pageBreak}>
-          <div ref={page3Ref}>
-            <ReportPageShell
-              timestamp={timestamp}
-              reportId={reportId}
-              pageNum={3}
-              totalPages={totalPages}
-            >
-              <main className={styles.content} data-page-content>
-                {page3Citations.length > 0 ? (
-                  <SourcesSection
-                    citations={page3Citations}
-                    cardClassName={styles.sourcesCardFull}
-                    startIndex={page2CitationCount}
-                    showHeading
-                  />
-                ) : null}
-                {deepDiveContinuesOnPage3 ? (
-                  <DeepDiveSection
-                    sections={page3DeepDive}
-                    showTitle={page2DeepDive.length === 0 && page3DeepDive.length > 0}
-                  />
-                ) : null}
-              </main>
-            </ReportPageShell>
-          </div>
-        </div>
-      ) : null}
+                      {page.citations.length > 0 ? (
+                        <SourcesSection
+                          citations={page.citations}
+                          cardClassName={styles.sourcesCardFull}
+                          startIndex={citationStartIndex}
+                          showHeading={pageIndex === firstSourcesContinuationIndex}
+                        />
+                      ) : null}
+                    </main>
+                  </ReportPageShell>
+                </div>
+              </div>
+            );
+          })
+        : null}
     </div>
   );
 };

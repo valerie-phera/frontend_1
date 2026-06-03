@@ -54,6 +54,56 @@ export function blockExtendsBelowFooter(pageEl, blockEl) {
 }
 
 /**
+ * Patient blocks (Your details / Reported symptoms) must fit above the pre-insights probe,
+ * not in the footer margin reserved for Overview and later sections.
+ * @param {HTMLElement|null} pageEl
+ * @param {HTMLElement|null} probeEl
+ */
+export function getPatientBlockLimit(pageEl, probeEl) {
+  if (probeEl) {
+    return probeEl.getBoundingClientRect().top - PAGE_CONTENT_FOOTER_GAP_PX;
+  }
+  return getFooterContentLimit(pageEl);
+}
+
+/** @param {HTMLElement|null} pageEl @param {HTMLElement|null} blockEl @param {HTMLElement|null} probeEl */
+export function blockExtendsBelowPatientLimit(pageEl, blockEl, probeEl) {
+  if (!pageEl || !blockEl) return false;
+  const limit = getPatientBlockLimit(pageEl, probeEl);
+  if (limit == null) return false;
+  return blockEl.getBoundingClientRect().bottom > limit + 1;
+}
+
+/**
+ * Whether a patient table fits in the gap after an anchor block and before the probe.
+ * @param {HTMLElement|null} anchorEl – bottom of Interpretation or Your details
+ * @param {HTMLElement|null} sectionEl – section to place
+ * @param {HTMLElement|null} probeEl
+ * @param {HTMLElement|null} pageEl
+ * @param {number} [contentGapPx]
+ */
+export function patientSectionFitsAfterAnchor(
+  anchorEl,
+  sectionEl,
+  probeEl,
+  pageEl,
+  contentGapPx = 24
+) {
+  if (!sectionEl) return true;
+
+  const limit = getPatientBlockLimit(pageEl, probeEl);
+  if (limit == null) return true;
+
+  const anchorBottom =
+    anchorEl?.getBoundingClientRect().bottom ??
+    pageEl?.querySelector("[data-page-content]")?.getBoundingClientRect().top ??
+    0;
+
+  const neededBottom = anchorBottom + contentGapPx + sectionEl.getBoundingClientRect().height;
+  return neededBottom <= limit + 1;
+}
+
+/**
  * Sources overflow when the last citation row crosses the footer safe line.
  * More reliable than the section box alone (flex + overflow:hidden can clip content).
  * @param {HTMLElement|null} pageEl
@@ -178,6 +228,14 @@ export const formatRecommendation = (text) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** Like formatRecommendation but keeps `**bold**` markers for PDF/UI rich text. */
+export function formatInsightRichText(text) {
+  return collapseDuplicateBracketRefs(normalizeDeepDiveChunk(text))
+    .replace(/<strong>([^<]*)<\/strong>/gi, "**$1**")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Strip HTML from deep-dive chunks (same source as ResultWithDetailsPage paragraphs). */
 export function normalizeDeepDiveChunk(raw) {
   return String(raw ?? "")
@@ -274,12 +332,12 @@ export function parseDeepDiveItem(raw) {
 
   if (labeled) {
     const title = labeled[1].trim();
-    const body = formatRecommendation(labeled[2]);
+    const body = formatInsightRichText(labeled[2]);
     if (!title && !body) return null;
     return { title: title || null, body };
   }
 
-  const body = formatRecommendation(original);
+  const body = formatInsightRichText(original);
   return body ? { title: null, body } : null;
 }
 
@@ -299,7 +357,7 @@ export function getDeepDiveSections(data) {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     items = Object.entries(raw)
       .map(([title, value]) => {
-        const body = formatRecommendation(
+        const body = formatInsightRichText(
           Array.isArray(value) ? value.join("\n\n") : String(value ?? "")
         );
         const label = String(title).trim();
@@ -334,7 +392,7 @@ export function getDeepDiveParagraphs(data) {
 
 /** @param {unknown} text */
 export function formatOverviewParagraph(text) {
-  return formatRecommendation(normalizeDeepDiveChunk(text));
+  return formatInsightRichText(text);
 }
 
 /**
@@ -397,16 +455,22 @@ export function extractInsightTextParts(raw) {
 }
 
 /**
- * Bullet paragraphs for insight sections (your_ph, your_symptoms, next_steps, etc.).
+ * Bullet paragraphs for insight sections (your_ph, your_symptoms, your_personal_baseline, etc.).
  * @param {unknown} raw
  * @returns {string[]}
  */
 export function getInsightSectionParagraphs(raw) {
+  const seen = new Set();
   return extractInsightTextParts(raw)
     .flatMap((part) => splitByBoldLabels(part))
     .flatMap((part) => splitIntoSentences(part))
     .map(formatOverviewParagraph)
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((paragraph) => {
+      if (seen.has(paragraph)) return false;
+      seen.add(paragraph);
+      return true;
+    });
 }
 
 /** @typedef {{ title: string, key: string, paragraphs: string[] }} PostOverviewSection */
@@ -415,12 +479,24 @@ export function getInsightSectionParagraphs(raw) {
 export const POST_OVERVIEW_SECTION_DEFS = [
   { title: "Your ph", key: "your_ph" },
   { title: "Your symptoms", key: "your_symptoms" },
+  { title: "Your personal baseline", key: "your_personal_baseline" },
+  { title: "Your health context", key: "your_health_context" },
   { title: "Next steps", key: "next_steps" },
 ];
 
 const POST_OVERVIEW_FIELD_ALIASES = {
   your_ph: ["your_ph", "yourPh", "your-ph"],
   your_symptoms: ["your_symptoms", "yourSymptoms", "your-symptoms"],
+  your_personal_baseline: [
+    "your_personal_baseline",
+    "yourPersonalBaseline",
+    "your-personal-baseline",
+  ],
+  your_health_context: [
+    "your_health_context",
+    "yourHealthContext",
+    "your-health-context",
+  ],
   next_steps: ["next_steps", "nextSteps", "next-steps"],
 };
 
@@ -465,7 +541,7 @@ export function postOverviewSectionsEqual(a, b) {
 }
 
 /**
- * Remove the last bullet from the last section (for page-1 overflow).
+ * Remove the last bullet from the last section (page overflow → next page).
  * @param {PostOverviewSection[]} sections
  */
 export function removeLastPostOverviewParagraph(sections) {
@@ -488,11 +564,73 @@ export function removeLastPostOverviewParagraph(sections) {
   return null;
 }
 
+/** @param {PostOverviewSection[]} sections @param {{ key: string, paragraph: string }} moved */
+export function postOverviewSectionsHasParagraph(sections, moved) {
+  const section = sections?.find((item) => item.key === moved.key);
+  return section?.paragraphs.includes(moved.paragraph) ?? false;
+}
+
+/**
+ * For each page slice, whether a post-overview section title should render
+ * (false when the same section continues from a prior page).
+ * @param {PostOverviewSection[][]} sectionListsInOrder
+ * @returns {Map<string, boolean>[]}
+ */
+export function buildPostSectionTitleVisibility(sectionListsInOrder) {
+  const seen = new Set();
+
+  return sectionListsInOrder.map((sections) => {
+    const visibility = new Map();
+    for (const section of sections ?? []) {
+      if (!section.paragraphs.length) continue;
+      visibility.set(section.key, !seen.has(section.key));
+      seen.add(section.key);
+    }
+    return visibility;
+  });
+}
+
+/**
+ * Merge split page slices back into canonical section order without duplicate bullets.
+ * @param {PostOverviewSection[][]} lists
+ * @param {PostOverviewSection[]} canonical
+ */
+export function consolidatePostOverviewSections(lists, canonical) {
+  const seenByKey = new Map();
+
+  for (const list of lists) {
+    for (const section of list ?? []) {
+      if (!seenByKey.has(section.key)) {
+        seenByKey.set(section.key, new Set());
+      }
+      for (const paragraph of section.paragraphs) {
+        seenByKey.get(section.key).add(paragraph);
+      }
+    }
+  }
+
+  return canonical
+    .map(({ title, key, paragraphs }) => {
+      const seen = seenByKey.get(key);
+      if (!seen || seen.size === 0) return null;
+      const ordered = paragraphs.filter((paragraph) => seen.has(paragraph));
+      for (const paragraph of seen) {
+        if (!ordered.includes(paragraph)) ordered.push(paragraph);
+      }
+      return ordered.length > 0 ? { title, key, paragraphs: ordered } : null;
+    })
+    .filter(Boolean);
+}
+
 /**
  * @param {PostOverviewSection[]} sections
  * @param {{ key: string, title: string, paragraph: string }} moved
  */
 export function prependPostOverviewParagraph(sections, moved) {
+  if (postOverviewSectionsHasParagraph(sections, moved)) {
+    return clonePostOverviewSections(sections);
+  }
+
   const next = clonePostOverviewSections(sections);
   const existing = next.find((section) => section.key === moved.key);
 
@@ -509,6 +647,220 @@ export function prependPostOverviewParagraph(sections, moved) {
     },
     ...next,
   ];
+}
+
+/** @typedef {{
+ *   overviewParagraphs: string[],
+ *   showYourDetails: boolean,
+ *   showSymptoms: boolean,
+ *   postSections: PostOverviewSection[],
+ *   deepDive: { title: string|null, body: string }[],
+ *   citations: object[],
+ * }} ContinuationPage */
+
+/** @returns {ContinuationPage} */
+export function createEmptyContinuationPage() {
+  return {
+    overviewParagraphs: [],
+    showYourDetails: false,
+    showSymptoms: false,
+    postSections: [],
+    deepDive: [],
+    citations: [],
+  };
+}
+
+/** @param {ContinuationPage} page */
+export function continuationPageHasContent(page) {
+  if (!page) return false;
+  return (
+    page.overviewParagraphs.length > 0 ||
+    page.showYourDetails ||
+    page.showSymptoms ||
+    page.postSections.some((section) => section.paragraphs.length > 0) ||
+    page.deepDive.length > 0 ||
+    page.citations.length > 0
+  );
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex */
+export function getContinuationPageCitationStartIndex(pages, pageIndex) {
+  let start = 0;
+  for (let i = 0; i < pageIndex; i += 1) {
+    start += pages[i]?.citations?.length ?? 0;
+  }
+  return start;
+}
+
+/** @param {ContinuationPage} page */
+function cloneContinuationPage(page) {
+  return {
+    ...page,
+    overviewParagraphs: [...page.overviewParagraphs],
+    postSections: clonePostOverviewSections(page.postSections),
+    deepDive: [...page.deepDive],
+    citations: [...page.citations],
+  };
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex */
+function ensureNextContinuationPage(pages, pageIndex) {
+  if (pageIndex + 1 < pages.length) return pages;
+  return [...pages, createEmptyContinuationPage()];
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex @returns {ContinuationPage[]|null} */
+export function shrinkPostOverviewOnContinuationPage(pages, pageIndex) {
+  const page = pages[pageIndex];
+  if (!page) return null;
+
+  const removed = removeLastPostOverviewParagraph(page.postSections);
+  if (!removed || postOverviewSectionsEqual(page.postSections, removed.sections)) return null;
+
+  let next = pages.map((entry, index) =>
+    index === pageIndex ? { ...entry, postSections: removed.sections } : cloneContinuationPage(entry)
+  );
+
+  next = ensureNextContinuationPage(next, pageIndex);
+  const targetIndex = pageIndex + 1;
+
+  if (postOverviewSectionsHasParagraph(next[targetIndex].postSections, removed.moved)) {
+    return next;
+  }
+
+  next[targetIndex] = {
+    ...next[targetIndex],
+    postSections: prependPostOverviewParagraph(next[targetIndex].postSections, removed.moved),
+  };
+
+  return next;
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex @returns {ContinuationPage[]|null} */
+export function shrinkOverviewOnContinuationPage(pages, pageIndex) {
+  const page = pages[pageIndex];
+  if (!page?.overviewParagraphs.length) return null;
+
+  const moved = page.overviewParagraphs[page.overviewParagraphs.length - 1];
+  let next = pages.map((entry, index) =>
+    index === pageIndex
+      ? { ...entry, overviewParagraphs: entry.overviewParagraphs.slice(0, -1) }
+      : cloneContinuationPage(entry)
+  );
+
+  next = ensureNextContinuationPage(next, pageIndex);
+  const targetIndex = pageIndex + 1;
+  const target = next[targetIndex];
+
+  if (target.overviewParagraphs[0] === moved) return next;
+
+  next[targetIndex] = {
+    ...target,
+    overviewParagraphs: [moved, ...target.overviewParagraphs],
+  };
+
+  return next;
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex @returns {ContinuationPage[]|null} */
+export function shrinkCitationOnContinuationPage(pages, pageIndex) {
+  const page = pages[pageIndex];
+  if (!page?.citations.length) return null;
+
+  const moved = page.citations[page.citations.length - 1];
+  let next = pages.map((entry, index) =>
+    index === pageIndex
+      ? { ...entry, citations: entry.citations.slice(0, -1) }
+      : cloneContinuationPage(entry)
+  );
+
+  next = ensureNextContinuationPage(next, pageIndex);
+  const targetIndex = pageIndex + 1;
+  const target = next[targetIndex];
+
+  if (target.citations[0] === moved) return next;
+
+  next[targetIndex] = {
+    ...target,
+    citations: [moved, ...target.citations],
+  };
+
+  return next;
+}
+
+/** @param {ContinuationPage[]} pages @param {number} pageIndex @returns {ContinuationPage[]|null} */
+export function shrinkDeepDiveOnContinuationPage(pages, pageIndex) {
+  const page = pages[pageIndex];
+  if (!page?.deepDive.length) return null;
+
+  const moved = page.deepDive[page.deepDive.length - 1];
+  let next = pages.map((entry, index) =>
+    index === pageIndex
+      ? { ...entry, deepDive: entry.deepDive.slice(0, -1) }
+      : cloneContinuationPage(entry)
+  );
+
+  next = ensureNextContinuationPage(next, pageIndex);
+  const targetIndex = pageIndex + 1;
+  const target = next[targetIndex];
+
+  if (target.deepDive[0] === moved) return next;
+
+  next[targetIndex] = {
+    ...target,
+    deepDive: [moved, ...target.deepDive],
+  };
+
+  return next;
+}
+
+/** @param {ContinuationPage[]} pages */
+export function serializeContinuationPages(pages) {
+  return pages
+    .map((page) =>
+      [
+        page.overviewParagraphs.join("\x1e"),
+        page.showYourDetails ? "1" : "0",
+        page.showSymptoms ? "1" : "0",
+        page.postSections
+          .map((section) => `${section.key}\x1f${section.paragraphs.join("\x1e")}`)
+          .join("\x1d"),
+        page.deepDive.map((item) => `${item.title ?? ""}\x1f${item.body}`).join("\x1d"),
+        String(page.citations.length),
+      ].join("\x1c")
+    )
+    .join("\x1b");
+}
+
+/** @param {ContinuationPage[]} a @param {ContinuationPage[]} b */
+export function continuationPagesEqual(a, b) {
+  return serializeContinuationPages(a) === serializeContinuationPages(b);
+}
+
+/** @param {{
+ *   postOverviewSections: PostOverviewSection[],
+ *   deepDiveSections: { title: string|null, body: string }[],
+ *   citations: object[],
+ *   insightsStartOnPage2: boolean,
+ *   showYourDetails: boolean,
+ *   showSymptoms: boolean,
+ * }} options @returns {ContinuationPage} */
+export function createInitialContinuationPage({
+  postOverviewSections,
+  deepDiveSections,
+  citations,
+  insightsStartOnPage2,
+  showYourDetails,
+  showSymptoms,
+}) {
+  return {
+    overviewParagraphs: [],
+    showYourDetails,
+    showSymptoms,
+    postSections: insightsStartOnPage2 ? clonePostOverviewSections(postOverviewSections) : [],
+    deepDive: [...deepDiveSections],
+    citations: [...citations],
+  };
 }
 
 /** @param {object} data @returns {PostOverviewSection[]} */
