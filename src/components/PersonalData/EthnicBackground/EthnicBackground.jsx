@@ -536,15 +536,7 @@ const EthnicBackground = ({
             aria-modal="true"
             aria-label="Ethnic background(s)"
             style={sheetStyle}
-            onTouchStart={onSheetTouchStart}
-            onTouchMove={onSheetTouchMove}
-            onTouchEnd={onSheetTouchEnd}
-            onTouchCancel={onSheetTouchEnd}
           >
-            <div className={styles.sheetHandleWrap} aria-hidden>
-              <div className={styles.sheetHandle} />
-            </div>
-
             <button
               type="button"
               className={styles.sheetClose}
@@ -554,43 +546,57 @@ const EthnicBackground = ({
               <span aria-hidden>×</span>
             </button>
 
-            <div className={styles.sheetHeader}>
-              <div className={styles.sheetTitle}>
-                <EthnicIcon aria-hidden />
-                <span>Ethnic background(s)</span>
+            <div
+              className={styles.sheetChrome}
+              onTouchStart={onSheetTouchStart}
+              onTouchMove={onSheetTouchMove}
+              onTouchEnd={onSheetTouchEnd}
+              onTouchCancel={onSheetTouchEnd}
+            >
+              <div className={styles.sheetHandleWrap} aria-hidden>
+                <div className={styles.sheetHandle} />
               </div>
+
+              <div className={styles.sheetHeader}>
+                <div className={styles.sheetTitle}>
+                  <EthnicIcon aria-hidden />
+                  <span>Ethnic background(s)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sheetBody}>
               <p className={styles.sheetSubtitle}>
                 Ethnic backgrounds shape vaginal flora and pH norms. Select all that apply - this helps personalize your result.
               </p>
+              <div className={styles.sheetList}>{sheetList}</div>
+              {isOtherInSheetDraft && (
+                <div className={styles.sheetOtherInput}>
+                  <input
+                    ref={sheetOtherInputRef}
+                    type="text"
+                    className={`${styles.input} ${
+                      showSheetOtherError ? styles.inputError : ""
+                    }`.trim()}
+                    placeholder="e.g. Afro-Caribbean"
+                    maxLength={50}
+                    aria-invalid={showSheetOtherError}
+                    value={sheetOtherDraft}
+                    onChange={handleSheetOtherInputChange}
+                  />
+                  <p
+                    className={`${styles.inputHint} ${
+                      showSheetOtherError ? styles.inputHintError : ""
+                    }`.trim()}
+                  >
+                    Please specify your background
+                  </p>
+                </div>
+              )}
+              <Button className={styles.modalBtn} onClick={applySheet}>
+                {applyButtonLabel}
+              </Button>
             </div>
-
-            <div className={styles.sheetList}>{sheetList}</div>
-            {isOtherInSheetDraft && (
-              <div className={styles.sheetOtherInput}>
-                <input
-                  ref={sheetOtherInputRef}
-                  type="text"
-                  className={`${styles.input} ${
-                    showSheetOtherError ? styles.inputError : ""
-                  }`.trim()}
-                  placeholder="e.g. Afro-Caribbean"
-                  maxLength={50}
-                  aria-invalid={showSheetOtherError}
-                  value={sheetOtherDraft}
-                  onChange={handleSheetOtherInputChange}
-                />
-                <p
-                  className={`${styles.inputHint} ${
-                    showSheetOtherError ? styles.inputHintError : ""
-                  }`.trim()}
-                >
-                  Please specify your background
-                </p>
-              </div>
-            )}
-            <Button className={styles.modalBtn} onClick={applySheet}>
-              {applyButtonLabel}
-            </Button>
           </div>
         </div>
       )}
