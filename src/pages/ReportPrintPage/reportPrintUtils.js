@@ -1,3 +1,5 @@
+import { collapseDuplicateBracketRefs } from "../../shared/utils/collapseDuplicateBracketRefs";
+
 /** Min space below "Your tailored insights" title for ≥2 lines (19px) + card padding */
 export const INSIGHTS_TITLE_LINE_HEIGHT = 19;
 export const INSIGHTS_MIN_BODY_LINES = 2;
@@ -170,7 +172,7 @@ export function paginateInsightParagraphs(availablePx, paragraphs, measureSectio
 }
 
 export const formatRecommendation = (text) =>
-  String(text ?? "")
+  collapseDuplicateBracketRefs(text)
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")

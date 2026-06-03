@@ -39,6 +39,7 @@ import {
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
+import { collapseDuplicateBracketRefs } from "../../shared/utils/collapseDuplicateBracketRefs";
 import { completePageImg } from "../../shared/utils/flowImages";
 import { preloadImage } from "../../shared/utils/preloadImage";
 import styles from "./ResultWithDetailsPage.module.css";
@@ -179,7 +180,7 @@ const renderWithItalicJournal = (text) => {
 };
 
 const formatInsightHtml = (text) =>
-    String(text ?? "")
+    collapseDuplicateBracketRefs(text)
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         .replace(/\[([^\]]+)\]/g, (m, inner) => {
             const parts = inner.split(/\s*,\s*/).map((s) => s.trim()).filter(Boolean);
