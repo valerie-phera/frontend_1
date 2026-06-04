@@ -24,7 +24,10 @@ import {
     persistBasicSkip,
     readPreSkipSnapshot,
 } from "../../shared/utils/addDetailsSkipStorage";
-import { writeActiveResultMeta } from "../../shared/utils/activeResultSessionStorage";
+import {
+    readActiveResultMeta,
+    writeActiveResultMeta,
+} from "../../shared/utils/activeResultSessionStorage";
 
 import AddDetailsSkipButton from "../../components/AddDetailsSkipButton/AddDetailsSkipButton";
 
@@ -162,11 +165,25 @@ const computeBasicSectionIssues = (
 const AddDetailsBasicPage = () => {
     const navigate = useNavigate();
     const { state, key: locationKey } = useLocation();
-    const phValue = state?.phValue;
-    const timestamp = state?.timestamp;
+    const activeMeta = useMemo(() => readActiveResultMeta(), []);
+
+    const phValue = state?.phValue ?? activeMeta?.phValue;
+    const timestamp = state?.timestamp ?? activeMeta?.timestamp;
     const recommendations = state?.recommendations;
 
-    const initialBasic = useMemo(() => resolveBasicFormState(state), [state]);
+    const routeContext = useMemo(
+        () => ({
+            ...(state && typeof state === "object" ? state : {}),
+            phValue,
+            timestamp,
+        }),
+        [state, phValue, timestamp]
+    );
+
+    const initialBasic = useMemo(
+        () => resolveBasicFormState(routeContext),
+        [routeContext]
+    );
     const initialDraft = useMemo(
         () => readAddDetailsDraft(phValue, timestamp),
         [phValue, timestamp]
@@ -233,7 +250,13 @@ const AddDetailsBasicPage = () => {
     );
 
     useEffect(() => {
-        const next = resolveBasicFormState(state);
+        if (phValue !== undefined && phValue !== null) {
+            writeActiveResultMeta({ phValue, timestamp });
+        }
+    }, [phValue, timestamp]);
+
+    useEffect(() => {
+        const next = resolveBasicFormState(routeContext);
         const draft = readAddDetailsDraft(phValue, timestamp);
         const skipped = next.basicSkipped || isStepSkipped(draft, "basic");
         const snap =
@@ -257,7 +280,7 @@ const AddDetailsBasicPage = () => {
             setEthnicBackground(next.ethnicChips);
             setEthnicOtherText(next.ethnicOtherText);
         }
-    }, [locationKey, state, phValue, timestamp]);
+    }, [locationKey, routeContext, phValue, timestamp]);
 
     useEffect(() => {
         if (basicValidationVisible && basicSectionIssues.count === 0) {
@@ -276,6 +299,42 @@ const AddDetailsBasicPage = () => {
         );
         writeBasicFormSnapshot(phValue, timestamp, formPatch);
         writeAddDetailsDraft(phValue, timestamp, formPatch);
+        writeActiveResultMeta({ phValue, timestamp });
+    }, [
+        phValue,
+        timestamp,
+        age,
+        lifeStage,
+        ethnicBackground,
+        ethnicOtherText,
+        isSkipped,
+    ]);
+
+    useEffect(() => {
+        if (phValue === undefined || phValue === null || isSkipped) return;
+
+        const flush = () => {
+            const formPatch = buildBasicFormPatch(
+                age,
+                lifeStage,
+                ethnicBackground,
+                ethnicOtherText
+            );
+            writeBasicFormSnapshot(phValue, timestamp, formPatch);
+            writeAddDetailsDraft(phValue, timestamp, formPatch);
+            writeActiveResultMeta({ phValue, timestamp });
+        };
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") flush();
+        };
+
+        window.addEventListener("pagehide", flush);
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        return () => {
+            window.removeEventListener("pagehide", flush);
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+        };
     }, [
         phValue,
         timestamp,
