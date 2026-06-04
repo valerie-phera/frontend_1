@@ -56,7 +56,16 @@
         background-color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
         color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
         border-color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-        border-style 0.32s ease;
+        border-style 0.32s ease,
+        box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Desktop phone frame scales the scene with transform — CSS dashed borders blur. */
+@media (min-width: 768px) {
+    .chipDetail:not(.chipDetailSelected) {
+        border-style: solid;
+        border-color: #717680;
+    }
 }
 
 .chipDetailSelected {
@@ -95,6 +104,7 @@
         background-color: #00343D0D;
         color: var(--main-color);
         border-color: var(--main-color);
+        border-style: solid;
     }
 
     .chipDetailSelected:hover {
