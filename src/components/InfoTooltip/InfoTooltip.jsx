@@ -2,99 +2,20 @@ import {
     useState,
     useRef,
     useEffect,
-    useLayoutEffect,
     useCallback,
 } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import InfoCircle from "../../assets/icons/InfoCircle";
 import ArrowDown from "../../assets/icons/ArrowDown";
-import {
-    findScrollableAncestor,
-    getPopoverHorizontalBounds,
-    isPopoverAnchorVisible,
-} from "../../shared/utils/scrollAncestor";
+import { findScrollableAncestor } from "../../shared/utils/scrollAncestor";
+import { useAnchoredPopoverStyle } from "../../shared/hooks/useAnchoredPopoverStyle";
 import styles from "./InfoTooltip.module.css";
-
-const VIEWPORT_PADDING_PX = 16;
 
 const ADD_DETAILS_HEADER_ICON_ALIGN_PATHS = new Set([
     "/add-details/basic",
     "/add-details/hormonal-health",
 ]);
-
-const useAnchoredPopoverStyle = (open, anchorRef, popoverRef) => {
-    const [style, setStyle] = useState(null);
-
-    const update = useCallback(() => {
-        const root = anchorRef.current;
-        if (!root) return;
-
-        const button = root.querySelector("button");
-        const anchor = button instanceof HTMLElement ? button : root;
-        const rect = anchor.getBoundingClientRect();
-        const popoverEl = popoverRef.current;
-
-        const { minX, maxX, viewportWidth } = getPopoverHorizontalBounds(
-            root,
-            VIEWPORT_PADDING_PX
-        );
-        const availableWidth = Math.max(0, maxX - minX);
-        const popoverWidth =
-            popoverEl?.offsetWidth ??
-            Math.min(215, Math.max(180, availableWidth), viewportWidth - VIEWPORT_PADDING_PX * 2);
-
-        const anchorCenterX = rect.left + rect.width / 2;
-        const halfWidth = popoverWidth / 2;
-        const minLeft = minX + halfWidth;
-        const maxLeft = maxX - halfWidth;
-        const left =
-            maxLeft >= minLeft
-                ? Math.max(minLeft, Math.min(maxLeft, anchorCenterX))
-                : minX + availableWidth / 2;
-        const arrowOffset = anchorCenterX - left;
-        const maxArrowOffset = Math.max(0, halfWidth - 14);
-        const scroller = findScrollableAncestor(root);
-        const visible = isPopoverAnchorVisible(
-            anchor,
-            root,
-            scroller,
-            popoverEl
-        );
-
-        setStyle({
-            top: rect.top,
-            left,
-            maxWidth: availableWidth > 0 ? availableWidth : undefined,
-            arrowOffset: Math.max(
-                -maxArrowOffset,
-                Math.min(maxArrowOffset, arrowOffset)
-            ),
-            visible,
-        });
-    }, [anchorRef, popoverRef]);
-
-    useLayoutEffect(() => {
-        if (!open) {
-            setStyle(null);
-            return undefined;
-        }
-
-        update();
-        const rafId = window.requestAnimationFrame(update);
-
-        window.addEventListener("resize", update);
-        window.visualViewport?.addEventListener("resize", update);
-
-        return () => {
-            window.cancelAnimationFrame(rafId);
-            window.removeEventListener("resize", update);
-            window.visualViewport?.removeEventListener("resize", update);
-        };
-    }, [open, update, anchorRef]);
-
-    return style;
-};
 
 const InfoTooltip = ({
     title,
@@ -109,7 +30,14 @@ const InfoTooltip = ({
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
     const popoverRef = useRef(null);
-    const popoverStyle = useAnchoredPopoverStyle(open, ref, popoverRef);
+    const getAnchorEl = useCallback(() => {
+        const root = ref.current;
+        if (!root) return null;
+        const button = root.querySelector("button");
+        return button instanceof HTMLElement ? button : root;
+    }, []);
+    const getBoundsEl = useCallback(() => ref.current, []);
+    const popoverStyle = useAnchoredPopoverStyle(open, getAnchorEl, getBoundsEl, popoverRef);
     const { pathname } = useLocation();
     const alignInfoIconEnd =
         !iconOnly && ADD_DETAILS_HEADER_ICON_ALIGN_PATHS.has(pathname);
@@ -183,6 +111,7 @@ const InfoTooltip = ({
                     ["--popover-arrow-offset"]: popoverStyle
                         ? `${popoverStyle.arrowOffset}px`
                         : "0px",
+                    ["--frame-scale"]: popoverStyle?.frameScale ?? 1,
                 }}
                 role="tooltip"
             >

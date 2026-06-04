@@ -88,16 +88,28 @@ export function getPopoverHorizontalBounds(fromEl, padding = 16) {
     fromEl instanceof Element
       ? fromEl.closest("[data-popover-bounds]")
       : null;
+  const scrollRoot =
+    fromEl instanceof Element
+      ? fromEl.closest("[data-scroll-container]")
+      : null;
   const pageRoot =
     columnRoot ??
-    (fromEl instanceof Element
-      ? fromEl.closest("[data-scroll-container]")
+    (scrollRoot instanceof HTMLElement
+      ? scrollRoot.querySelector("[data-popover-bounds]") ?? scrollRoot
       : null);
 
   if (pageRoot instanceof HTMLElement) {
     const rect = pageRoot.getBoundingClientRect();
     minX = Math.max(minX, rect.left + padding);
     maxX = Math.min(maxX, rect.right - padding);
+  }
+
+  const screenEl =
+    fromEl instanceof Element ? fromEl.closest("[data-device-screen]") : null;
+  if (screenEl instanceof HTMLElement) {
+    const screenRect = screenEl.getBoundingClientRect();
+    minX = Math.max(minX, screenRect.left + padding);
+    maxX = Math.min(maxX, screenRect.right - padding);
   }
 
   if (maxX <= minX) {
@@ -450,4 +462,22 @@ export function scrollContentToBottom(
 
   timerId = window.setTimeout(runScroll, startDelayMs);
   return cancel;
+}
+
+/** Desktop phone frame applies CSS scale; portaled UI must match to look like mobile. */
+export function getDeviceFrameScale(fromEl) {
+  const scene =
+    fromEl instanceof Element
+      ? fromEl.closest("[data-device-frame-scene]")
+      : null;
+
+  if (!(scene instanceof HTMLElement)) return 1;
+
+  const layoutWidth = scene.offsetWidth;
+  if (!layoutWidth) return 1;
+
+  const renderedWidth = scene.getBoundingClientRect().width;
+  const scale = renderedWidth / layoutWidth;
+
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
 }

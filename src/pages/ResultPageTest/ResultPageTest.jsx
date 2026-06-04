@@ -30,6 +30,7 @@ import {
     getMarkerLayout,
 } from "../../shared/utils/phScaleMarker";
 
+import HoverTooltip from "../../components/HoverTooltip/HoverTooltip";
 import styles from "./ResultPageTest.module.css";
 
 const MIN_PH = PH_SCALE_MIN;
@@ -37,7 +38,28 @@ const MAX_PH = PH_SCALE_MAX;
 const DEFAULT_PH = 4.3;
 const PH_STEP = 0.1;
 
-const DETAIL_TAGS = ["Age", "Ethnicity", "Hormones", "Symptoms"];
+const DETAIL_TAGS = [
+    {
+        label: "Age",
+        tooltip:
+            "pH norms shift with age and life stage - what's elevated at 25 may be normal at 50.",
+    },
+    {
+        label: "Ethnicity",
+        tooltip:
+            "Healthy pH ranges vary by ethnic background due to differences in vaginal microbiome.",
+    },
+    {
+        label: "Hormones",
+        tooltip:
+            "Birth control, hormone therapy, and hormone conditions directly affect vaginal pH levels.",
+    },
+    {
+        label: "Health context",
+        tooltip:
+            "Your recent health context helps us understand whether an elevated pH is significant or has a simple explanation.",
+    },
+];
 
 const LEVEL_CONFIG = {
     Normal: {
@@ -412,10 +434,14 @@ const ResultPageTest = () => {
                                             Takes about 2 minutes.
                                         </p>
                                         <div className={styles.tags}>
-                                            {DETAIL_TAGS.map((tag) => (
-                                                <span key={tag} className={styles.tag}>
-                                                    {tag}
-                                                </span>
+                                            {DETAIL_TAGS.map(({ label, tooltip }) => (
+                                                <HoverTooltip
+                                                    key={label}
+                                                    content={tooltip}
+                                                    className={styles.tag}
+                                                >
+                                                    {label}
+                                                </HoverTooltip>
                                             ))}
                                         </div>
                                     </div>

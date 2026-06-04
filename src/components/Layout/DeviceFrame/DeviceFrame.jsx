@@ -117,7 +117,7 @@ const DeviceFrame = ({ children }) => {
 
         <div className={styles.desktopStage}>
           <div className={styles.desktopStageFit}>
-            <div className={styles.desktopStageSceneInner}>
+            <div className={styles.desktopStageSceneInner} data-device-frame-scene>
               <div className={styles.bgCircleFill} aria-hidden="true" />
               <svg
                 className={styles.bgCircleOutline}
