@@ -23,6 +23,15 @@ const options = ETHNIC_OPTIONS;
 /** Matches CSS hide animation duration + small buffer before unmount. */
 const OTHER_PANEL_ANIM_MS = 430;
 
+/** Bottom sheet slide duration; keep in sync with .sheet / .sheetBackdrop transitions. */
+const SHEET_ANIM_MS = 480;
+
+/**
+ * Duration for sheet “+ Other” expand/collapse — drives CSS via --sheet-other-duration.
+ * Change only this value; CSS reads the variable from the element inline style.
+ */
+const SHEET_OTHER_ANIM_MS = 520;
+
 const OTHER_CHIP_LABEL_MAX = 30;
 
 const truncateChipLabel = (text, maxLen = OTHER_CHIP_LABEL_MAX) => {
@@ -60,7 +69,9 @@ const EthnicBackground = ({
   skipped = false,
 }) => {
   const isModalMode = otherInputMode === "when_other";
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetMounted, setSheetMounted] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const sheetCloseTimerRef = useRef(null);
   const [sheetDraft, setSheetDraft] = useState([]);
   const [sheetOtherDraft, setSheetOtherDraft] = useState("");
   const [sheetOtherError, setSheetOtherError] = useState(false);
@@ -72,25 +83,42 @@ const EthnicBackground = ({
     moved: false,
   });
 
+  const clearSheetCloseTimer = useCallback(() => {
+    if (sheetCloseTimerRef.current != null) {
+      window.clearTimeout(sheetCloseTimerRef.current);
+      sheetCloseTimerRef.current = null;
+    }
+  }, []);
+
   const closeSheet = useCallback(() => {
-    setIsSheetOpen(false);
+    clearSheetCloseTimer();
+    setSheetVisible(false);
     setDragOffset(0);
     dragRef.current.active = false;
     dragRef.current.moved = false;
-  }, []);
+    sheetCloseTimerRef.current = window.setTimeout(() => {
+      setSheetMounted(false);
+      sheetCloseTimerRef.current = null;
+    }, SHEET_ANIM_MS);
+  }, [clearSheetCloseTimer]);
 
   const openSheet = useCallback(() => {
+    clearSheetCloseTimer();
     const committed = stripDetailOptions(
       Array.isArray(ethnicBackground) ? ethnicBackground : []
     );
     setSheetDraft([...committed]);
     setSheetOtherDraft(otherText ?? "");
     setSheetOtherError(false);
-    setIsSheetOpen(true);
+    setSheetMounted(true);
+    setSheetVisible(false);
     setDragOffset(0);
     dragRef.current.active = false;
     dragRef.current.moved = false;
-  }, [ethnicBackground, otherText]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSheetVisible(true));
+    });
+  }, [clearSheetCloseTimer, ethnicBackground, otherText]);
 
   const applySheet = useCallback(() => {
     const next = stripDetailOptions(
@@ -145,6 +173,11 @@ const EthnicBackground = ({
   }, []);
 
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
+  useEffect(
+    () => () => clearSheetCloseTimer(),
+    [clearSheetCloseTimer]
+  );
 
   const isOtherSelected = ethnicBackground.includes(ETHNIC_OTHER_OPTION);
   const showOtherInput = otherInputMode === "always" || isOtherSelected || otherPanelClosing;
@@ -284,6 +317,7 @@ const EthnicBackground = ({
 
   const inputBlockRef = useRef(null);
   const hintRef = useRef(null);
+  const sheetBodyRef = useRef(null);
   const sheetOtherInputRef = useRef(null);
 
   useEffect(() => {
@@ -300,34 +334,62 @@ const EthnicBackground = ({
   }, [isModalMode, isOtherSelected, otherPanelClosing, otherInputMode]);
 
   useEffect(() => {
-    if (!isSheetOpen || !isOtherInSheetDraft) return;
+    if (!sheetMounted || !sheetVisible || !isOtherInSheetDraft) return;
+
+    let cancelled = false;
+    let rafId = 0;
+    let focusTimerId = 0;
+
+    const pinScrollToBottom = () => {
+      if (cancelled) return;
+      const body = sheetBodyRef.current;
+      if (body) {
+        body.scrollTop = body.scrollHeight - body.clientHeight;
+      }
+      rafId = requestAnimationFrame(pinScrollToBottom);
+    };
+
     requestAnimationFrame(() => {
-      sheetOtherInputRef.current?.focus();
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        pinScrollToBottom();
+        focusTimerId = window.setTimeout(() => {
+          cancelled = true;
+          cancelAnimationFrame(rafId);
+          sheetOtherInputRef.current?.focus({ preventScroll: true });
+        }, SHEET_OTHER_ANIM_MS);
+      });
     });
-  }, [isSheetOpen, isOtherInSheetDraft]);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      if (focusTimerId) window.clearTimeout(focusTimerId);
+    };
+  }, [sheetMounted, sheetVisible, isOtherInSheetDraft]);
 
   useEffect(() => {
-    if (!isSheetOpen) return;
+    if (!sheetMounted) return;
     const onKeyDown = (e) => {
       if (e.key === "Escape") closeSheet();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isSheetOpen, closeSheet]);
+  }, [sheetMounted, closeSheet]);
 
   useEffect(() => {
-    if (!skipped || !isSheetOpen) return;
+    if (!skipped || !sheetMounted) return;
     closeSheet();
-  }, [skipped, isSheetOpen, closeSheet]);
+  }, [skipped, sheetMounted, closeSheet]);
 
   useEffect(() => {
-    if (!isSheetOpen) return;
+    if (!sheetMounted) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, [isSheetOpen]);
+  }, [sheetMounted]);
 
   const selectedChips = useMemo(() => {
     const arr = (Array.isArray(ethnicBackground) ? ethnicBackground : []).filter(
@@ -385,9 +447,10 @@ const EthnicBackground = ({
   }, [onOtherTextChange, setEthnicBackground]);
 
   const sheetTranslate = Math.max(0, dragOffset);
-  const sheetStyle = isSheetOpen
-    ? { transform: `translateY(${sheetTranslate}px)` }
-    : undefined;
+  const sheetDragStyle =
+    sheetVisible && sheetTranslate > 0
+      ? { transform: `translateY(${sheetTranslate}px)` }
+      : undefined;
 
   const onSheetTouchStart = (e) => {
     const t = e.touches?.[0];
@@ -521,8 +584,13 @@ const EthnicBackground = ({
         )}
       </div>
 
-      {isModalMode && isSheetOpen && (
-        <div className={styles.sheetOverlay} role="presentation">
+      {isModalMode && sheetMounted && (
+        <div
+          className={`${styles.sheetOverlay} ${
+            sheetVisible ? styles.sheetOverlayVisible : ""
+          }`.trim()}
+          role="presentation"
+        >
           <button
             type="button"
             className={styles.sheetBackdrop}
@@ -531,11 +599,13 @@ const EthnicBackground = ({
           />
 
           <div
-            className={styles.sheet}
+            className={`${styles.sheet} ${
+              sheetTranslate > 0 ? styles.sheetDragging : ""
+            }`.trim()}
             role="dialog"
             aria-modal="true"
             aria-label="Ethnic background(s)"
-            style={sheetStyle}
+            style={sheetDragStyle}
           >
             <button
               type="button"
@@ -565,13 +635,21 @@ const EthnicBackground = ({
               </div>
             </div>
 
-            <div className={styles.sheetBody}>
+            <div ref={sheetBodyRef} className={styles.sheetBody}>
               <p className={styles.sheetSubtitle}>
                 Ethnic backgrounds shape vaginal flora and pH norms. Select all that apply - this helps personalize your result.
               </p>
               <div className={styles.sheetList}>{sheetList}</div>
-              {isOtherInSheetDraft && (
-                <div className={styles.sheetOtherInput}>
+              <div
+                className={`${styles.sheetOtherInput} ${
+                  isOtherInSheetDraft ? styles.sheetOtherInputOpen : ""
+                }`.trim()}
+                style={{
+                  "--sheet-other-duration": `${SHEET_OTHER_ANIM_MS}ms`,
+                }}
+                aria-hidden={!isOtherInSheetDraft}
+              >
+                <div className={styles.sheetOtherInputInner}>
                   <input
                     ref={sheetOtherInputRef}
                     type="text"
@@ -583,6 +661,7 @@ const EthnicBackground = ({
                     aria-invalid={showSheetOtherError}
                     value={sheetOtherDraft}
                     onChange={handleSheetOtherInputChange}
+                    tabIndex={isOtherInSheetDraft ? 0 : -1}
                   />
                   <p
                     className={`${styles.inputHint} ${
@@ -592,7 +671,7 @@ const EthnicBackground = ({
                     Please specify your background
                   </p>
                 </div>
-              )}
+              </div>
               <Button className={styles.modalBtn} onClick={applySheet}>
                 {applyButtonLabel}
               </Button>
