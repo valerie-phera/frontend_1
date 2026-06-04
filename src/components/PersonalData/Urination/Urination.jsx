@@ -4,6 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import ToiletIcon from "../../../assets/AddDetailsIcons/ToiletIcon";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./Urination.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -43,7 +44,7 @@ const Urination = ({
         return (
             <div
                 key={item}
-                className={isActive ? styles.itemSelected : styles.item}
+                className={buildSelectionChipClassName(isActive)}
                 onClick={() => onChange(item)}
                 role="button"
                 tabIndex={0}

@@ -4,6 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import PillIcon from "../../../assets/AddDetailsIcons/PillIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./CurrentMedications.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -59,13 +60,9 @@ const CurrentMedications = ({
             return (
                 <div
                     key={item}
-                    className={
-                        isDisabled
-                            ? styles.itemDisabled
-                            : isActive
-                                ? styles.itemSelected
-                                : styles.item
-                    }
+                    className={buildSelectionChipClassName(isActive, {
+                        disabled: isDisabled,
+                    })}
                     onClick={() => {
                         if (isDisabled) return;
                         onChange(item);

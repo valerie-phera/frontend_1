@@ -5,6 +5,7 @@ import {
     FORM_PREFER_NOT_TO_SAY,
 } from "../../../shared/constants/formDetailOptions";
 import detailStyles from "../../../shared/styles/detailChipRow.module.css";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 
 const DetailChipRow = ({
     selected,
@@ -33,9 +34,9 @@ const DetailChipRow = ({
                         ? isSelected
                             ? detailStyles.itemDetailSkippedSelected
                             : detailStyles.itemDetailSkipped
-                        : isActive
-                            ? detailStyles.itemDetailSelected
-                            : detailStyles.itemDetail;
+                        : buildSelectionChipClassName(isActive, {
+                              variant: "detail",
+                          });
 
                     return (
                         <div

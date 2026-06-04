@@ -4,6 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import DropIcon from "../../../assets/AddDetailsIcons/DropIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./MenstrualCycle.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -50,7 +51,7 @@ const MenstrualCycle = ({
         return (
             <div
                 key={item}
-                className={isActive ? styles.itemSelected : styles.item}
+                className={buildSelectionChipClassName(isActive)}
                 onClick={() => onChange(item)}
                 role="button"
                 tabIndex={0}

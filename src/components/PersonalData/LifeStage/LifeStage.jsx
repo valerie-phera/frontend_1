@@ -4,6 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import LifeStageIcon from "../../../assets/AddDetailsIcons/LifeStageIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import { LIFE_STAGE_MAIN_OPTIONS } from "./lifeStageOptions";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./LifeStage.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -40,12 +41,9 @@ const LifeStage = ({
     const isActive = selected.includes(item);
     const isDisabled = disabledSet.has(item);
 
-    let className = styles.item;
-    if (isDisabled) {
-      className = styles.itemDisabled;
-    } else if (isActive) {
-      className = styles.itemSelected;
-    }
+    const className = buildSelectionChipClassName(isActive, {
+      disabled: isDisabled,
+    });
 
     return (
       <div

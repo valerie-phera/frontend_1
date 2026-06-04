@@ -16,6 +16,7 @@ import {
   stripDetailOptions,
 } from "../../../shared/utils/detailChipSelection";
 import { scrollContentToBottom } from "../../../shared/utils/scrollAncestor";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./EthnicBackground.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -24,8 +25,11 @@ const options = ETHNIC_OPTIONS;
 /** Matches CSS hide animation duration + small buffer before unmount. */
 const OTHER_PANEL_ANIM_MS = 430;
 
-/** Bottom sheet slide duration; keep in sync with .sheet / .sheetBackdrop transitions. */
-const SHEET_ANIM_MS = 480;
+/**
+ * Bottom sheet open/close — drives CSS via --sheet-anim-duration on the overlay.
+ * Change only this value.
+ */
+const SHEET_ANIM_MS = 620;
 
 /**
  * Duration for sheet “+ Other” expand/collapse — drives CSS via --sheet-other-duration.
@@ -270,10 +274,12 @@ const EthnicBackground = ({
     (activeList, onToggle, { inSheet = false, items = options } = {}) =>
       items.map((item) => {
         const isActive = activeList.includes(item);
+        const chipClassName = buildSelectionChipClassName(isActive);
+
         return (
           <div
             key={item}
-            className={isActive ? styles.isemSelected : styles.item}
+            className={chipClassName}
             onClick={() => {
               if (
                 inSheet &&
@@ -695,6 +701,7 @@ const EthnicBackground = ({
           className={`${styles.sheetOverlay} ${
             sheetVisible ? styles.sheetOverlayVisible : ""
           }`.trim()}
+          style={{ "--sheet-anim-duration": `${SHEET_ANIM_MS}ms` }}
           role="presentation"
         >
           <button

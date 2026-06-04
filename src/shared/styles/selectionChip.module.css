@@ -1,0 +1,111 @@
+.chip {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 10px 9px;
+    border: 1px solid var(--main-color);
+    border-radius: 100px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 19px;
+    text-align: center;
+    background-color: #FFFFFF;
+    color: var(--main-color);
+    transition:
+        background-color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chipSelected {
+    background-color: var(--main-color);
+    color: #fff;
+    font-weight: 600;
+}
+
+.chipDisabled {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 10px 9px;
+    border: 1px solid #C9D3D6;
+    border-radius: 100px;
+    cursor: not-allowed;
+    font-size: 14px;
+    line-height: 19px;
+    background-color: #F3F6F7;
+    color: #9AA6AA;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.chipDetail {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 10px 9px;
+    border: 1px dashed #717680;
+    border-radius: 100px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 19px;
+    text-align: center;
+    background-color: #FFFFFF;
+    color: #717680;
+    transition:
+        background-color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        border-style 0.32s ease;
+}
+
+.chipDetailSelected {
+    border-style: solid;
+    border-color: var(--main-color);
+    background-color: var(--main-color);
+    color: #fff;
+    font-weight: 600;
+}
+
+.chip:active:not(.chipDisabled),
+.chipSelected:active,
+.chipDetail:active,
+.chipDetailSelected:active {
+    transform: scale(0.99);
+}
+
+.chip:focus-visible,
+.chipSelected:focus-visible,
+.chipDetail:focus-visible,
+.chipDetailSelected:focus-visible {
+    outline: 2px solid rgba(47, 142, 150, 0.35);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .chip:hover {
+        background-color: #00343D0D;
+    }
+
+    .chipSelected:hover {
+        background-color: var(--main-color);
+    }
+
+    .chipDetail:hover {
+        background-color: #00343D0D;
+        color: var(--main-color);
+        border-color: var(--main-color);
+    }
+
+    .chipDetailSelected:hover {
+        background-color: var(--main-color);
+         color: #fff;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chip,
+    .chipDetail {
+        transition-duration: 0.01ms;
+    }
+}

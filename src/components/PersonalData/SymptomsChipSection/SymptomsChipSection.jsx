@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import { FORM_DETAIL_OPTIONS } from "../../../shared/constants/formDetailOptions";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./SymptomsChipSection.module.css";
 
 const SymptomsChipSection = ({
@@ -34,13 +35,9 @@ const SymptomsChipSection = ({
         }
 
         const isActive = values.includes(item);
-        const className = isDetail
-            ? isActive
-                ? styles.detailItemSelected
-                : styles.detailItem
-            : isActive
-              ? styles.itemSelected
-              : styles.item;
+        const className = buildSelectionChipClassName(isActive, {
+            variant: isDetail ? "detail" : "main",
+        });
 
         return (
             <div

@@ -326,6 +326,7 @@
 }
 
 .sheetOverlay {
+    --sheet-anim-ease: cubic-bezier(0.22, 1, 0.36, 1);
     position: fixed;
     top: 0;
     bottom: 0;
@@ -344,7 +345,7 @@
     opacity: 0;
     border: none;
     padding: 0;
-    transition: opacity 0.48s ease;
+    transition: opacity var(--sheet-anim-duration, 620ms) var(--sheet-anim-ease);
 }
 
 .sheetOverlayVisible .sheetBackdrop {
@@ -364,13 +365,17 @@
     padding-top: 14px;
     max-height: min(78dvh, 486px);
     overflow: hidden;
+    opacity: 0.94;
     transform: translateY(100%);
-    transition: transform 0.48s cubic-bezier(0.32, 0.72, 0, 1);
-    will-change: transform;
+    transition:
+        transform var(--sheet-anim-duration, 620ms) var(--sheet-anim-ease),
+        opacity calc(var(--sheet-anim-duration, 620ms) * 0.85) var(--sheet-anim-ease);
+    will-change: transform, opacity;
 }
 
 .sheetOverlayVisible .sheet:not(.sheetDragging) {
     transform: translateY(0);
+    opacity: 1;
 }
 
 .sheetDragging {

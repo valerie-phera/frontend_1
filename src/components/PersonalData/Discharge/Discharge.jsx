@@ -4,6 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import GroupIcon from "../../../assets/AddDetailsIcons/GroupIcon";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
 import SymptomsChipSection from "../SymptomsChipSection/SymptomsChipSection";
+import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./Discharge.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -52,7 +53,7 @@ const Discharge = ({
         return (
             <div
                 key={item}
-                className={isActive ? styles.itemSelected : styles.item}
+                className={buildSelectionChipClassName(isActive)}
                 onClick={() => onChange(item)}
                 role="button"
                 tabIndex={0}

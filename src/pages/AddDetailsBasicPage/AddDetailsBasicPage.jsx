@@ -68,6 +68,8 @@ const buildBasicFormPatch = (
         lifeStage: stripNoneToken(lifeStage),
         ethnicBackground: ethnicForApi,
         ethnicOtherText: hasOtherChip ? trimmedOtherForState : "",
+        /** Exact chip selection for modal + main screen restore after reload. */
+        ethnicChips: Array.isArray(ethnicBackground) ? [...ethnicBackground] : [],
     };
 };
 
@@ -262,6 +264,27 @@ const AddDetailsBasicPage = () => {
             setBasicValidationVisible(false);
         }
     }, [basicValidationVisible, basicSectionIssues.count]);
+
+    useEffect(() => {
+        if (phValue === undefined || phValue === null || isSkipped) return;
+
+        const formPatch = buildBasicFormPatch(
+            age,
+            lifeStage,
+            ethnicBackground,
+            ethnicOtherText
+        );
+        writeBasicFormSnapshot(phValue, timestamp, formPatch);
+        writeAddDetailsDraft(phValue, timestamp, formPatch);
+    }, [
+        phValue,
+        timestamp,
+        age,
+        lifeStage,
+        ethnicBackground,
+        ethnicOtherText,
+        isSkipped,
+    ]);
 
     useEffect(() => {
         if (errorBannerScrollToken === 0) return;

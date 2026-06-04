@@ -102,15 +102,24 @@ export const resolveBasicFormState = (routeState) => {
         routeState?.timestamp
     );
 
-    const ethnicNorm = snap?.ethnicBackground
-        ? normalizeEthnicFromRoute(
-              snap.ethnicBackground,
-              snap.ethnicOtherText
-          )
-        : normalizeEthnicFromRoute(
-              routeState?.ethnicBackground,
-              routeState?.ethnicOtherText
-          );
+    const ethnicNorm = (() => {
+        if (Array.isArray(snap?.ethnicChips)) {
+            return {
+                chips: snap.ethnicChips,
+                otherText: String(snap.ethnicOtherText ?? "").trim().slice(0, 50),
+            };
+        }
+        if (snap?.ethnicBackground) {
+            return normalizeEthnicFromRoute(
+                snap.ethnicBackground,
+                snap.ethnicOtherText
+            );
+        }
+        return normalizeEthnicFromRoute(
+            routeState?.ethnicBackground,
+            routeState?.ethnicOtherText
+        );
+    })();
 
     const age =
         snap && Object.prototype.hasOwnProperty.call(snap, "age")
