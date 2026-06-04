@@ -15,6 +15,7 @@ import {
   applyDetailChipSelection,
   stripDetailOptions,
 } from "../../../shared/utils/detailChipSelection";
+import { scrollContentToBottom } from "../../../shared/utils/scrollAncestor";
 import styles from "./EthnicBackground.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -31,6 +32,9 @@ const SHEET_ANIM_MS = 480;
  * Change only this value; CSS reads the variable from the element inline style.
  */
 const SHEET_OTHER_ANIM_MS = 520;
+
+/** Selected chip remove / “Prefer not to say” clear — keep in sync with CSS. */
+const SELECTED_CHIP_EXIT_MS = 400;
 
 const OTHER_CHIP_LABEL_MAX = 30;
 
@@ -90,7 +94,7 @@ const EthnicBackground = ({
     }
   }, []);
 
-  const closeSheet = useCallback(() => {
+  const closeSheet = useCallback(({ onAfterClose } = {}) => {
     clearSheetCloseTimer();
     setSheetVisible(false);
     setDragOffset(0);
@@ -99,6 +103,7 @@ const EthnicBackground = ({
     sheetCloseTimerRef.current = window.setTimeout(() => {
       setSheetMounted(false);
       sheetCloseTimerRef.current = null;
+      onAfterClose?.();
     }, SHEET_ANIM_MS);
   }, [clearSheetCloseTimer]);
 
@@ -149,7 +154,16 @@ const EthnicBackground = ({
       }
     }
     onOtherTextChange?.(sheetOtherDraft);
-    closeSheet();
+    pageScrollCancelRef.current?.();
+    closeSheet({
+      onAfterClose: () => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            pageScrollCancelRef.current = scrollContentToBottom(wrapRef.current);
+          });
+        });
+      },
+    });
   }, [
     sheetDraft,
     sheetOtherDraft,
@@ -161,9 +175,12 @@ const EthnicBackground = ({
   ]);
 
   const [otherPanelClosing, setOtherPanelClosing] = useState(false);
+  const [exitingChipKeys, setExitingChipKeys] = useState([]);
   const closeTimerRef = useRef(null);
+  const chipExitTimerRef = useRef(null);
   const otherPanelClosingRef = useRef(false);
   otherPanelClosingRef.current = otherPanelClosing;
+  const isSelectedChipExiting = exitingChipKeys.length > 0;
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current != null) {
@@ -172,11 +189,47 @@ const EthnicBackground = ({
     }
   }, []);
 
+  const clearChipExitTimer = useCallback(() => {
+    if (chipExitTimerRef.current != null) {
+      window.clearTimeout(chipExitTimerRef.current);
+      chipExitTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleAfterChipExit = useCallback(
+    (keys, onComplete) => {
+      if (!keys.length) {
+        onComplete();
+        return;
+      }
+      clearChipExitTimer();
+      setExitingChipKeys([]);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setExitingChipKeys(keys);
+          chipExitTimerRef.current = window.setTimeout(() => {
+            setExitingChipKeys([]);
+            chipExitTimerRef.current = null;
+            onComplete();
+          }, SELECTED_CHIP_EXIT_MS);
+        });
+      });
+    },
+    [clearChipExitTimer]
+  );
+
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
+  useEffect(() => () => clearChipExitTimer(), [clearChipExitTimer]);
 
   useEffect(
     () => () => clearSheetCloseTimer(),
     [clearSheetCloseTimer]
+  );
+
+  useEffect(
+    () => () => pageScrollCancelRef.current?.(),
+    []
   );
 
   const isOtherSelected = ethnicBackground.includes(ETHNIC_OTHER_OPTION);
@@ -315,10 +368,12 @@ const EthnicBackground = ({
     setSheetOtherError(false);
   };
 
+  const wrapRef = useRef(null);
   const inputBlockRef = useRef(null);
   const hintRef = useRef(null);
   const sheetBodyRef = useRef(null);
   const sheetOtherInputRef = useRef(null);
+  const pageScrollCancelRef = useRef(null);
 
   useEffect(() => {
     if (isModalMode) return;
@@ -429,7 +484,20 @@ const EthnicBackground = ({
     [onChange, onOtherTextChange]
   );
 
-  const handlePreferNotToSay = useCallback(() => {
+  const handleChipRemoveAnimated = useCallback(
+    (chip) => {
+      if (skipped || isSelectedChipExiting) return;
+      scheduleAfterChipExit([chip.key], () => handleChipRemove(chip.value));
+    },
+    [
+      skipped,
+      isSelectedChipExiting,
+      scheduleAfterChipExit,
+      handleChipRemove,
+    ]
+  );
+
+  const commitPreferNotToSay = useCallback(() => {
     if (typeof setEthnicBackground !== "function") return;
 
     setEthnicBackground((prev) => {
@@ -445,6 +513,31 @@ const EthnicBackground = ({
       return detailNext;
     });
   }, [onOtherTextChange, setEthnicBackground]);
+
+  const handlePreferNotToSay = useCallback(() => {
+    if (typeof setEthnicBackground !== "function") return;
+    if (skipped || isSelectedChipExiting) return;
+
+    const prevArr = Array.isArray(ethnicBackground) ? ethnicBackground : [];
+    const willSelectPrefer = !prevArr.includes(FORM_PREFER_NOT_TO_SAY);
+
+    if (willSelectPrefer && selectedChips.length > 0) {
+      scheduleAfterChipExit(
+        selectedChips.map((c) => c.key),
+        commitPreferNotToSay
+      );
+      return;
+    }
+
+    commitPreferNotToSay();
+  }, [
+    ethnicBackground,
+    skipped,
+    isSelectedChipExiting,
+    selectedChips,
+    scheduleAfterChipExit,
+    commitPreferNotToSay,
+  ]);
 
   const sheetTranslate = Math.max(0, dragOffset);
   const sheetDragStyle =
@@ -489,7 +582,10 @@ const EthnicBackground = ({
 
   return (
     <>
-      <div className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}>
+      <div
+        ref={wrapRef}
+        className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}
+      >
         <InfoTooltip
           title={
             <span className={titleStyles.titleWithIcon}>
@@ -541,15 +637,25 @@ const EthnicBackground = ({
                     key={c.key}
                     className={`${styles.selectedChip} ${
                       skipped ? styles.selectedChipSkipped : ""
+                    } ${
+                      exitingChipKeys.includes(c.key)
+                        ? styles.selectedChipExiting
+                        : ""
                     }`.trim()}
+                    style={{
+                      "--selected-chip-exit-duration": `${SELECTED_CHIP_EXIT_MS}ms`,
+                    }}
                   >
                     <span className={styles.selectedChipText}>{c.label}</span>
                     <button
                       type="button"
                       className={styles.selectedChipRemove}
                       onClick={
-                        skipped ? undefined : () => handleChipRemove(c.value)
+                        skipped
+                          ? undefined
+                          : () => handleChipRemoveAnimated(c)
                       }
+                      disabled={isSelectedChipExiting}
                       aria-disabled={skipped}
                       aria-label={`Remove ${c.ariaLabel ?? c.label}`}
                       tabIndex={skipped ? -1 : 0}
@@ -574,7 +680,7 @@ const EthnicBackground = ({
                   options={[FORM_PREFER_NOT_TO_SAY]}
                   showDivider={selectedChips.length > 0}
                   dividerFlushTop
-                  skipped={skipped}
+                  skipped={skipped || isSelectedChipExiting}
                 />
               </div>
             )}

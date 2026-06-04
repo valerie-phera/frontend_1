@@ -100,6 +100,7 @@
 }
 
 .selectedChip {
+    --selected-chip-exit-ease: cubic-bezier(0.22, 1, 0.36, 1);
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -110,7 +111,37 @@
     color: #FFFFFF;
     font-size: 14px;
     font-weight: 600;
-    overflow: visible;
+    overflow: hidden;
+    max-height: 48px;
+    max-width: 100%;
+
+    transition:
+        opacity var(--selected-chip-exit-duration, 400ms) ease,
+        transform var(--selected-chip-exit-duration, 400ms) var(--selected-chip-exit-ease),
+        max-height var(--selected-chip-exit-duration, 400ms) var(--selected-chip-exit-ease),
+        max-width var(--selected-chip-exit-duration, 400ms) var(--selected-chip-exit-ease),
+        padding var(--selected-chip-exit-duration, 400ms) var(--selected-chip-exit-ease),
+        border-width var(--selected-chip-exit-duration, 400ms) ease,
+        gap var(--selected-chip-exit-duration, 400ms) ease,
+        margin var(--selected-chip-exit-duration, 400ms) ease;
+}
+
+.selectedChipExiting {
+    opacity: 0;
+    transform: scale(0.88);
+    max-height: 0;
+    max-width: 0;
+    padding: 0;
+    border-width: 0;
+    gap: 0;
+    margin: 0;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .selectedChip {
+        transition-duration: 0.01ms;
+    }
 }
 
 .selectedChip.selectedChipSkipped {

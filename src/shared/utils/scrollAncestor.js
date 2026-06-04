@@ -348,3 +348,106 @@ export function scrollOpenedSectionIntoView(
   timerId = window.setTimeout(runScroll, startDelayMs);
   return cancel;
 }
+
+function resolvePageScroller(fromEl) {
+  if (fromEl instanceof Element) {
+    const fromAncestor = findScrollableAncestor(fromEl);
+    if (fromAncestor) return fromAncestor;
+  }
+
+  const marked = document.querySelector("[data-scroll-container]");
+  if (marked instanceof HTMLElement) {
+    return findScrollableAncestor(marked) || marked;
+  }
+
+  const root = document.getElementById("root");
+  if (root instanceof HTMLElement) {
+    const { overflowY } = window.getComputedStyle(root);
+    if (
+      overflowY === "auto" ||
+      overflowY === "scroll" ||
+      overflowY === "overlay"
+    ) {
+      return root;
+    }
+  }
+
+  const scrolling = document.scrollingElement;
+  return scrolling instanceof HTMLElement ? scrolling : null;
+}
+
+/**
+ * Smoothly scroll the page scrollport to the top (e.g. after closing a bottom sheet).
+ * @returns {() => void} cancel pending scroll / animation
+ */
+export function scrollContentToTop(
+  fromEl,
+  {
+    durationMs = DEFAULT_SCROLL_DURATION_MS,
+    startDelayMs = SCROLL_START_DELAY_MS,
+  } = {}
+) {
+  let cancelled = false;
+  let timerId = 0;
+
+  const cancel = () => {
+    cancelled = true;
+    window.clearTimeout(timerId);
+  };
+
+  const scroller = resolvePageScroller(fromEl);
+  if (!scroller) return cancel;
+
+  const runScroll = () => {
+    if (cancelled) return;
+    animateScrollTop(scroller, 0, durationMs, () => cancelled);
+  };
+
+  if (startDelayMs <= 0 || prefersReducedMotion()) {
+    runScroll();
+    return cancel;
+  }
+
+  timerId = window.setTimeout(runScroll, startDelayMs);
+  return cancel;
+}
+
+/**
+ * Smoothly scroll the page scrollport to the bottom (e.g. reveal content added below the fold).
+ * @returns {() => void} cancel pending scroll / animation
+ */
+export function scrollContentToBottom(
+  fromEl,
+  {
+    durationMs = DEFAULT_SCROLL_DURATION_MS,
+    startDelayMs = SCROLL_START_DELAY_MS,
+  } = {}
+) {
+  let cancelled = false;
+  let timerId = 0;
+
+  const cancel = () => {
+    cancelled = true;
+    window.clearTimeout(timerId);
+  };
+
+  const scroller = resolvePageScroller(fromEl);
+  if (!scroller) return cancel;
+
+  const runScroll = () => {
+    if (cancelled) return;
+    const target = clampScrollTop(
+      scroller,
+      scroller.scrollHeight - scroller.clientHeight
+    );
+    animateScrollTop(scroller, target, durationMs, () => cancelled);
+  };
+
+  if (startDelayMs <= 0 || prefersReducedMotion()) {
+    runScroll();
+    return cancel;
+  }
+
+  timerId = window.setTimeout(runScroll, startDelayMs);
+  return cancel;
+}
