@@ -24,8 +24,9 @@ const Notes = ({ notes, setNotes, skipped = false, embedded = false }) => {
     const el = textareaRef.current;
     if (!el) return;
 
+    // Use offsetHeight (includes borders) so overflow-y: hidden does not clip edges.
     el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${el.offsetHeight}px`;
   }, []);
 
   const scrollNotesContentIntoView = useCallback(() => {
