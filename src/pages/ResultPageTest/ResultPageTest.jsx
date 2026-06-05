@@ -431,7 +431,9 @@ const ResultPageTest = () => {
                                     <div className={styles.detailsRow}>
                                         <p className={styles.timeRow}>
                                             <ClockFill className={styles.timeIcon} />
-                                            Takes about 2 minutes.
+                                            <span className={styles.timeText}>
+                                                Takes about <span className={styles.timeStrong}>2 minutes.</span>
+                                            </span>
                                         </p>
                                         <div className={styles.tags}>
                                             {DETAIL_TAGS.map(({ label, tooltip }) => (

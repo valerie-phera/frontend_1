@@ -485,6 +485,15 @@
     color: #1F1F1F;
 }
 
+.timeText {
+    display: inline;
+}
+
+.timeStrong {
+    font-weight: 600;
+}
+
+
 .timeIcon {
     width: 12px;
     height: 12px;

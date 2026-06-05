@@ -54,7 +54,9 @@ const AgeInput = ({
                 title={
                     <span className={titleStyles.titleWithIcon}>
                         <AgeIcon aria-hidden />
-                        <span>Age</span>
+                        <span>
+                            Age <span className={styles.titleWithIconGray}>(optional)</span>
+                        </span>
                     </span>
                 }
                 showArrow={false}
@@ -67,15 +69,13 @@ const AgeInput = ({
                 type="number"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`${styles.input} ${
-                    showInlineError ? styles.inputError : ""
-                } ${
-                    skipped
+                className={`${styles.input} ${showInlineError ? styles.inputError : ""
+                    } ${skipped
                         ? localAge !== "" && localAge != null
                             ? styles.inputSkippedFilled
                             : styles.inputSkipped
                         : ""
-                }`.trim()}
+                    }`.trim()}
                 placeholder="Enter your age"
                 value={localAge}
                 onChange={handleChange}
