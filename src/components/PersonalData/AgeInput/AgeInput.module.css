@@ -48,6 +48,11 @@
     pointer-events: none;
 }
 
+.inputReadonly {
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 .wrapSkipped h4 svg path {
     fill: #A4A7AE;
 }

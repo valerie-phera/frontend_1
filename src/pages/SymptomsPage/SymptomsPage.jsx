@@ -754,6 +754,7 @@ const SymptomsPage = () => {
                                 onToggle={() =>
                                     toggleSection(SECTION_KEYS.notes)
                                 }
+                                hasSelection={String(notes ?? "").trim().length > 0}
                             >
                                 <Notes
                                     notes={notes}

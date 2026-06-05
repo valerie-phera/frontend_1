@@ -270,7 +270,6 @@
     display: inline;
     padding: 0;
     margin: 0;
-    margin-inline: 12px;
     border: none;
     background: none;
     font: inherit;
@@ -281,6 +280,11 @@
     cursor: pointer;
     text-decoration: none;
     vertical-align: baseline;
+}
+
+/* Gap between adjacent refs so 44×44 hit areas do not overlap */
+.bracketRefLink + .bracketRefLink {
+    margin-inline-start: 24px;
 }
 
 /* 44×44 hit area centered on the label; does not affect text layout */

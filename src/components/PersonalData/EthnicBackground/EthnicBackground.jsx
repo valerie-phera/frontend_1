@@ -629,7 +629,9 @@ const EthnicBackground = ({
               type="button"
               className={`${styles.selectChip} ${
                 skipped
-                  ? styles.selectChipSkipped
+                  ? selectedChips.length > 0
+                      ? `${styles.selectChipFilled} ${styles.selectChipReadonly}`
+                      : styles.selectChipSkipped
                   : selectedChips.length > 0
                       ? styles.selectChipFilled
                       : ""
@@ -645,9 +647,7 @@ const EthnicBackground = ({
               </span>
               {selectedChips.length > 0 && (
                 <span
-                  className={`${styles.selectChipBadge} ${
-                    skipped ? styles.selectChipBadgeSkipped : ""
-                  }`.trim()}
+                  className={styles.selectChipBadge}
                 >
                   {selectedChips.length} selected
                 </span>
@@ -660,7 +660,7 @@ const EthnicBackground = ({
                   <div
                     key={c.key}
                     className={`${styles.selectedChip} ${
-                      skipped ? styles.selectedChipSkipped : ""
+                      skipped ? styles.selectedChipReadonly : ""
                     } ${
                       exitingChipKeys.includes(c.key)
                         ? styles.selectedChipExiting

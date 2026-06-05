@@ -296,7 +296,7 @@ const toDeepDiveBulletItems = (raw) => {
     const sentences = parts
         .flatMap((p) => splitByBoldLabels(p))
         .flatMap((p) => splitIntoSentences(p))
-        .map((s) => String(s ?? "").trim())
+        .map((s) => stripTrailingDash(String(s ?? "").trim()))
         .filter(Boolean);
 
     return sentences;

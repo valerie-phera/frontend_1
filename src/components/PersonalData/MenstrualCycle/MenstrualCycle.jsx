@@ -4,7 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import DropIcon from "../../../assets/AddDetailsIcons/DropIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
-import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
+import { buildSelectionChipClassName, buildSkippedChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./MenstrualCycle.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -33,11 +33,7 @@ const MenstrualCycle = ({
             return (
                 <div
                     key={item}
-                    className={
-                        isSelected
-                            ? skippedStyles.itemSkippedSelected
-                            : skippedStyles.itemSkippedInactive
-                    }
+                    className={buildSkippedChipClassName(isSelected)}
                     role="presentation"
                     aria-hidden={!isSelected}
                 >

@@ -54,7 +54,7 @@ const AgeInput = ({
     const showInlineError = (touched && !!error) || showError;
     const inlineErrorText = error || (showError ? ERROR_TEXT : "");
     const isFilled = localAge !== "" && localAge != null;
-    const showFilledBackground = !skipped && isFilled && !isFocused;
+    const showFilledBackground = isFilled && !isFocused;
 
     return (
         <div className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}>
@@ -81,7 +81,7 @@ const AgeInput = ({
                     } ${showFilledBackground ? styles.inputFilled : ""
                     } ${skipped
                         ? isFilled
-                            ? styles.inputSkippedFilled
+                            ? styles.inputReadonly
                             : styles.inputSkipped
                         : ""
                     }`.trim()}

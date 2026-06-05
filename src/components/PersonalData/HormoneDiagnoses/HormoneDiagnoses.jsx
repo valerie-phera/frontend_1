@@ -3,7 +3,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import StethoscopeIcon from "../../../assets/AddDetailsIcons/StethoscopeIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
-import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
+import { buildSelectionChipClassName, buildSkippedChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./HormoneDiagnoses.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -34,11 +34,7 @@ const HormoneDiagnoses = ({
             return (
                 <div
                     key={item}
-                    className={
-                        isSelected
-                            ? skippedStyles.itemSkippedSelected
-                            : skippedStyles.itemSkippedInactive
-                    }
+                    className={buildSkippedChipClassName(isSelected)}
                     role="presentation"
                     aria-hidden={!isSelected}
                 >

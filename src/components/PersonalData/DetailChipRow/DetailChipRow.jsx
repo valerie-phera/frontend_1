@@ -5,7 +5,10 @@ import {
     FORM_PREFER_NOT_TO_SAY,
 } from "../../../shared/constants/formDetailOptions";
 import detailStyles from "../../../shared/styles/detailChipRow.module.css";
-import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
+import {
+    buildSelectionChipClassName,
+    buildSkippedChipClassName,
+} from "../../../shared/utils/selectionChipClassName";
 
 const DetailChipRow = ({
     selected,
@@ -31,9 +34,9 @@ const DetailChipRow = ({
                     const isSelected = selectedArr.includes(item);
                     const isActive = !skipped && isSelected;
                     const className = skipped
-                        ? isSelected
-                            ? detailStyles.itemDetailSkippedSelected
-                            : detailStyles.itemDetailSkipped
+                        ? buildSkippedChipClassName(isSelected, {
+                              variant: "detail",
+                          })
                         : buildSelectionChipClassName(isActive, {
                               variant: "detail",
                           });

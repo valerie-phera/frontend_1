@@ -144,6 +144,16 @@
     }
 }
 
+.selectChip.selectChipReadonly {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.selectedChip.selectedChipReadonly {
+    pointer-events: none;
+    cursor: default;
+}
+
 .selectedChip.selectedChipSkipped {
     border: 1px solid #A4A7AE;
     background-color: #A4A7AE;

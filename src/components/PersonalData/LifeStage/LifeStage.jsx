@@ -4,7 +4,7 @@ import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import LifeStageIcon from "../../../assets/AddDetailsIcons/LifeStageIcon";
 import DetailChipRow from "../DetailChipRow/DetailChipRow";
 import { LIFE_STAGE_MAIN_OPTIONS } from "./lifeStageOptions";
-import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
+import { buildSelectionChipClassName, buildSkippedChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./LifeStage.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
@@ -25,11 +25,7 @@ const LifeStage = ({
       return (
         <div
           key={item}
-          className={
-            isSelected
-              ? styles.itemSkippedSelected
-              : styles.itemSkippedInactive
-          }
+          className={buildSkippedChipClassName(isSelected)}
           role="presentation"
           aria-hidden={!isSelected}
         >

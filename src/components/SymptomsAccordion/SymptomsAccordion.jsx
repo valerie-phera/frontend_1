@@ -16,12 +16,15 @@ const SymptomsAccordion = ({
     children,
     hasBody = true,
     skipped = false,
+    hasSelection: hasSelectionProp,
 }) => {
     const rootRef = useRef(null);
     const bodyWrapperRef = useRef(null);
     const prevOpenRef = useRef(isOpen);
 
     const showSelectionLabel = Boolean(selectionLabel);
+    const hasSelection = hasSelectionProp ?? Boolean(selectionLabel);
+    const muteHeader = skipped && !hasSelection;
 
     const infoSlot = infoText ? (
         <div className={styles.infoWrap}>
@@ -75,7 +78,7 @@ const SymptomsAccordion = ({
         <div
             ref={rootRef}
             className={`${styles.accordion} ${
-                skipped ? styles.accordionSkipped : ""
+                muteHeader ? styles.accordionSkipped : ""
             } ${isOpen && hasBody ? styles.accordionExpanded : ""}`.trim()}
         >
             <button

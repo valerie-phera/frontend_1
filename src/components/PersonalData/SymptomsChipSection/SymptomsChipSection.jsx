@@ -1,8 +1,7 @@
 import { memo } from "react";
 
 import { FORM_DETAIL_OPTIONS } from "../../../shared/constants/formDetailOptions";
-import skippedStyles from "../../../shared/styles/skippedChipSection.module.css";
-import { buildSelectionChipClassName } from "../../../shared/utils/selectionChipClassName";
+import { buildSelectionChipClassName, buildSkippedChipClassName } from "../../../shared/utils/selectionChipClassName";
 import styles from "./SymptomsChipSection.module.css";
 
 const SymptomsChipSection = ({
@@ -21,11 +20,9 @@ const SymptomsChipSection = ({
             return (
                 <div
                     key={item}
-                    className={
-                        isSelected
-                            ? skippedStyles.itemSkippedSelected
-                            : skippedStyles.itemSkippedInactive
-                    }
+                    className={buildSkippedChipClassName(isSelected, {
+                        variant: isDetail ? "detail" : "main",
+                    })}
                     role="presentation"
                     aria-hidden={!isSelected}
                 >
