@@ -1213,9 +1213,9 @@ const ResultWithDetailsPage = () => {
                         className={`${styles.btns} ${isDesktopCompletionLayout ? styles.btnsDesktopCompletion : ""}`}
                     >
                         {isTestCompleteRoute ? (
-                            <Button onClick={onExportClick}>Export results</Button>
+                            <Button onClick={onExportClick}>Save results</Button>
                         ) : (
-                            <ButtonReverse onClick={onExportClick}>Export results</ButtonReverse>
+                            <ButtonReverse onClick={onExportClick}>Save results</ButtonReverse>
                         )}
                     </div>
                     <div className={styles.privacyPolicyWrap}>
