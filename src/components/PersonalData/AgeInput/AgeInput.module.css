@@ -21,6 +21,10 @@
     color: var(--main-color-secondary);
 }
 
+.inputFilled {
+    background-color: #E6F2F4;
+}
+
 .inputError {
     border: 1px solid #CC3433;
 }
@@ -30,7 +34,7 @@
 }
 
 .inputSkipped {
-    background-color: #FDFDFD;
+    background-color: #F5F5F5;
     border-color: #0C121E;
     color: #A4A7AE;
     cursor: not-allowed;
@@ -38,6 +42,7 @@
 }
 
 .inputSkippedFilled {
+    background-color: #F5F5F5;
     color: #A4A7AE;
     cursor: not-allowed;
     pointer-events: none;

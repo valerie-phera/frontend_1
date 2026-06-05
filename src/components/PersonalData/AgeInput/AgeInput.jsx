@@ -19,6 +19,7 @@ const AgeInput = ({
     const [localAge, setLocalAge] = useState(age ?? "");
     const [error, setError] = useState("");
     const [touched, setTouched] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
         setLocalAge(age ?? "");
@@ -40,13 +41,20 @@ const AgeInput = ({
         onChange(raw === "" ? "" : raw);
     };
 
+    const handleFocus = () => {
+        setIsFocused(true);
+    };
+
     const handleBlur = (e) => {
+        setIsFocused(false);
         setTouched(true);
         setError(validate(e.target.value));
     };
 
     const showInlineError = (touched && !!error) || showError;
     const inlineErrorText = error || (showError ? ERROR_TEXT : "");
+    const isFilled = localAge !== "" && localAge != null;
+    const showFilledBackground = !skipped && isFilled && !isFocused;
 
     return (
         <div className={`${styles.wrap} ${skipped ? styles.wrapSkipped : ""}`.trim()}>
@@ -70,8 +78,9 @@ const AgeInput = ({
                 inputMode="numeric"
                 pattern="[0-9]*"
                 className={`${styles.input} ${showInlineError ? styles.inputError : ""
+                    } ${showFilledBackground ? styles.inputFilled : ""
                     } ${skipped
-                        ? localAge !== "" && localAge != null
+                        ? isFilled
                             ? styles.inputSkippedFilled
                             : styles.inputSkipped
                         : ""
@@ -79,6 +88,7 @@ const AgeInput = ({
                 placeholder="Enter your age"
                 value={localAge}
                 onChange={handleChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 min={MIN_AGE}
                 max={MAX_AGE}

@@ -42,6 +42,9 @@ const SELECTED_CHIP_EXIT_MS = 400;
 
 const OTHER_CHIP_LABEL_MAX = 30;
 
+/** Max ethnic backgrounds selectable in the /add-details/basic bottom sheet (incl. "+ Other"). */
+const SHEET_MAX_SELECTIONS = 4;
+
 const truncateChipLabel = (text, maxLen = OTHER_CHIP_LABEL_MAX) => {
   const s = String(text ?? "");
   if (s.length <= maxLen) return s;
@@ -263,6 +266,9 @@ const EthnicBackground = ({
         }
         return arr.filter((x) => x !== item);
       }
+      if (arr.length >= SHEET_MAX_SELECTIONS) {
+        return arr;
+      }
       if (item === ETHNIC_OTHER_OPTION) {
         setSheetOtherError(false);
       }
@@ -271,69 +277,81 @@ const EthnicBackground = ({
   }, []);
 
   const renderOptionChips = useCallback(
-    (activeList, onToggle, { inSheet = false, items = options } = {}) =>
-      items.map((item) => {
+    (activeList, onToggle, { inSheet = false, items = options } = {}) => {
+      const isAtMaxSelection =
+        inSheet && activeList.length >= SHEET_MAX_SELECTIONS;
+
+      return items.map((item) => {
         const isActive = activeList.includes(item);
-        const chipClassName = buildSelectionChipClassName(isActive);
+        const isDisabled = isAtMaxSelection && !isActive;
+        const chipClassName = buildSelectionChipClassName(isActive, {
+          disabled: isDisabled,
+        });
+
+        const activateChip = () => {
+          if (isDisabled) return;
+          if (
+            inSheet &&
+            item === ETHNIC_OTHER_OPTION &&
+            otherInputMode === "when_other"
+          ) {
+            if (otherPanelClosing) {
+              clearCloseTimer();
+              setOtherPanelClosing(false);
+              return;
+            }
+            toggleSheetDraft(item);
+            return;
+          }
+          if (
+            !inSheet &&
+            item === ETHNIC_OTHER_OPTION &&
+            otherInputMode === "when_other"
+          ) {
+            if (otherPanelClosing) {
+              clearCloseTimer();
+              setOtherPanelClosing(false);
+              return;
+            }
+            if (isActive) {
+              setOtherPanelClosing(true);
+              clearCloseTimer();
+              onChange(item);
+              closeTimerRef.current = window.setTimeout(() => {
+                onOtherTextChange?.("");
+                setOtherPanelClosing(false);
+                closeTimerRef.current = null;
+              }, OTHER_PANEL_ANIM_MS);
+              return;
+            }
+            openSheet();
+            onChange(item);
+            return;
+          }
+          onToggle(item);
+        };
 
         return (
           <div
             key={item}
             className={chipClassName}
-            onClick={() => {
-              if (
-                inSheet &&
-                item === ETHNIC_OTHER_OPTION &&
-                otherInputMode === "when_other"
-              ) {
-                if (otherPanelClosing) {
-                  clearCloseTimer();
-                  setOtherPanelClosing(false);
-                  return;
-                }
-                toggleSheetDraft(item);
-                return;
-              }
-              if (
-                !inSheet &&
-                item === ETHNIC_OTHER_OPTION &&
-                otherInputMode === "when_other"
-              ) {
-                if (otherPanelClosing) {
-                  clearCloseTimer();
-                  setOtherPanelClosing(false);
-                  return;
-                }
-                if (isActive) {
-                  setOtherPanelClosing(true);
-                  clearCloseTimer();
-                  onChange(item);
-                  closeTimerRef.current = window.setTimeout(() => {
-                    onOtherTextChange?.("");
-                    setOtherPanelClosing(false);
-                    closeTimerRef.current = null;
-                  }, OTHER_PANEL_ANIM_MS);
-                  return;
-                }
-                openSheet();
-                onChange(item);
-                return;
-              }
-              onToggle(item);
-            }}
+            onClick={activateChip}
             role="button"
-            tabIndex={0}
+            tabIndex={isDisabled ? -1 : 0}
+            aria-disabled={isDisabled}
             onKeyDown={(e) => {
+              if (isDisabled) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onToggle(item);
+                activateChip();
               }
             }}
           >
             {item}
           </div>
         );
-      }),
+      });
+    },
     [
       clearCloseTimer,
       onChange,

@@ -88,13 +88,47 @@ const PersonalData = ({
         ? lifeStage.includes("Pregnant")
         : false;
 
+    const isMenopause = Array.isArray(lifeStage)
+        ? lifeStage.includes("Menopause")
+        : false;
+
+    const isPostmenopause = Array.isArray(lifeStage)
+        ? lifeStage.includes("Postmenopause")
+        : false;
+
+    const lifeStageDisabledItems = (() => {
+        const disabled = new Set();
+        if (isPregnant) {
+            ["Trying to conceive", "Menopause", "Postmenopause"].forEach((item) =>
+                disabled.add(item)
+            );
+        }
+        if (isTryingToConceive) {
+            ["Menopause", "Postmenopause", "Pregnant"].forEach((item) =>
+                disabled.add(item)
+            );
+        }
+        if (isMenopause || isPostmenopause) {
+            ["Pregnant", "Trying to conceive"].forEach((item) => disabled.add(item));
+        }
+        return Array.from(disabled);
+    })();
+
     const handleLifeStageChange = (value) => {
         setLifeStage((prev) => {
-            const disabledWhenTrying = new Set(["Menopause", "Postmenopause"]);
+            const disabledWhenTrying = new Set([
+                "Menopause",
+                "Postmenopause",
+                "Pregnant",
+            ]);
             const disabledWhenPregnant = new Set([
                 "Trying to conceive",
                 "Menopause",
                 "Postmenopause",
+            ]);
+            const disabledWhenMenopausalStage = new Set([
+                "Pregnant",
+                "Trying to conceive",
             ]);
             const prevArr = Array.isArray(prev) ? prev : [];
 
@@ -103,8 +137,15 @@ const PersonalData = ({
 
             const tryingSelected = prevArr.includes("Trying to conceive");
             const pregnantSelected = prevArr.includes("Pregnant");
+            const menopausalStageSelected =
+                prevArr.includes("Menopause") ||
+                prevArr.includes("Postmenopause");
 
             if (tryingSelected && disabledWhenTrying.has(value)) {
+                return prevArr;
+            }
+
+            if (menopausalStageSelected && disabledWhenMenopausalStage.has(value)) {
                 return prevArr;
             }
 
@@ -121,6 +162,13 @@ const PersonalData = ({
             }
             if (next.includes("Pregnant")) {
                 next = next.filter((x) => !disabledWhenPregnant.has(x));
+            }
+
+            if (
+                next.includes("Menopause") ||
+                next.includes("Postmenopause")
+            ) {
+                next = next.filter((x) => !disabledWhenMenopausalStage.has(x));
             }
 
             return next;
@@ -184,13 +232,7 @@ const PersonalData = ({
                         showHeadingError={showLifeHeadingError}
                         showDetailOptions={!showFullForm}
                         skipped={skipped}
-                        disabledItems={
-                            isPregnant
-                                ? ["Trying to conceive", "Menopause", "Postmenopause"]
-                                : isTryingToConceive
-                                    ? ["Menopause", "Postmenopause"]
-                                    : []
-                        }
+                        disabledItems={lifeStageDisabledItems}
                     />
                     <EthnicBackground
                         ethnicBackground={ethnicBackground}
