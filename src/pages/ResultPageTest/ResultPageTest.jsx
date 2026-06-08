@@ -55,9 +55,9 @@ const DETAIL_TAGS = [
             "Birth control, hormone therapy, and hormone conditions directly affect vaginal pH levels.",
     },
     {
-        label: "Health context",
+        label: "Symptoms",
         tooltip:
-            "Your recent health context helps us understand whether an elevated pH is significant or has a simple explanation.",
+            "Tracking changes in your discharge, odor, or comfort helps establish your personal baseline and flags early signs of imbalance.",
     },
 ];
 
