@@ -44,7 +44,8 @@
     transform: translate(-50%, -100%) scale(0.95);
     opacity: 0;
 
-    width: clamp(180px, 80vw, 215px);
+    /* width: clamp(180px, 80vw, 215px); */
+    width: clamp(180px, 80vw, 218px);
     max-width: calc(100vw - 32px);
     box-sizing: border-box;
 
