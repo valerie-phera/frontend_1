@@ -152,6 +152,7 @@ const AnalyzingData = () => {
         (async () => {
             try {
                 const payload = buildPayload();
+                console.log("[AnalyzingData] request payload:", payload);
                 const minWaitMs = Math.max(0, MIN_WAIT_MS - (Date.now() - startedAt));
 
                 const backendPromise = Promise.race([
