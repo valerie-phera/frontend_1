@@ -9,12 +9,24 @@ export const SPOTTING_OPTIONS = [
     "Blood may have been present",
 ];
 
-const Spotting = ({ selected = [], onChange, skipped = false, infoSlot = null }) => (
+export const SPOTTING_PERIOD_OPTIONS = [
+    "Period started",
+    "Period just ended",
+];
+
+const Spotting = ({
+    selected = [],
+    onChange,
+    skipped = false,
+    disabledItems = [],
+    infoSlot = null,
+}) => (
     <SymptomsChipSection
         options={SPOTTING_OPTIONS}
         selected={selected}
         onChange={onChange}
         skipped={skipped}
+        disabledItems={disabledItems}
         infoSlot={infoSlot}
     />
 );

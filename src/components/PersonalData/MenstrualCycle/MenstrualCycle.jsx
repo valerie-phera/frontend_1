@@ -8,8 +8,10 @@ import { buildSelectionChipClassName, buildSkippedChipClassName } from "../../..
 import styles from "./MenstrualCycle.module.css";
 import titleStyles from "../../../shared/styles/titleWithIcon.module.css";
 
+export const MENSTRUAL_NO_PERIOD_12_MONTHS = "No period for 12+ months";
+
 const options = [
-    "No period for 12+ months",
+    MENSTRUAL_NO_PERIOD_12_MONTHS,
     "Regular",
     "Irregular",
     "Currently pregnant",

@@ -1,3 +1,4 @@
+import { BIRTH_CONTROL_NEITHER_OPTION } from "../components/PersonalData/BirthControl/BirthControl";
 import { formatNotesForDisplay } from "../shared/utils/notesDisplay";
 import { stripDetailOptions } from "../shared/utils/detailChipSelection";
 
@@ -12,7 +13,9 @@ const useDetailsFromState = (state) => {
     strip(stripDetailOptions(arr), tokens);
 
   const birthControlValues = state?.birthControl
-    ? Object.values(state.birthControl).filter(Boolean)
+    ? Object.values(state.birthControl)
+        .filter(Boolean)
+        .filter((x) => x !== BIRTH_CONTROL_NEITHER_OPTION)
     : [];
 
   const hormoneTherapyValues = state?.hormoneTherapy

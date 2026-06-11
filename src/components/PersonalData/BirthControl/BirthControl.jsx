@@ -4,11 +4,13 @@ import { toggleValue } from "../../../shared/utils/toggleValue";
 import InfoTooltip from "../../InfoTooltip/InfoTooltip";
 import styles from "./BirthControl.module.css";
 
+export const BIRTH_CONTROL_NEITHER_OPTION = "Neither";
+
 const options = {
     general: [
         "Stopped birth control in the last 3 months",
         "Morning after-pill / emergency contraception in the last 7 days",
-        "Neither",
+        BIRTH_CONTROL_NEITHER_OPTION,
     ],
     pill: ["Combined pill", "Progestin-only pill"],
     iud: ["Hormonal IUD", "Copper IUD"],

@@ -13,7 +13,10 @@ import Urination from "../../components/PersonalData/Urination/Urination";
 import Notes from "../../components/PersonalData/Notes/Notes";
 import VaginalProducts from "../../components/PersonalData/VaginalProducts/VaginalProducts";
 import SexFluids from "../../components/PersonalData/SexFluids/SexFluids";
-import Spotting from "../../components/PersonalData/Spotting/Spotting";
+import { MENSTRUAL_NO_PERIOD_12_MONTHS } from "../../components/PersonalData/MenstrualCycle/MenstrualCycle";
+import Spotting, {
+    SPOTTING_PERIOD_OPTIONS,
+} from "../../components/PersonalData/Spotting/Spotting";
 import SymptomsAccordion from "../../components/SymptomsAccordion/SymptomsAccordion";
 
 import GroupIcon from "../../assets/AddDetailsIcons/GroupIcon";
@@ -145,6 +148,32 @@ const SymptomsPage = () => {
         [phValue, timestamp]
     );
 
+    const lifeStage = useMemo(() => {
+        const raw = Array.isArray(state?.lifeStage)
+            ? state.lifeStage
+            : draft?.lifeStage ?? [];
+        return stripDetailOptions(raw);
+    }, [state?.lifeStage, draft?.lifeStage]);
+
+    const menstrualCycle = useMemo(() => {
+        const raw = Array.isArray(state?.menstrualCycle)
+            ? state.menstrualCycle
+            : draft?.menstrualCycle ?? [];
+        return stripDetailOptions(raw);
+    }, [state?.menstrualCycle, draft?.menstrualCycle]);
+
+    const spottingDisabledItems = useMemo(() => {
+        const isMenopausalStage =
+            lifeStage.includes("Menopause") ||
+            lifeStage.includes("Postmenopause");
+        const hasNoPeriod12Months = menstrualCycle.includes(
+            MENSTRUAL_NO_PERIOD_12_MONTHS
+        );
+        return isMenopausalStage || hasNoPeriod12Months
+            ? [...SPOTTING_PERIOD_OPTIONS]
+            : [];
+    }, [lifeStage, menstrualCycle]);
+
     const initialSkipped = isStepSkipped(draft, "symptoms");
     const initialPreSkipSnapshot = readPreSkipSnapshot(draft, "symptoms");
 
@@ -274,6 +303,14 @@ const SymptomsPage = () => {
             setValidationVisible(false);
         }
     }, [validationVisible, sectionIssues.count]);
+
+    useEffect(() => {
+        if (spottingDisabledItems.length === 0) return;
+        const blocked = new Set(spottingDisabledItems);
+        setSpotting((prev) =>
+            Array.isArray(prev) ? prev.filter((x) => !blocked.has(x)) : []
+        );
+    }, [spottingDisabledItems]);
 
     useEffect(() => {
         if (errorBannerScrollToken === 0) return;
@@ -743,6 +780,7 @@ const SymptomsPage = () => {
                                     selected={spotting}
                                     onChange={handleSpottingChange}
                                     skipped={isSkipped}
+                                    disabledItems={spottingDisabledItems}
                                 />
                             </SymptomsAccordion>
 
