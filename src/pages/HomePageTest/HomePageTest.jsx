@@ -50,7 +50,7 @@ const HomePageTest = () => {
                   <ShieldIcon />
                 </div>
                 <div className={styles.rowText}>
-                  <div className={styles.rowTitle}>Completely anonymous</div>
+                  <div className={styles.rowTitle}>No account required</div>
                   <div className={styles.rowBody}>
                     You can use this service without an account. We do not collect
                     or store information that identifies you.
@@ -78,7 +78,7 @@ const HomePageTest = () => {
                 <div className={styles.rowText}>
                   <div className={styles.rowTitle}>Personalized health insights</div>
                   <div className={styles.rowBody}>
-                    Insights are generated with the help of AI based on published
+                    Insights are generated with the help of Medical Agent based based on published
                     scientific research and your inputs. They are for informational
                     purposes only and do not constitute medical advice.
                   </div>

@@ -670,7 +670,7 @@ const ResultWithDetailsPage = () => {
         parsedOverview?.bullets ??
         toOverviewBulletItems(backendOverview).map(formatInsightHtml);
     const deepDiveSections = [
-        { title: "Your ph", raw: deepDiveRaw.your_ph },
+        { title: "Your pH", raw: deepDiveRaw.your_ph },
         { title: "Your symptoms", raw: deepDiveRaw.your_symptoms },
         { title: "Your personal baseline", raw: deepDiveRaw.your_personal_baseline },
         { title: "Your health context", raw: deepDiveRaw.your_health_context },

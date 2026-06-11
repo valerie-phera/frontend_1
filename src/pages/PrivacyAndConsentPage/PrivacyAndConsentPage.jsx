@@ -228,7 +228,7 @@ const PrivacyAndConsentPage = () => {
                 </Container>
                 <BottomBlock>
                     <Button onClick={handleContinue} disabled={!canContinue}>Continue</Button>
-                    <div className={styles.bottomText}><p>You can withdraw optional consent at any time in Settings.</p> </div>
+                    <div className={styles.bottomText}><p>Optional analytics consent is not required. You can leave it unselected before continuing.</p> </div>
                 </BottomBlock>
             </div>
         </>
